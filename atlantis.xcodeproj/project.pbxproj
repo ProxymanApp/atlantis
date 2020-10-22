@@ -8,13 +8,21 @@
 
 /* Begin PBXBuildFile section */
 		52D6D9871BEFF229002C0205 /* atlantis.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 52D6D97C1BEFF229002C0205 /* atlantis.framework */; };
-		8933C7851EB5B820000D00A4 /* atlantis.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8933C7841EB5B820000D00A4 /* atlantis.swift */; };
-		8933C7861EB5B820000D00A4 /* atlantis.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8933C7841EB5B820000D00A4 /* atlantis.swift */; };
-		8933C7871EB5B820000D00A4 /* atlantis.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8933C7841EB5B820000D00A4 /* atlantis.swift */; };
-		8933C7881EB5B820000D00A4 /* atlantis.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8933C7841EB5B820000D00A4 /* atlantis.swift */; };
 		8933C78E1EB5B82C000D00A4 /* atlantisTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8933C7891EB5B82A000D00A4 /* atlantisTests.swift */; };
 		8933C78F1EB5B82C000D00A4 /* atlantisTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8933C7891EB5B82A000D00A4 /* atlantisTests.swift */; };
 		8933C7901EB5B82D000D00A4 /* atlantisTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8933C7891EB5B82A000D00A4 /* atlantisTests.swift */; };
+		BA268ED32541CBC000DD9DEC /* Atlantis+Utils.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA268ED22541CBC000DD9DEC /* Atlantis+Utils.swift */; };
+		BA268ED42541CBC000DD9DEC /* Atlantis+Utils.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA268ED22541CBC000DD9DEC /* Atlantis+Utils.swift */; };
+		BA268ED52541CBC000DD9DEC /* Atlantis+Utils.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA268ED22541CBC000DD9DEC /* Atlantis+Utils.swift */; };
+		BA268ED62541CBC000DD9DEC /* Atlantis+Utils.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA268ED22541CBC000DD9DEC /* Atlantis+Utils.swift */; };
+		BABB88B42541BF0F00B19641 /* Atlantis.swift in Sources */ = {isa = PBXBuildFile; fileRef = BABB88B32541BF0F00B19641 /* Atlantis.swift */; };
+		BABB88B52541BF0F00B19641 /* Atlantis.swift in Sources */ = {isa = PBXBuildFile; fileRef = BABB88B32541BF0F00B19641 /* Atlantis.swift */; };
+		BABB88B62541BF0F00B19641 /* Atlantis.swift in Sources */ = {isa = PBXBuildFile; fileRef = BABB88B32541BF0F00B19641 /* Atlantis.swift */; };
+		BABB88B72541BF0F00B19641 /* Atlantis.swift in Sources */ = {isa = PBXBuildFile; fileRef = BABB88B32541BF0F00B19641 /* Atlantis.swift */; };
+		BABB88B92541C64C00B19641 /* DispatchQueue+Once.swift in Sources */ = {isa = PBXBuildFile; fileRef = BABB88B82541C64C00B19641 /* DispatchQueue+Once.swift */; };
+		BABB88BA2541C64C00B19641 /* DispatchQueue+Once.swift in Sources */ = {isa = PBXBuildFile; fileRef = BABB88B82541C64C00B19641 /* DispatchQueue+Once.swift */; };
+		BABB88BB2541C64C00B19641 /* DispatchQueue+Once.swift in Sources */ = {isa = PBXBuildFile; fileRef = BABB88B82541C64C00B19641 /* DispatchQueue+Once.swift */; };
+		BABB88BC2541C64C00B19641 /* DispatchQueue+Once.swift in Sources */ = {isa = PBXBuildFile; fileRef = BABB88B82541C64C00B19641 /* DispatchQueue+Once.swift */; };
 		DD7502881C68FEDE006590AF /* atlantis.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 52D6DA0F1BF000BD002C0205 /* atlantis.framework */; };
 		DD7502921C690C7A006590AF /* atlantis.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 52D6D9F01BEFFFBE002C0205 /* atlantis.framework */; };
 /* End PBXBuildFile section */
@@ -49,10 +57,12 @@
 		52D6D9E21BEFFF6E002C0205 /* atlantis.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = atlantis.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		52D6D9F01BEFFFBE002C0205 /* atlantis.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = atlantis.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		52D6DA0F1BF000BD002C0205 /* atlantis.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = atlantis.framework; sourceTree = BUILT_PRODUCTS_DIR; };
-		8933C7841EB5B820000D00A4 /* atlantis.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = atlantis.swift; sourceTree = "<group>"; };
 		8933C7891EB5B82A000D00A4 /* atlantisTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = atlantisTests.swift; sourceTree = "<group>"; };
 		AD2FAA261CD0B6D800659CF4 /* atlantis.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = atlantis.plist; sourceTree = "<group>"; };
 		AD2FAA281CD0B6E100659CF4 /* atlantisTests.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = atlantisTests.plist; sourceTree = "<group>"; };
+		BA268ED22541CBC000DD9DEC /* Atlantis+Utils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Atlantis+Utils.swift"; sourceTree = "<group>"; };
+		BABB88B32541BF0F00B19641 /* Atlantis.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Atlantis.swift; sourceTree = "<group>"; };
+		BABB88B82541C64C00B19641 /* DispatchQueue+Once.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DispatchQueue+Once.swift"; sourceTree = "<group>"; };
 		DD75027A1C68FCFC006590AF /* atlantis-macOS Tests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "atlantis-macOS Tests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		DD75028D1C690C7A006590AF /* atlantis-tvOS Tests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "atlantis-tvOS Tests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -149,7 +159,9 @@
 		8933C7811EB5B7E0000D00A4 /* Sources */ = {
 			isa = PBXGroup;
 			children = (
-				8933C7841EB5B820000D00A4 /* atlantis.swift */,
+				BABB88B32541BF0F00B19641 /* Atlantis.swift */,
+				BA268ED22541CBC000DD9DEC /* Atlantis+Utils.swift */,
+				BABB88B82541C64C00B19641 /* DispatchQueue+Once.swift */,
 			);
 			path = Sources;
 			sourceTree = "<group>";
@@ -351,7 +363,7 @@
 				TargetAttributes = {
 					52D6D97B1BEFF229002C0205 = {
 						CreatedOnToolsVersion = 7.1;
-						LastSwiftMigration = 1020;
+						LastSwiftMigration = 1170;
 					};
 					52D6D9851BEFF229002C0205 = {
 						CreatedOnToolsVersion = 7.1;
@@ -359,15 +371,15 @@
 					};
 					52D6D9E11BEFFF6E002C0205 = {
 						CreatedOnToolsVersion = 7.1;
-						LastSwiftMigration = 1020;
+						LastSwiftMigration = 1170;
 					};
 					52D6D9EF1BEFFFBE002C0205 = {
 						CreatedOnToolsVersion = 7.1;
-						LastSwiftMigration = 1020;
+						LastSwiftMigration = 1170;
 					};
 					52D6DA0E1BF000BD002C0205 = {
 						CreatedOnToolsVersion = 7.1;
-						LastSwiftMigration = 1020;
+						LastSwiftMigration = 1170;
 					};
 					DD7502791C68FCFC006590AF = {
 						CreatedOnToolsVersion = 7.2.1;
@@ -460,7 +472,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				8933C7851EB5B820000D00A4 /* atlantis.swift in Sources */,
+				BABB88B42541BF0F00B19641 /* Atlantis.swift in Sources */,
+				BABB88B92541C64C00B19641 /* DispatchQueue+Once.swift in Sources */,
+				BA268ED32541CBC000DD9DEC /* Atlantis+Utils.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -476,7 +490,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				8933C7871EB5B820000D00A4 /* atlantis.swift in Sources */,
+				BABB88B62541BF0F00B19641 /* Atlantis.swift in Sources */,
+				BABB88BB2541C64C00B19641 /* DispatchQueue+Once.swift in Sources */,
+				BA268ED52541CBC000DD9DEC /* Atlantis+Utils.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -484,7 +500,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				8933C7881EB5B820000D00A4 /* atlantis.swift in Sources */,
+				BABB88B72541BF0F00B19641 /* Atlantis.swift in Sources */,
+				BABB88BC2541C64C00B19641 /* DispatchQueue+Once.swift in Sources */,
+				BA268ED62541CBC000DD9DEC /* Atlantis+Utils.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -492,7 +510,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				8933C7861EB5B820000D00A4 /* atlantis.swift in Sources */,
+				BABB88B52541BF0F00B19641 /* Atlantis.swift in Sources */,
+				BABB88BA2541C64C00B19641 /* DispatchQueue+Once.swift in Sources */,
+				BA268ED42541CBC000DD9DEC /* Atlantis+Utils.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -725,6 +745,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
+				CLANG_ENABLE_MODULES = YES;
 				"CODE_SIGN_IDENTITY[sdk=watchos*]" = "";
 				DEFINES_MODULE = YES;
 				DYLIB_COMPATIBILITY_VERSION = 1;
@@ -737,6 +758,7 @@
 				PRODUCT_NAME = atlantis;
 				SDKROOT = watchos;
 				SKIP_INSTALL = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 4;
 				WATCHOS_DEPLOYMENT_TARGET = 2.0;
@@ -747,6 +769,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
+				CLANG_ENABLE_MODULES = YES;
 				"CODE_SIGN_IDENTITY[sdk=watchos*]" = "";
 				DEFINES_MODULE = YES;
 				DYLIB_COMPATIBILITY_VERSION = 1;
@@ -770,6 +793,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
+				CLANG_ENABLE_MODULES = YES;
 				"CODE_SIGN_IDENTITY[sdk=appletvos*]" = "";
 				DEFINES_MODULE = YES;
 				DYLIB_COMPATIBILITY_VERSION = 1;
@@ -782,6 +806,7 @@
 				PRODUCT_NAME = atlantis;
 				SDKROOT = appletvos;
 				SKIP_INSTALL = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 3;
 				TVOS_DEPLOYMENT_TARGET = 9.0;
@@ -792,6 +817,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
+				CLANG_ENABLE_MODULES = YES;
 				"CODE_SIGN_IDENTITY[sdk=appletvos*]" = "";
 				DEFINES_MODULE = YES;
 				DYLIB_COMPATIBILITY_VERSION = 1;
@@ -815,6 +841,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
+				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_IDENTITY = "-";
 				COMBINE_HIDPI_IMAGES = YES;
 				DEFINES_MODULE = YES;
@@ -830,6 +857,7 @@
 				PRODUCT_NAME = atlantis;
 				SDKROOT = macosx;
 				SKIP_INSTALL = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
 			};
 			name = Debug;
@@ -838,6 +866,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
+				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_IDENTITY = "-";
 				COMBINE_HIDPI_IMAGES = YES;
 				DEFINES_MODULE = YES;
