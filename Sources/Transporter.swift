@@ -89,6 +89,7 @@ extension NetServiceTransport: Transporter {
         for package in pendingPackages {
             stream(package: package)
         }
+        pendingPackages.removeAll()
     }
 }
 

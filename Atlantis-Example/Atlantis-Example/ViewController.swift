@@ -38,5 +38,8 @@ class ViewController: UIViewController {
         task.resume()
     }
 
+    @IBAction func sendMessageBtnOnTap(_ sender: Any) {
+        makeSimpleRequest()
+    }
 }
 
