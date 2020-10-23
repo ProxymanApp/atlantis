@@ -29,16 +29,15 @@ final class NetServiceTransport: NSObject {
         self.configuration = configuration
         self.serviceBrowser = NetServiceBrowser()
         super.init()
-        self.serviceBrowser.delegate = self
+        serviceBrowser.delegate = self
     }
 
     func start() {
-
         // Reset all current connections
         reset()
 
         // Start searching
-        serviceBrowser.searchForServices(ofType: configuration.netServiceType, inDomain: configuration.netServiceType)
+        serviceBrowser.searchForServices(ofType: configuration.netServiceType, inDomain: configuration.netServiceDomain)
     }
 
     private func reset() {
@@ -64,7 +63,7 @@ extension NetServiceTransport: Transporter {
 extension NetServiceTransport {
 
     private func connectToService(_ service: NetService) {
-
+        print("Connect to server address count = \(service.addresses?.count ?? 0)")
     }
 }
 
@@ -73,23 +72,35 @@ extension NetServiceTransport {
 extension NetServiceTransport: NetServiceBrowserDelegate {
 
     func netServiceBrowser(_ browser: NetServiceBrowser, didFind service: NetService, moreComing: Bool) {
-        queue.sync {
-            services.append(service)
-            service.delegate = self
+        print("didFind service \(service)")
+        queue.async {[weak self] in
+            guard let strongSelf = self else { return }
+            strongSelf.services.append(service)
+            service.delegate = strongSelf
             service.resolve(withTimeout: 30)
         }
     }
 
     func netServiceBrowser(_ browser: NetServiceBrowser, didRemove service: NetService, moreComing: Bool) {
-        queue.sync {
-            if let index = services.firstIndex(where: { $0 === service }) {
-                services.remove(at: index)
+        print("didRemove service \(service)")
+        queue.async {[weak self] in
+            guard let strongSelf = self else { return }
+            if let index = strongSelf.services.firstIndex(where: { $0 === service }) {
+                strongSelf.services.remove(at: index)
             }
         }
     }
 
     func netServiceBrowser(_ browser: NetServiceBrowser, didNotSearch errorDict: [String : NSNumber]) {
         print("[Atlantis][ERROR] didNotSearch \(errorDict)")
+    }
+
+    func netServiceBrowserWillSearch(_ browser: NetServiceBrowser) {
+        print("netServiceBrowserWillSearch")
+    }
+
+    func netServiceBrowserDidStopSearch(_ browser: NetServiceBrowser) {
+        print("netServiceBrowserDidStopSearch")
     }
 }
 
@@ -98,6 +109,7 @@ extension NetServiceTransport: NetServiceBrowserDelegate {
 extension NetServiceTransport: NetServiceDelegate {
 
     func netServiceDidResolveAddress(_ sender: NetService) {
+        print("netServiceDidResolveAddress")
         connectToService(sender)
     }
 

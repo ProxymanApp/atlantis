@@ -13,7 +13,23 @@
 		BA268EF52541D55D00DD9DEC /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = BA268EF32541D55D00DD9DEC /* Main.storyboard */; };
 		BA268EF72541D55E00DD9DEC /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = BA268EF62541D55E00DD9DEC /* Assets.xcassets */; };
 		BA268EFA2541D55E00DD9DEC /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = BA268EF82541D55E00DD9DEC /* LaunchScreen.storyboard */; };
+		BA7D93A92542E0B300C46587 /* atlantis.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BA7D93A82542E0B300C46587 /* atlantis.framework */; };
+		BA7D93AA2542E0B300C46587 /* atlantis.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = BA7D93A82542E0B300C46587 /* atlantis.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		BA7D93AB2542E0B400C46587 /* Embed Frameworks */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				BA7D93AA2542E0B300C46587 /* atlantis.framework in Embed Frameworks */,
+			);
+			name = "Embed Frameworks";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		BA268EEA2541D55D00DD9DEC /* Atlantis-Example.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Atlantis-Example.app"; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -24,6 +40,8 @@
 		BA268EF62541D55E00DD9DEC /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		BA268EF92541D55E00DD9DEC /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		BA268EFB2541D55E00DD9DEC /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		BA7D93A42542DD8C00C46587 /* atlantis.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = atlantis.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		BA7D93A82542E0B300C46587 /* atlantis.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = atlantis.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -31,6 +49,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				BA7D93A92542E0B300C46587 /* atlantis.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -42,6 +61,7 @@
 			children = (
 				BA268EEC2541D55D00DD9DEC /* Atlantis-Example */,
 				BA268EEB2541D55D00DD9DEC /* Products */,
+				BA7D93A32542DD8C00C46587 /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -67,6 +87,15 @@
 			path = "Atlantis-Example";
 			sourceTree = "<group>";
 		};
+		BA7D93A32542DD8C00C46587 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				BA7D93A82542E0B300C46587 /* atlantis.framework */,
+				BA7D93A42542DD8C00C46587 /* atlantis.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -77,6 +106,7 @@
 				BA268EE62541D55D00DD9DEC /* Sources */,
 				BA268EE72541D55D00DD9DEC /* Frameworks */,
 				BA268EE82541D55D00DD9DEC /* Resources */,
+				BA7D93AB2542E0B400C46587 /* Embed Frameworks */,
 			);
 			buildRules = (
 			);
