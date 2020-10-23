@@ -18,6 +18,8 @@ import ObjectiveC
 ///
 public final class Atlantis: NSObject {
 
+    private static let shared = Atlantis(transporter: NetServiceTransport())
+
     private struct Constants {
         static let isEnabledNetworkInjector = "isEnabledNetworkInjector"
     }
@@ -33,9 +35,18 @@ public final class Atlantis: NSObject {
         set {
             UserDefaults.standard.set(newValue, forKey: Constants.isEnabledNetworkInjector)
             if newValue {
-                injectAllNetworkClasses()
+                Atlantis.shared.injectAllNetworkClasses()
             }
         }
+    }
+
+    // MARK: - Private components
+
+    private let transporter: Transporter
+
+    public init(transporter: Transporter) {
+        self.transporter = transporter
+        super.init()
     }
 }
 
@@ -43,7 +54,7 @@ public final class Atlantis: NSObject {
 
 extension Atlantis {
 
-    private class func injectAllNetworkClasses() {
+    private func injectAllNetworkClasses() {
         // Make sure we swizzle *ONCE*
         DispatchQueue.once {
             injectURLSessionResume()
@@ -55,7 +66,7 @@ extension Atlantis {
 
 extension Atlantis {
 
-    private class func injectURLSessionResume() {
+    private func injectURLSessionResume() {
         // In iOS 7 resume lives in __NSCFLocalSessionTask
         // In iOS 8 resume lives in NSURLSessionTask
         // In iOS 9 resume lives in __NSCFURLSessionTask
@@ -80,7 +91,7 @@ extension Atlantis {
         _swizzleResumeSelector(baseClass: resumeClass)
     }
 
-    private class func _swizzleResumeSelector(baseClass: AnyClass) {
+    private func _swizzleResumeSelector(baseClass: AnyClass) {
         // Prepare
         let selector = NSSelectorFromString("resume")
         guard let method = class_getInstanceMethod(baseClass, selector),
@@ -93,10 +104,16 @@ extension Atlantis {
         let originalIMP = method_getImplementation(method)
 
         // swizzle the original with the new one and start intercepting the content
-        let swizzleIMP = imp_implementationWithBlock({ (self: URLSessionTask) -> Void in
-            print("---------------- Start request \(self.currentRequest?.url)")
+        let swizzleIMP = imp_implementationWithBlock({[weak self] (slf: URLSessionTask) -> Void in
+
+            // Compose and send
+            if let package = RequestPackage(slf.currentRequest) {
+                self?.transporter.send(package: package)
+            }
+
+            // Make sure the original method is called
             let oldIMP = unsafeBitCast(originalIMP, to: (@convention(c) (URLSessionTask, Selector) -> Void).self)
-            oldIMP(self, selector)
+            oldIMP(slf, selector)
             } as @convention(block) (URLSessionTask) -> Void)
 
         //
