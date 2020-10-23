@@ -14,7 +14,7 @@ public protocol Package {
     func toData() -> Data?
 }
 
-struct PrimaryPackage: Package, CustomDebugStringConvertible {
+struct PrimaryPackage: Package, Codable, CustomDebugStringConvertible {
 
     let id: Int
     let device: Device
@@ -40,6 +40,11 @@ struct PrimaryPackage: Package, CustomDebugStringConvertible {
     }
 
     func toData() -> Data? {
+        do {
+            return try JSONEncoder().encode(self)
+        } catch let error {
+            print(error)
+        }
         return nil
     }
 
@@ -48,7 +53,7 @@ struct PrimaryPackage: Package, CustomDebugStringConvertible {
     }
 }
 
-struct Device {
+struct Device: Codable {
 
     let name: String
     let mode: String
@@ -62,7 +67,7 @@ struct Device {
     }
 }
 
-struct Project {
+struct Project: Codable {
 
     static let current = Project()
 
@@ -75,20 +80,20 @@ struct Project {
     }
 }
 
-struct Header {
+struct Header: Codable {
 
     let key: String
     let value: String
 }
 
-struct Request {
+struct Request: Codable {
 
     // MARK: - Variables
 
     let url: String
     let method: String
     let headers: [Header]?
-    let body: Any?
+    let body: Data?
 
     // MARK: - Init
 
@@ -101,11 +106,11 @@ struct Request {
     }
 }
 
-struct Response {
+struct Response: Codable {
 
     let statusCode: Int
     let statusPhrase: String
     let httpVersion: String
-    let headers: [[String: String]]
-    let body: Any?
+    let headers: [Header]?
+    let body: Data?
 }

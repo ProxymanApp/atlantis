@@ -21,7 +21,10 @@ final class NetServiceTransport: NSObject {
     private let serviceBrowser: NetServiceBrowser
     private let configuration: Configuration
     private var services: [NetService] = []
-    private let queue = DispatchQueue(label: "com.proxyman.atlantis.netservices")
+    private let queue = DispatchQueue(label: "com.proxyman.atlantis.netservices") // Serial on purpose
+    private let session = URLSession(configuration: URLSessionConfiguration.default)
+    private var task: URLSessionStreamTask?
+    private var pendingPackages: [Package] = []
 
     // MARK: - Public
 
@@ -54,7 +57,38 @@ final class NetServiceTransport: NSObject {
 extension NetServiceTransport: Transporter {
 
     func send(package: Package) {
-        print("Send package = \(package)")
+        queue.async {[weak self] in
+            guard let strongSelf = self else { return }
+            print("Send package = \(package)")
+            guard let task = strongSelf.task, task.state == .running else {
+                // It means the connection is not ready
+                // We add the package to the pending list
+                print("Add package to the pending list...")
+                strongSelf.pendingPackages.append(package)
+                return
+            }
+
+            // Flush all pending data if need
+            strongSelf.flushAllPendingIfNeed()
+
+            // Send the main one
+            strongSelf.stream(package: package)
+        }
+    }
+
+    private func stream(package: Package) {
+        guard let data = package.toData() else { return }
+        task?.write(data, timeout: 5) { (error) in
+            if let error = error {
+                print(error)
+            }
+        }
+    }
+
+    private func flushAllPendingIfNeed() {
+        for package in pendingPackages {
+            stream(package: package)
+        }
     }
 }
 
@@ -64,6 +98,19 @@ extension NetServiceTransport {
 
     private func connectToService(_ service: NetService) {
         print("Connect to server address count = \(service.addresses?.count ?? 0)")
+        // Stop previous connection if need
+        if let task = task {
+            task.stopSecureConnection()
+        }
+
+        // Create a newone
+        task = session.streamTask(with: service)
+        task?.resume()
+
+        // All pending
+        queue.async {[weak self] in
+            self?.flushAllPendingIfNeed()
+        }
     }
 }
 
