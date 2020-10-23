@@ -10,14 +10,42 @@ import Foundation
 
 public protocol Transporter {
 
+    func start()
     func send(package: Package)
 }
 
-final class NetServiceTransport: Transporter {
+final class NetServiceTransport: NSObject {
 
-    static let shared = NetServiceTransport()
-    
-    func send(package: Package) {
-        
+    // MARK: - Variabls
+
+    private let serviceBrowser: NetServiceBrowser
+    private let configuration: Configuration
+
+    // MARK: - Public
+
+    init(configuration: Configuration) {
+        self.configuration = configuration
+        self.serviceBrowser = NetServiceBrowser()
+        super.init()
+        self.serviceBrowser.delegate = self
     }
+
+    func start() {
+        serviceBrowser.searchForServices(ofType: configuration.netServiceType, inDomain: configuration.netServiceType)
+    }
+}
+
+// MARK: - Transporter
+
+extension NetServiceTransport: Transporter {
+
+    func send(package: Package) {
+
+    }
+}
+
+// MARK: - NetServiceBrowserDelegate
+
+extension NetServiceTransport: NetServiceBrowserDelegate {
+
 }

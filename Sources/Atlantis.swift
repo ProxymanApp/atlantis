@@ -35,6 +35,7 @@ public final class Atlantis: NSObject {
         set {
             UserDefaults.standard.set(newValue, forKey: Constants.isEnabledNetworkInjector)
             if newValue {
+                Atlantis.shared.transporter.start()
                 Atlantis.shared.injector.injectAllNetworkClasses()
             }
         }
@@ -42,8 +43,11 @@ public final class Atlantis: NSObject {
 
     // MARK: - Components
 
-    private(set) var transporter: Transporter = NetServiceTransport()
+    private(set) lazy var transporter: Transporter = {
+        return NetServiceTransport(configuration: configuration)
+    }()
     private(set) var injector: Injector = NetworkInjector()
+    private(set) var configuration: Configuration = Configuration.default()
 
     // MARK: - Init
 
@@ -59,6 +63,10 @@ public final class Atlantis: NSObject {
     /// - Parameter transporter: Transporter
     public class func setTransporter(_ transporter: Transporter) {
         Atlantis.shared.transporter = transporter
+    }
+
+    public class func setConfiguration(_ config: Configuration) {
+        Atlantis.shared.configuration = config
     }
 }
 
