@@ -100,7 +100,7 @@ extension NetServiceTransport {
         print("Connect to server address count = \(service.addresses?.count ?? 0)")
         // Stop previous connection if need
         if let task = task {
-            task.stopSecureConnection()
+            task.closeWrite()
         }
 
         // Create a newone
