@@ -14,7 +14,7 @@ public protocol Package {
     func toData() -> Data?
 }
 
-struct PrimaryPackage: Package {
+struct PrimaryPackage: Package, CustomDebugStringConvertible {
 
     let id: Int
     let device: Device
@@ -41,6 +41,10 @@ struct PrimaryPackage: Package {
 
     func toData() -> Data? {
         return nil
+    }
+
+    var debugDescription: String {
+        return "Package: id=\(id), device=\(device), project=\(project), request=\(String(describing: request)), response=\(String(describing: response))"
     }
 }
 

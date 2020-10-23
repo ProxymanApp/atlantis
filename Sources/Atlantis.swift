@@ -20,24 +20,15 @@ public final class Atlantis: NSObject {
 
     private static let shared = Atlantis()
 
-    private struct Constants {
-        static let isEnabledNetworkInjector = "isEnabledNetworkInjector"
-    }
-
     // MARK: - Class variables
 
     /// Determine whether or not Atlantis start intercepting
     /// When it's enabled, Atlantis starts swizzling all available network methods
-    public static var isEnabled: Bool {
-        get {
-            return UserDefaults.standard.bool(forKey: Constants.isEnabledNetworkInjector)
-        }
-        set {
-            UserDefaults.standard.set(newValue, forKey: Constants.isEnabledNetworkInjector)
-            if newValue {
-                Atlantis.shared.transporter.start()
-                Atlantis.shared.injector.injectAllNetworkClasses()
-            }
+    public static var isEnabled: Bool = false {
+        didSet {
+            guard self.isEnabled != oldValue else { return }
+            Atlantis.shared.transporter.start()
+            Atlantis.shared.injector.injectAllNetworkClasses()
         }
     }
 
