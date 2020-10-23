@@ -23,8 +23,8 @@ struct PrimaryPackage: Package {
     let request: Request?
     let response: Response?
 
-    private init?(request: Request, dataTask: URLSessionTask) {
-        self.id = dataTask.taskIdentifier
+    private init?(request: Request, sessionTask: URLSessionTask) {
+        self.id = sessionTask.taskIdentifier
         self.device = Device.current
         self.project = Project.current
         self.request = request
@@ -33,10 +33,10 @@ struct PrimaryPackage: Package {
 
     // MARK: - Builder
 
-    static func buildRequest(dataTask: URLSessionTask) -> PrimaryPackage? {
-        guard let currentRequest = dataTask.currentRequest,
+    static func buildRequest(sessionTask: URLSessionTask) -> PrimaryPackage? {
+        guard let currentRequest = sessionTask.currentRequest,
             let request = Request(currentRequest) else { return nil }
-        return PrimaryPackage(request: request, dataTask: dataTask)
+        return PrimaryPackage(request: request, sessionTask: sessionTask)
     }
 
     func toData() -> Data? {

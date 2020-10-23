@@ -20,6 +20,10 @@
 		BA268F1F25427D9A00DD9DEC /* Packages.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA268F1D25427D9A00DD9DEC /* Packages.swift */; };
 		BA268F2025427D9A00DD9DEC /* Packages.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA268F1D25427D9A00DD9DEC /* Packages.swift */; };
 		BA268F2125427D9A00DD9DEC /* Packages.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA268F1D25427D9A00DD9DEC /* Packages.swift */; };
+		BA268F2325428D0A00DD9DEC /* NetworkInjector.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA268F2225428D0A00DD9DEC /* NetworkInjector.swift */; };
+		BA268F2425428D0A00DD9DEC /* NetworkInjector.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA268F2225428D0A00DD9DEC /* NetworkInjector.swift */; };
+		BA268F2525428D0A00DD9DEC /* NetworkInjector.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA268F2225428D0A00DD9DEC /* NetworkInjector.swift */; };
+		BA268F2625428D0A00DD9DEC /* NetworkInjector.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA268F2225428D0A00DD9DEC /* NetworkInjector.swift */; };
 		BABB88B42541BF0F00B19641 /* Atlantis.swift in Sources */ = {isa = PBXBuildFile; fileRef = BABB88B32541BF0F00B19641 /* Atlantis.swift */; };
 		BABB88B52541BF0F00B19641 /* Atlantis.swift in Sources */ = {isa = PBXBuildFile; fileRef = BABB88B32541BF0F00B19641 /* Atlantis.swift */; };
 		BABB88B62541BF0F00B19641 /* Atlantis.swift in Sources */ = {isa = PBXBuildFile; fileRef = BABB88B32541BF0F00B19641 /* Atlantis.swift */; };
@@ -68,6 +72,7 @@
 		BA268ED22541CBC000DD9DEC /* Atlantis+Utils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Atlantis+Utils.swift"; sourceTree = "<group>"; };
 		BA268F1B25427D5300DD9DEC /* Transporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Transporter.swift; sourceTree = "<group>"; };
 		BA268F1D25427D9A00DD9DEC /* Packages.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Packages.swift; sourceTree = "<group>"; };
+		BA268F2225428D0A00DD9DEC /* NetworkInjector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkInjector.swift; sourceTree = "<group>"; };
 		BABB88B32541BF0F00B19641 /* Atlantis.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Atlantis.swift; sourceTree = "<group>"; };
 		BABB88B82541C64C00B19641 /* DispatchQueue+Once.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DispatchQueue+Once.swift"; sourceTree = "<group>"; };
 		DD75027A1C68FCFC006590AF /* atlantis-macOS Tests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "atlantis-macOS Tests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -167,6 +172,7 @@
 			isa = PBXGroup;
 			children = (
 				BABB88B32541BF0F00B19641 /* Atlantis.swift */,
+				BA268F2225428D0A00DD9DEC /* NetworkInjector.swift */,
 				BA268ED22541CBC000DD9DEC /* Atlantis+Utils.swift */,
 				BABB88B82541C64C00B19641 /* DispatchQueue+Once.swift */,
 				BA268F1B25427D5300DD9DEC /* Transporter.swift */,
@@ -482,6 +488,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				BABB88B42541BF0F00B19641 /* Atlantis.swift in Sources */,
+				BA268F2325428D0A00DD9DEC /* NetworkInjector.swift in Sources */,
 				BA268F1E25427D9A00DD9DEC /* Packages.swift in Sources */,
 				BA268F1C25427D5300DD9DEC /* Transporter.swift in Sources */,
 				BABB88B92541C64C00B19641 /* DispatchQueue+Once.swift in Sources */,
@@ -501,6 +508,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				BA268F2525428D0A00DD9DEC /* NetworkInjector.swift in Sources */,
 				BA268F2025427D9A00DD9DEC /* Packages.swift in Sources */,
 				BABB88B62541BF0F00B19641 /* Atlantis.swift in Sources */,
 				BABB88BB2541C64C00B19641 /* DispatchQueue+Once.swift in Sources */,
@@ -512,6 +520,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				BA268F2625428D0A00DD9DEC /* NetworkInjector.swift in Sources */,
 				BA268F2125427D9A00DD9DEC /* Packages.swift in Sources */,
 				BABB88B72541BF0F00B19641 /* Atlantis.swift in Sources */,
 				BABB88BC2541C64C00B19641 /* DispatchQueue+Once.swift in Sources */,
@@ -523,6 +532,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				BA268F2425428D0A00DD9DEC /* NetworkInjector.swift in Sources */,
 				BA268F1F25427D9A00DD9DEC /* Packages.swift in Sources */,
 				BABB88B52541BF0F00B19641 /* Atlantis.swift in Sources */,
 				BABB88BA2541C64C00B19641 /* DispatchQueue+Once.swift in Sources */,
