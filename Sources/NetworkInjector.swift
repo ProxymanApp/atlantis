@@ -71,6 +71,10 @@ extension NetworkInjector {
     private func injectIntoDelegate(anyClass: AnyClass) {
         print("Start inject into delegate for class \(anyClass)")
 
+        // URLSession
+        _swizzleURLSessionDataTaskDidReceiveResponse(baseClass: anyClass)
+        _swizzleURLSessionDataTaskDidReceiveData(baseClass: anyClass)
+        _swizzleURLSessionTaskDidCompleteWithError(baseClass: anyClass)
     }
 
     private func injectURLSessionResume() {
@@ -95,33 +99,6 @@ extension NetworkInjector {
             return
         }
 
-        _swizzleResumeSelector(baseClass: resumeClass)
-    }
-
-    private func _swizzleResumeSelector(baseClass: AnyClass) {
-        // Prepare
-        let selector = NSSelectorFromString("resume")
-        guard let method = class_getInstanceMethod(baseClass, selector),
-            baseClass.instancesRespond(to: selector) else {
-            assertionFailure()
-            return
-        }
-
-        // Get original method to call later
-        let originalIMP = method_getImplementation(method)
-
-        // swizzle the original with the new one and start intercepting the content
-        let swizzleIMP = imp_implementationWithBlock({[weak self](slf: URLSessionTask) -> Void in
-
-            // Notify
-            self?.delegate?.injectorSessionDidCallResume(task: slf)
-
-            // Make sure the original method is called
-            let oldIMP = unsafeBitCast(originalIMP, to: (@convention(c) (URLSessionTask, Selector) -> Void).self)
-            oldIMP(slf, selector)
-            } as @convention(block) (URLSessionTask) -> Void)
-
-        //
-        method_setImplementation(method, swizzleIMP)
+        _swizzleURLSessionResumeSelector(baseClass: resumeClass)
     }
 }
