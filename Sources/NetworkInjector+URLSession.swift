@@ -39,6 +39,14 @@ extension NetworkInjector {
     /// urlSession(_:dataTask:didReceive:completionHandler:)
     /// https://developer.apple.com/documentation/foundation/urlsessiondatadelegate/1410027-urlsession
     func _swizzleURLSessionDataTaskDidReceiveResponse(baseClass: AnyClass) {
+        if #available(iOS 13.0, *) {
+            _swizzleURLSessionDataTaskDidReceiveResponseForIOS13AndLater(baseClass: baseClass)
+        } else {
+            _swizzleURLSessionDataTaskDidReceiveResponseForBelowIOS13(baseClass: baseClass)
+        }
+    }
+
+    func _swizzleURLSessionDataTaskDidReceiveResponseForIOS13AndLater(baseClass: AnyClass) {
         // Prepare
         let selector = NSSelectorFromString("_didReceiveResponse:sniff:rewrite:")
         guard let method = class_getInstanceMethod(baseClass, selector),
@@ -63,6 +71,36 @@ extension NetworkInjector {
             let oldIMP = unsafeBitCast(originalIMP, to: (@convention(c) (AnyObject, Selector, URLResponse, Bool, Bool) -> Void).self)
             oldIMP(slf, selector, response, sniff, rewirte)
             } as @convention(block) (AnyObject, URLResponse, Bool, Bool) -> Void)
+
+        //
+        method_setImplementation(method, swizzleIMP)
+    }
+
+    private func _swizzleURLSessionDataTaskDidReceiveResponseForBelowIOS13(baseClass: AnyClass) {
+        // Prepare
+        let selector = NSSelectorFromString("_didReceiveResponse:sniff:")
+        guard let method = class_getInstanceMethod(baseClass, selector),
+            baseClass.instancesRespond(to: selector) else {
+            return
+        }
+
+        // Get original method to call later
+        let originalIMP = method_getImplementation(method)
+
+        // swizzle the original with the new one and start intercepting the content
+        let swizzleIMP = imp_implementationWithBlock({[weak self](slf: AnyObject, response: URLResponse, sniff: Bool) -> Void in
+
+            // Safe-check
+            if let task = slf.value(forKey: "task") as? URLSessionDataTask {
+                self?.delegate?.injectorSessionDidReceiveResponse(dataTask: task, response: response)
+            } else {
+                assertionFailure("Could not get URLSessionDataTask from _swizzleURLSessionDataTaskDidReceiveResponse. It might causes due to the latest iOS changes. Please contact the author!")
+            }
+
+            // Make sure the original method is called
+            let oldIMP = unsafeBitCast(originalIMP, to: (@convention(c) (AnyObject, Selector, URLResponse, Bool) -> Void).self)
+            oldIMP(slf, selector, response, sniff)
+            } as @convention(block) (AnyObject, URLResponse, Bool) -> Void)
 
         //
         method_setImplementation(method, swizzleIMP)
