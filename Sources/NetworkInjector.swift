@@ -33,12 +33,45 @@ final class NetworkInjector: Injector {
     func injectAllNetworkClasses() {
         // Make sure we swizzle *ONCE*
         DispatchQueue.once {
+            injectAllURLSessionDelegate()
             injectURLSessionResume()
         }
     }
 }
 
 extension NetworkInjector {
+
+    private func injectAllURLSessionDelegate() {
+        let allClasses = Runtime.getAllClasses()
+        let selectors: [Selector] = [#selector(URLSessionDataDelegate.urlSession(_:dataTask:didReceive:completionHandler:)),
+                                     #selector(URLSessionDataDelegate.urlSession(_:dataTask:didReceive:)),
+                                     #selector(URLSessionTaskDelegate.urlSession(_:task:didCompleteWithError:))]
+
+        // Query all classes that conforms any delegate method
+        // We have to do it because there are many classes in the user's source code that conform those methods
+        for anyClass in allClasses {
+            let methods = Runtime.getAllMethods(from: anyClass)
+            var isMatchingFound = false
+            for method in methods {
+                for selector in selectors {
+                    if method_getName(method) == selector {
+                        isMatchingFound = true
+                        injectIntoDelegate(anyClass: anyClass)
+                        break
+                    }
+                }
+
+                if isMatchingFound {
+                    break
+                }
+            }
+        }
+    }
+
+    private func injectIntoDelegate(anyClass: AnyClass) {
+        print("Start inject into delegate for class \(anyClass)")
+
+    }
 
     private func injectURLSessionResume() {
         // In iOS 7 resume lives in __NSCFLocalSessionTask

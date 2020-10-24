@@ -21,6 +21,8 @@
 		BA7D93832542CB0500C46587 /* Configuration.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA7D93812542CB0500C46587 /* Configuration.swift */; };
 		BA7D93C925440C6600C46587 /* PackageIdentifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA7D93C825440C6600C46587 /* PackageIdentifier.swift */; };
 		BA7D93CA25440C6600C46587 /* PackageIdentifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA7D93C825440C6600C46587 /* PackageIdentifier.swift */; };
+		BA7D93CC2544204000C46587 /* Runtime.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA7D93CB2544204000C46587 /* Runtime.swift */; };
+		BA7D93CD2544204000C46587 /* Runtime.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA7D93CB2544204000C46587 /* Runtime.swift */; };
 		BABB88B42541BF0F00B19641 /* Atlantis.swift in Sources */ = {isa = PBXBuildFile; fileRef = BABB88B32541BF0F00B19641 /* Atlantis.swift */; };
 		BABB88B52541BF0F00B19641 /* Atlantis.swift in Sources */ = {isa = PBXBuildFile; fileRef = BABB88B32541BF0F00B19641 /* Atlantis.swift */; };
 		BABB88B92541C64C00B19641 /* DispatchQueue+Once.swift in Sources */ = {isa = PBXBuildFile; fileRef = BABB88B82541C64C00B19641 /* DispatchQueue+Once.swift */; };
@@ -58,6 +60,7 @@
 		BA268F2225428D0A00DD9DEC /* NetworkInjector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkInjector.swift; sourceTree = "<group>"; };
 		BA7D93812542CB0500C46587 /* Configuration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Configuration.swift; sourceTree = "<group>"; };
 		BA7D93C825440C6600C46587 /* PackageIdentifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PackageIdentifier.swift; sourceTree = "<group>"; };
+		BA7D93CB2544204000C46587 /* Runtime.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Runtime.swift; sourceTree = "<group>"; };
 		BABB88B32541BF0F00B19641 /* Atlantis.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Atlantis.swift; sourceTree = "<group>"; };
 		BABB88B82541C64C00B19641 /* DispatchQueue+Once.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DispatchQueue+Once.swift"; sourceTree = "<group>"; };
 		DD75027A1C68FCFC006590AF /* atlantis-macOS Tests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "atlantis-macOS Tests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -138,6 +141,7 @@
 				BA268F1D25427D9A00DD9DEC /* Packages.swift */,
 				BA7D93812542CB0500C46587 /* Configuration.swift */,
 				BA7D93C825440C6600C46587 /* PackageIdentifier.swift */,
+				BA7D93CB2544204000C46587 /* Runtime.swift */,
 			);
 			path = Sources;
 			sourceTree = "<group>";
@@ -351,6 +355,7 @@
 				BA268F1E25427D9A00DD9DEC /* Packages.swift in Sources */,
 				BA268F1C25427D5300DD9DEC /* Transporter.swift in Sources */,
 				BABB88B92541C64C00B19641 /* DispatchQueue+Once.swift in Sources */,
+				BA7D93CC2544204000C46587 /* Runtime.swift in Sources */,
 				BA268ED32541CBC000DD9DEC /* Atlantis+Utils.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -371,6 +376,7 @@
 				BA7D93832542CB0500C46587 /* Configuration.swift in Sources */,
 				BA268F2425428D0A00DD9DEC /* NetworkInjector.swift in Sources */,
 				BA268F1F25427D9A00DD9DEC /* Packages.swift in Sources */,
+				BA7D93CD2544204000C46587 /* Runtime.swift in Sources */,
 				BABB88B52541BF0F00B19641 /* Atlantis.swift in Sources */,
 				BABB88BA2541C64C00B19641 /* DispatchQueue+Once.swift in Sources */,
 				BA268ED42541CBC000DD9DEC /* Atlantis+Utils.swift in Sources */,
