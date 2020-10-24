@@ -15,7 +15,7 @@ extension NetworkInjector {
         let selector = NSSelectorFromString("resume")
         guard let method = class_getInstanceMethod(baseClass, selector),
             baseClass.instancesRespond(to: selector) else {
-            assertionFailure()
+            assertionFailure("Internal error: could not get selector \(selector) from class \(baseClass)")
             return
         }
 
@@ -40,7 +40,30 @@ extension NetworkInjector {
     /// urlSession(_:dataTask:didReceive:completionHandler:)
     /// https://developer.apple.com/documentation/foundation/urlsessiondatadelegate/1410027-urlsession
     func _swizzleURLSessionDataTaskDidReceiveResponse(baseClass: AnyClass) {
-        
+        // Prepare
+        let selector = #selector(URLSessionDataDelegate.urlSession(_:dataTask:didReceive:completionHandler:))
+        guard let method = class_getInstanceMethod(baseClass, selector),
+            baseClass.instancesRespond(to: selector) else {
+            assertionFailure("Internal error: could not get selector \(selector) from class \(baseClass)")
+            return
+        }
+
+        // Get original method to call later
+        let originalIMP = method_getImplementation(method)
+
+        // swizzle the original with the new one and start intercepting the content
+        let swizzleIMP = imp_implementationWithBlock({[weak self](slf: URLSessionDataDelegate, session: URLSession, dataTask: URLSessionDataTask, response: URLResponse, complete: URLSession.ResponseDisposition) -> Void in
+
+            // Notify
+            self?.delegate?.injectorSessionDidReceiveResponse(dataTask: dataTask, response: response)
+
+            // Make sure the original method is called
+            let oldIMP = unsafeBitCast(originalIMP, to: (@convention(c) (URLSessionDataDelegate, Selector, URLSession, URLSessionDataTask, URLResponse, URLSession.ResponseDisposition) -> Void).self)
+            oldIMP(slf, selector, session, dataTask, response, complete)
+            } as @convention(block) (URLSessionDataDelegate, URLSession, URLSessionDataTask, URLResponse, URLSession.ResponseDisposition) -> Void)
+
+        //
+        method_setImplementation(method, swizzleIMP)
     }
 
     /// urlSession(_:dataTask:didReceive:)
