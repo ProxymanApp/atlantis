@@ -18,7 +18,7 @@ class ViewController: UIViewController {
     }
 
     func makeSimpleRequest() {
-        let url = URL(string: "https://httpbin.org/get?name=proxyman")!
+        let url = URL(string: "https://httpbin.org/get?name=proxyman&id=\(UUID().uuidString)&randon=\(Int.random(in: 0..<10000))")!
         let task = URLSession.shared.dataTask(with: url) { (data, response, error) in
             if let error = error {
                 print(error)

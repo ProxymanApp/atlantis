@@ -78,7 +78,20 @@ extension NetServiceTransport: Transporter {
 
     private func stream(package: Package) {
         guard let data = package.toData() else { return }
-        task?.write(data, timeout: 5) { (error) in
+
+        // Compose a message
+        // [1]: the length of the second message. We reserver 8 bytes to store this data
+        // [2]: The actual message
+
+        let buffer = NSMutableData()
+        var lengthPackage = data.count
+        buffer.append(&lengthPackage, length: Int(MemoryLayout<UInt64>.stride))
+        buffer.append([UInt8](data), length: data.count)
+
+        print("------ Write length message = \(data.count)")
+
+        // Write data
+        task?.write(buffer as Data, timeout: 5) { (error) in
             if let error = error {
                 print(error)
             }
