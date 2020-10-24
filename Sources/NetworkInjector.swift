@@ -73,18 +73,25 @@ extension NetworkInjector {
         for anyClass in allClasses {
             if class_conformsToProtocol(anyClass, URLSessionDataDelegate.self) {
                 print("--- Inject to \(anyClass)")
-                injectIntoDelegate(anyClass: anyClass)
+                injectIntoURLSessionDelegate(anyClass: anyClass)
+            }
+            else if class_conformsToProtocol(anyClass, NSURLConnectionDataDelegate.self) {
+                injectURLConnectionDelegate(anyClass: anyClass)
             }
         }
     }
 
-    private func injectIntoDelegate(anyClass: AnyClass) {
+    private func injectIntoURLSessionDelegate(anyClass: AnyClass) {
         print("Start inject into delegate for class \(anyClass)")
 
         // URLSession
         _swizzleURLSessionDataTaskDidReceiveResponse(baseClass: anyClass)
         _swizzleURLSessionDataTaskDidReceiveData(baseClass: anyClass)
         _swizzleURLSessionTaskDidCompleteWithError(baseClass: anyClass)
+    }
+
+    private func injectURLConnectionDelegate(anyClass: AnyClass) {
+        _swizzleConnectionDidReceiveResponse(anyClass: anyClass)
     }
 
     private func injectURLSessionResume() {
