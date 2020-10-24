@@ -15,7 +15,6 @@ extension NetworkInjector {
         let selector = NSSelectorFromString("resume")
         guard let method = class_getInstanceMethod(baseClass, selector),
             baseClass.instancesRespond(to: selector) else {
-            assertionFailure("Internal error: could not get selector \(selector) from class \(baseClass)")
             return
         }
 
@@ -44,7 +43,6 @@ extension NetworkInjector {
         let selector = #selector(URLSessionDataDelegate.urlSession(_:dataTask:didReceive:completionHandler:))
         guard let method = class_getInstanceMethod(baseClass, selector),
             baseClass.instancesRespond(to: selector) else {
-            assertionFailure("Internal error: could not get selector \(selector) from class \(baseClass)")
             return
         }
 

@@ -42,28 +42,38 @@ final class NetworkInjector: Injector {
 extension NetworkInjector {
 
     private func injectAllURLSessionDelegate() {
+//        let allClasses = Runtime.getAllClasses()
+//        let selectors: [Selector] = [#selector(URLSessionDataDelegate.urlSession(_:dataTask:didReceive:completionHandler:)),
+//                                     #selector(URLSessionDataDelegate.urlSession(_:dataTask:didReceive:)),
+//                                     #selector(URLSessionTaskDelegate.urlSession(_:task:didCompleteWithError:))]
+//
+//        // Query all classes that conforms any delegate method
+//        // We have to do it because there are many classes in the user's source code that conform those methods
+//        for anyClass in allClasses {
+//            print(anyClass)
+//            let methods = Runtime.getAllMethods(from: anyClass)
+//            var isMatchingFound = false
+//            for method in methods {
+//                print("--- \(method_getName(method))")
+//                for selector in selectors {
+//                    if method_getName(method) == selector {
+//                        isMatchingFound = true
+//                        injectIntoDelegate(anyClass: anyClass)
+//                        break
+//                    }
+//                }
+//
+//                if isMatchingFound {
+//                    break
+//                }
+//            }
+//        }
+
         let allClasses = Runtime.getAllClasses()
-        let selectors: [Selector] = [#selector(URLSessionDataDelegate.urlSession(_:dataTask:didReceive:completionHandler:)),
-                                     #selector(URLSessionDataDelegate.urlSession(_:dataTask:didReceive:)),
-                                     #selector(URLSessionTaskDelegate.urlSession(_:task:didCompleteWithError:))]
-
-        // Query all classes that conforms any delegate method
-        // We have to do it because there are many classes in the user's source code that conform those methods
         for anyClass in allClasses {
-            let methods = Runtime.getAllMethods(from: anyClass)
-            var isMatchingFound = false
-            for method in methods {
-                for selector in selectors {
-                    if method_getName(method) == selector {
-                        isMatchingFound = true
-                        injectIntoDelegate(anyClass: anyClass)
-                        break
-                    }
-                }
-
-                if isMatchingFound {
-                    break
-                }
+            if class_conformsToProtocol(anyClass, URLSessionDataDelegate.self) {
+                print("--- Inject to \(anyClass)")
+                injectIntoDelegate(anyClass: anyClass)
             }
         }
     }

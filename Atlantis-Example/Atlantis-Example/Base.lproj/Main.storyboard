@@ -16,15 +16,25 @@
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
                             <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="K1U-uu-WSR">
-                                <rect key="frame" x="156.5" y="433" width="101" height="30"/>
-                                <state key="normal" title="Send Message"/>
+                                <rect key="frame" x="106" y="433" width="202" height="30"/>
+                                <state key="normal" title="Send Message with complete"/>
                                 <connections>
                                     <action selector="sendMessageBtnOnTap:" destination="BYZ-38-t0r" eventType="touchUpInside" id="J1X-ZC-DvP"/>
+                                </connections>
+                            </button>
+                            <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="R1n-8c-306">
+                                <rect key="frame" x="108" y="493" width="198" height="30"/>
+                                <state key="normal" title="Send Message with delegate"/>
+                                <connections>
+                                    <action selector="sendMessageBtnOnTap:" destination="BYZ-38-t0r" eventType="touchUpInside" id="u07-Cf-HUO"/>
+                                    <action selector="sendMessageByDeleteOnTap:" destination="BYZ-38-t0r" eventType="touchUpInside" id="PKo-qy-vlq"/>
                                 </connections>
                             </button>
                         </subviews>
                         <color key="backgroundColor" systemColor="systemBackgroundColor" cocoaTouchSystemColor="whiteColor"/>
                         <constraints>
+                            <constraint firstItem="R1n-8c-306" firstAttribute="centerX" secondItem="8bC-Xf-vdC" secondAttribute="centerX" id="Fd2-4s-i6a"/>
+                            <constraint firstItem="R1n-8c-306" firstAttribute="top" secondItem="K1U-uu-WSR" secondAttribute="bottom" constant="30" id="Fw0-qP-rLg"/>
                             <constraint firstItem="K1U-uu-WSR" firstAttribute="centerY" secondItem="8bC-Xf-vdC" secondAttribute="centerY" id="dB2-bh-365"/>
                             <constraint firstItem="K1U-uu-WSR" firstAttribute="centerX" secondItem="8bC-Xf-vdC" secondAttribute="centerX" id="n6S-Ah-ma5"/>
                         </constraints>
