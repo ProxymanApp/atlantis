@@ -69,13 +69,17 @@ extension NetworkInjector {
 //            }
 //        }
 
+        // iOS 8: __NSCFURLSessionConnection
+        // iOS 9, 10, 11, 12, 13, 14: __NSCFURLLocalSessionConnection
+        let sessionClass = NSClassFromString("__NSCFURLLocalSessionConnection") ?? NSClassFromString("__NSCFURLSessionConnection")
+        if let anySessionClass = sessionClass {
+            injectIntoURLSessionDelegate(anyClass: anySessionClass)
+        }
+
+        // URLConnection
         let allClasses = Runtime.getAllClasses()
         for anyClass in allClasses {
-            if class_conformsToProtocol(anyClass, URLSessionDataDelegate.self) {
-                print("--- Inject to \(anyClass)")
-                injectIntoURLSessionDelegate(anyClass: anyClass)
-            }
-            else if class_conformsToProtocol(anyClass, NSURLConnectionDataDelegate.self) {
+            if class_conformsToProtocol(anyClass, NSURLConnectionDataDelegate.self) {
                 injectURLConnectionDelegate(anyClass: anyClass)
             }
         }
