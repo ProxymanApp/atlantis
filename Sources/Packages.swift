@@ -25,10 +25,10 @@ final class PrimaryPackage: Package, Codable, CustomDebugStringConvertible {
     private let device: Device
     private let project: Project
 
-    private let request: Request?
-    private let response: Response?
+    private let request: Request
+    private var response: Response?
     private(set) var error: CustomError?
-    private lazy var accumulateData: Data = Data()
+    private var responseBodyData = Data()
     
     private init?(id: String, request: Request, sessionTask: URLSessionTask) {
         self.id = id
@@ -47,7 +47,8 @@ final class PrimaryPackage: Package, Codable, CustomDebugStringConvertible {
     }
 
     func updateResponse(_ response: URLResponse) {
-
+        // Construct the Response without body
+        self.response = Response(response)
     }
     
     func updateError(_ error: Error?) {
@@ -56,7 +57,7 @@ final class PrimaryPackage: Package, Codable, CustomDebugStringConvertible {
     }
 
     func append(_ data: Data) {
-        accumulateData.append(data)
+        responseBodyData.append(data)
     }
 
     func toData() -> Data? {
@@ -129,10 +130,16 @@ struct Request: Codable {
 struct Response: Codable {
 
     let statusCode: Int
-    let statusPhrase: String
-    let httpVersion: String
     let headers: [Header]?
-    let body: Data?
+
+    init?(_ response: URLResponse) {
+        guard let httpResponse = response as? HTTPURLResponse else {
+            assertionFailure("Only support HTTPURLResponse")
+            return nil
+        }
+        statusCode = httpResponse.statusCode
+        headers = httpResponse.allHeaderFields.map { Header(key: $0.key as? String ?? "Unknown Key", value: $0.value as? String ?? "Unknown Value" ) }
+    }
 }
 
 struct CustomError: Codable {

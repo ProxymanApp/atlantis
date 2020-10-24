@@ -67,7 +67,7 @@ public final class Atlantis: NSObject {
 
 extension Atlantis {
 
-    private func getPackage(_ task: URLSessionTask) -> Package {
+    private func getPackage(_ task: URLSessionTask) -> Package? {
         // This method should be called from our queue
 
         // Receive package from the cache
@@ -78,7 +78,8 @@ extension Atlantis {
 
         // If not found, just generate and cache
         guard let package = PrimaryPackage.buildRequest(sessionTask: task, id: id) else {
-            fatalError("Should build package from Request")
+            assertionFailure("Should build package from Request")
+            return nil
         }
         packages[id] = package
         return package
@@ -102,23 +103,25 @@ extension Atlantis: InjectorDelegate {
         queue.async {[weak self] in
             guard let strongSelf = self else { return }
             let package = strongSelf.getPackage(dataTask)
-            package.updateResponse(response)
+            package?.updateResponse(response)
         }
     }
-
 
     func injectorSessionDidReceiveData(dataTask: URLSessionDataTask, data: Data) {
         queue.async {[weak self] in
             guard let strongSelf = self else { return }
             let package = strongSelf.getPackage(dataTask)
-            package.append(data)
+            package?.append(data)
         }
     }
 
     func injectorSessionDidComplete(task: URLSessionTask, error: Error?) {
         queue.async {[weak self] in
             guard let strongSelf = self else { return }
-            let package = strongSelf.getPackage(task)
+            guard let package = strongSelf.getPackage(task) else {
+                assertionFailure("Internal error. We should have Package")
+                return
+            }
             package.updateError(error)
 
             // At this time, the package has all the data
