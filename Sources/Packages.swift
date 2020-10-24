@@ -11,20 +11,27 @@ import UIKit
 
 public protocol Package {
 
+    var id: String { get }
+
+    func updateResponse(_ response: URLResponse)
+    func updateError(_ error: Error?)
+    func append(_ data: Data)
     func toData() -> Data?
 }
 
-struct PrimaryPackage: Package, Codable, CustomDebugStringConvertible {
+final class PrimaryPackage: Package, Codable, CustomDebugStringConvertible {
 
-    let id: Int
-    let device: Device
-    let project: Project
+    let id: String
+    private let device: Device
+    private let project: Project
 
-    let request: Request?
-    let response: Response?
-
-    private init?(request: Request, sessionTask: URLSessionTask) {
-        self.id = sessionTask.taskIdentifier
+    private let request: Request?
+    private let response: Response?
+    private(set) var error: CustomError?
+    private lazy var accumulateData: Data = Data()
+    
+    private init?(id: String, request: Request, sessionTask: URLSessionTask) {
+        self.id = id
         self.device = Device.current
         self.project = Project.current
         self.request = request
@@ -33,10 +40,23 @@ struct PrimaryPackage: Package, Codable, CustomDebugStringConvertible {
 
     // MARK: - Builder
 
-    static func buildRequest(sessionTask: URLSessionTask) -> PrimaryPackage? {
+    static func buildRequest(sessionTask: URLSessionTask, id: String) -> PrimaryPackage? {
         guard let currentRequest = sessionTask.currentRequest,
             let request = Request(currentRequest) else { return nil }
-        return PrimaryPackage(request: request, sessionTask: sessionTask)
+        return PrimaryPackage(id: id, request: request, sessionTask: sessionTask)
+    }
+
+    func updateResponse(_ response: URLResponse) {
+
+    }
+    
+    func updateError(_ error: Error?) {
+        guard let error = error else { return }
+        self.error = CustomError(error)
+    }
+
+    func append(_ data: Data) {
+        accumulateData.append(data)
     }
 
     func toData() -> Data? {
@@ -113,4 +133,21 @@ struct Response: Codable {
     let httpVersion: String
     let headers: [Header]?
     let body: Data?
+}
+
+struct CustomError: Codable {
+
+    let code: Int
+    let message: String
+
+    init(_ error: Error) {
+        let nsError = error as NSError
+        self.code = nsError.code
+        self.message = nsError.localizedDescription
+    }
+
+    init(_ error: NSError) {
+        self.code = error.code
+        self.message = error.localizedDescription
+    }
 }

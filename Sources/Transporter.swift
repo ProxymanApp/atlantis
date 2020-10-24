@@ -22,15 +22,21 @@ final class NetServiceTransport: NSObject {
     private let configuration: Configuration
     private var services: [NetService] = []
     private let queue = DispatchQueue(label: "com.proxyman.atlantis.netservices") // Serial on purpose
-    private let session = URLSession(configuration: URLSessionConfiguration.default)
+    private let session: URLSession
     private var task: URLSessionStreamTask?
     private var pendingPackages: [Package] = []
+
+    // States
+    
 
     // MARK: - Public
 
     init(configuration: Configuration) {
         self.configuration = configuration
         self.serviceBrowser = NetServiceBrowser()
+        let config = URLSessionConfiguration.default
+        config.waitsForConnectivity = true
+        session = URLSession(configuration: config)
         super.init()
         serviceBrowser.delegate = self
     }

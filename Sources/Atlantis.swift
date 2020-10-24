@@ -39,6 +39,8 @@ public final class Atlantis: NSObject {
     }()
     private(set) var injector: Injector = NetworkInjector()
     private(set) var configuration: Configuration = Configuration.default()
+    private var packages: [String: Package] = [:]
+    private let queue = DispatchQueue(label: "com.proxyman.atlantis")
 
     // MARK: - Init
 
@@ -61,14 +63,70 @@ public final class Atlantis: NSObject {
     }
 }
 
+// MARK: - Private
+
+extension Atlantis {
+
+    private func getPackage(_ task: URLSessionTask) -> Package {
+        // This method should be called from our queue
+
+        // Receive package from the cache
+        let id = PackageIdentifier.getID(task: task)
+        if let package = packages[id] {
+            return package
+        }
+
+        // If not found, just generate and cache
+        guard let package = PrimaryPackage.buildRequest(sessionTask: task, id: id) else {
+            fatalError("Should build package from Request")
+        }
+        packages[id] = package
+        return package
+    }
+}
+
 // MARK: - Injection Methods
 
 extension Atlantis: InjectorDelegate {
 
-    func injectorDidReceiveResume(sessionTask: URLSessionTask) {
-        guard let package = PrimaryPackage.buildRequest(sessionTask: sessionTask) else {
-            return
+    func injectorSessionDidCallResume(task: URLSessionTask) {
+        queue.async {[weak self] in
+            guard let strongSelf = self else { return }
+
+            // Cache
+            _ = strongSelf.getPackage(task)
         }
-        self.transporter.send(package: package)
+    }
+
+    func injectorSessionDidReceiveResponse(dataTask: URLSessionTask, response: URLResponse) {
+        queue.async {[weak self] in
+            guard let strongSelf = self else { return }
+            let package = strongSelf.getPackage(dataTask)
+            package.updateResponse(response)
+        }
+    }
+
+
+    func injectorSessionDidReceiveData(dataTask: URLSessionDataTask, data: Data) {
+        queue.async {[weak self] in
+            guard let strongSelf = self else { return }
+            let package = strongSelf.getPackage(dataTask)
+            package.append(data)
+        }
+    }
+
+    func injectorSessionDidComplete(task: URLSessionTask, error: Error?) {
+        queue.async {[weak self] in
+            guard let strongSelf = self else { return }
+            let package = strongSelf.getPackage(task)
+            package.updateError(error)
+
+            // At this time, the package has all the data
+            // It's time to send it
+            strongSelf.transporter.send(package: package)
+
+            // Then remove it from our cache
+            strongSelf.packages.removeValue(forKey: package.id)
+        }
     }
 }

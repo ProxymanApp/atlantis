@@ -16,7 +16,10 @@ protocol Injector {
 
 protocol InjectorDelegate: class {
 
-    func injectorDidReceiveResume(sessionTask: URLSessionTask)
+    func injectorSessionDidCallResume(task: URLSessionTask)
+    func injectorSessionDidReceiveResponse(dataTask: URLSessionTask, response: URLResponse)
+    func injectorSessionDidReceiveData(dataTask: URLSessionDataTask, data: Data)
+    func injectorSessionDidComplete(task: URLSessionTask, error: Error?)
 }
 
 final class NetworkInjector: Injector {
@@ -78,7 +81,7 @@ extension NetworkInjector {
         let swizzleIMP = imp_implementationWithBlock({[weak self](slf: URLSessionTask) -> Void in
 
             // Notify
-            self?.delegate?.injectorDidReceiveResume(sessionTask: slf)
+            self?.delegate?.injectorSessionDidCallResume(task: slf)
 
             // Make sure the original method is called
             let oldIMP = unsafeBitCast(originalIMP, to: (@convention(c) (URLSessionTask, Selector) -> Void).self)
