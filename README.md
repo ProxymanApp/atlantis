@@ -1,6 +1,6 @@
 ![Atlantis: Debug iOS with ease](https://raw.githubusercontent.com/ProxymanApp/atlantis/main/images/cover.png)
 
-Atlantis: A little iOS framework for intercepting HTTP/HTTPS Traffic from your app. No more messing around with proxy, certificate config. 
+A little and powerful iOS framework for intercepting HTTP/HTTPS Traffic from your app. No more messing around with proxy, certificate config. 
 
 ## Features
 - [x] Automatically intercept all HTTP/HTTPS Traffic with ease
@@ -9,7 +9,7 @@ Atlantis: A little iOS framework for intercepting HTTP/HTTPS Traffic from your a
 - [x] Categorize the log by project and devices.
 
 ## How to use
-- Integrate Atlantis with one single line of code
+- Integrate Atlantis with one single line of code:
 
 ```swift
 // AppDelegate.swift
@@ -33,29 +33,31 @@ pod atlantis
 ```
 
 ## FAQ
-1. How does Atlantis work?
+#### How does Atlantis work?
 
-Behind the scene, Atlantis uses [Method Swizzling](https://nshipster.com/method-swizzling/) technique to swizzle certain functions of NSURLSession and NSURLConnection that enables Atlantis captures HTTP/HTTPS Traffic on the fly.
+Atlantis uses [Method Swizzling](https://nshipster.com/method-swizzling/) technique to swizzle certain functions of NSURLSession and NSURLConnection that enables Atlantis captures HTTP/HTTPS traffic on the fly.
 
-Then it send to [Proxyman app](https://proxyman.io) for inspector.
+Then it sends to [Proxyman app](https://proxyman.io) for inspecting later.
 
-2. How can Atlantis stream the data to the Proxyman app?
+#### How can Atlantis stream the data to the Proxyman app?
 
-As soon as your iOS app (Atlantis is enabled) and Proxyman macOS app are the same **local network**, Atlantis could discover Proxyman app by using [Bonjour Service](https://developer.apple.com/bonjour/). After the connection is established, Atlantis will send the data via Socket.
+As soon as your iOS app (Atlantis is enabled) and the Proxyman macOS app are the same **local network**, Atlantis could discover the Proxyman app by using [Bonjour Service](https://developer.apple.com/bonjour/). After the connection is established, Atlantis will send the data via Socket.
 
-3. Is it safe to send my network traffic logs to Proxyman app?
+#### Is it safe to send my network traffic logs to the Proxyman app?
 
-It's completely safe since your data is locally transfered between your iOS app and Proxyman app, no Internet requirement. All traffic logs are captures and send to Proxyman app to review on the fly. We don't store any your data to any server.
+It's completely **safe** since your data is locally transferred between your iOS app and the Proxyman app, no Internet is required. All traffic logs are captures and send to the Proxyman app for inspecting on the fly. 
 
-4. What kind of data that Atlantis capture?
+Atlantis and Proxyman app do not store any of your data on any server.
 
-- All HTTP/HTTPS traffic from your iOS app, which integrate Atlantis framework 
-- Your iOS app name, bundle identifier and small size logo
+#### What kind of data that Atlantis capture?
+
+- All HTTP/HTTPS traffic from your iOS apps, that integrate the Atlantis framework 
+- Your iOS app name, bundle identifier, and small size of the logo
 - iOS devices/simulators name and device models.
 
-**All above data are not stored anywhere (except in the memory)**. It will be wipe out as soon as you close the app. 
+**All the above data are not stored anywhere (except in the memory)**. It will be wiped out as soon as you close the app. 
 
-They are require to categorize the traffic on Proxyman app by project and device name. Therefore, it's easier to know where the request/response comes from.
+They are required to categorize the traffic on the Proxyman app by project and device name. Therefore, it's easier to know where the request/response comes from.
 
 
 
