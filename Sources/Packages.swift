@@ -22,7 +22,7 @@ struct ConnectionPackage: Codable, Serializable {
         currentProject.name = config.projectName
         self.device = currentDevice
         self.project = currentProject
-        self.icon = nil
+        self.icon = UIImage.appIcon?.pngData()
     }
 
     func toData() -> Data? {
@@ -167,5 +167,15 @@ struct CustomError: Codable {
     init(_ error: NSError) {
         self.code = error.code
         self.message = error.localizedDescription
+    }
+}
+
+extension UIImage {
+    static var appIcon: UIImage? {
+        guard let iconsDictionary = Bundle.main.infoDictionary?["CFBundleIcons"] as? [String:Any],
+              let primaryIconsDictionary = iconsDictionary["CFBundlePrimaryIcon"] as? [String:Any],
+              let iconFiles = primaryIconsDictionary["CFBundleIconFiles"] as? [String],
+              let lastIcon = iconFiles.last else { return nil }
+        return UIImage(named: lastIcon)
     }
 }

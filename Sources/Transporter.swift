@@ -123,6 +123,7 @@ extension NetServiceTransport: Transporter {
 
     private func flushAllPendingIfNeed() {
         guard !pendingPackages.isEmpty else { return }
+        print("Flush \(pendingPackages.count) items")
         for package in pendingPackages {
             stream(package: package)
         }
