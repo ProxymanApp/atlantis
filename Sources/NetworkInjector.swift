@@ -33,50 +33,30 @@ final class NetworkInjector: Injector {
     func injectAllNetworkClasses() {
         // Make sure we swizzle *ONCE*
         DispatchQueue.once {
-            injectAllURLSessionDelegate()
-            injectURLSessionResume()
+            injectAllURLSession()
+            injectAllURLConnection()
         }
     }
 }
 
 extension NetworkInjector {
 
-    private func injectAllURLSessionDelegate() {
-//        let allClasses = Runtime.getAllClasses()
-//        let selectors: [Selector] = [#selector(URLSessionDataDelegate.urlSession(_:dataTask:didReceive:completionHandler:)),
-//                                     #selector(URLSessionDataDelegate.urlSession(_:dataTask:didReceive:)),
-//                                     #selector(URLSessionTaskDelegate.urlSession(_:task:didCompleteWithError:))]
-//
-//        // Query all classes that conforms any delegate method
-//        // We have to do it because there are many classes in the user's source code that conform those methods
-//        for anyClass in allClasses {
-//            print(anyClass)
-//            let methods = Runtime.getAllMethods(from: anyClass)
-//            var isMatchingFound = false
-//            for method in methods {
-//                print("--- \(method_getName(method))")
-//                for selector in selectors {
-//                    if method_getName(method) == selector {
-//                        isMatchingFound = true
-//                        injectIntoDelegate(anyClass: anyClass)
-//                        break
-//                    }
-//                }
-//
-//                if isMatchingFound {
-//                    break
-//                }
-//            }
-//        }
+    private func injectAllURLSession() {
 
         // iOS 8: __NSCFURLSessionConnection
         // iOS 9, 10, 11, 12, 13, 14: __NSCFURLLocalSessionConnection
-        let sessionClass = NSClassFromString("__NSCFURLLocalSessionConnection") ?? NSClassFromString("__NSCFURLSessionConnection")
+        // This approach works with delegate or complete block from URLSession
+        let sessionClass: AnyClass? = NSClassFromString("__NSCFURLLocalSessionConnection") ?? NSClassFromString("__NSCFURLSessionConnection")
         if let anySessionClass = sessionClass {
             injectIntoURLSessionDelegate(anyClass: anySessionClass)
         }
 
-        // URLConnection
+        // Resume
+        injectURLSessionResume()
+    }
+
+    private func injectAllURLConnection() {
+        // Find all classes that conform URLConnection delegates and start the injection
         let allClasses = Runtime.getAllClasses()
         for anyClass in allClasses {
             if class_conformsToProtocol(anyClass, NSURLConnectionDataDelegate.self) {

@@ -23,24 +23,24 @@ class ViewController: UIViewController, URLSessionDataDelegate {
     }
 
     func makeSimpleRequest() {
-        let url = URL(string: "https://httpbin.org/get?name=proxyman&id=\(UUID().uuidString)&randon=\(Int.random(in: 0..<10000))")!
-        let task = URLSession.shared.dataTask(with: url) { (data, response, error) in
-            if let error = error {
-                print(error)
-                return
-            }
-
-            if let response = response as? HTTPURLResponse {
-                print(response)
-
-                if let data = data {
-                    print("------ Body")
-                    let dict = try! JSONSerialization.jsonObject(with: data, options: [])
-                    print(dict)
-                }
-            }
-        }
-        task.resume()
+//        let url = URL(string: "https://httpbin.org/get?name=proxyman&id=\(UUID().uuidString)&randon=\(Int.random(in: 0..<10000))")!
+//        let task = URLSession.shared.dataTask(with: url) { (data, response, error) in
+//            if let error = error {
+//                print(error)
+//                return
+//            }
+//
+//            if let response = response as? HTTPURLResponse {
+//                print(response)
+//
+//                if let data = data {
+//                    print("------ Body")
+//                    let dict = try? JSONSerialization.jsonObject(with: data, options: [])
+//                    print(dict)
+//                }
+//            }
+//        }
+//        task.resume()
     }
 
     func makeRequestWithDelegate() {

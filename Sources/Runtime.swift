@@ -27,19 +27,4 @@ struct Runtime {
         allClasses.deallocate()
         return classes
     }
-
-    static func getAllMethods(from baseClass: AnyClass) -> [Method] {
-        var methods = [Method]()
-        let count = UnsafeMutablePointer<UInt32>.allocate(capacity: 0)
-        guard let methodList = class_copyMethodList(baseClass, count) else { return methods }
-
-        for methodCount in 0..<count.pointee {
-            let method = methodList[Int(methodCount)]
-            methods.append(method)
-        }
-
-        count.deallocate()
-        methodList.deallocate()
-        return methods
-    }
 }

@@ -130,6 +130,8 @@ extension Atlantis: InjectorDelegate {
 
             // Then remove it from our cache
             strongSelf.packages.removeValue(forKey: package.id)
+
+            print("------------- Did Complete")
         }
     }
 }
