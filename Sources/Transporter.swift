@@ -11,15 +11,20 @@ import Foundation
 public protocol Transporter {
 
     func start()
+    func stop()
     func send(package: Package)
 }
 
 final class NetServiceTransport: NSObject {
 
+    private struct Constants {
+        static let netServiceType = "_Proxyman._tcp"
+        static let netServiceDomain = ""
+    }
+
     // MARK: - Variabls
 
     private let serviceBrowser: NetServiceBrowser
-    private let configuration: Configuration
     private var services: [NetService] = []
     private let queue = DispatchQueue(label: "com.proxyman.atlantis.netservices") // Serial on purpose
     private let session: URLSession
@@ -31,8 +36,7 @@ final class NetServiceTransport: NSObject {
 
     // MARK: - Public
 
-    init(configuration: Configuration) {
-        self.configuration = configuration
+    override init() {
         self.serviceBrowser = NetServiceBrowser()
         let config = URLSessionConfiguration.default
         config.waitsForConnectivity = true
@@ -42,14 +46,14 @@ final class NetServiceTransport: NSObject {
     }
 
     func start() {
-        // Reset all current connections
-        reset()
+        // Reset all current connections if need
+        stop()
 
         // Start searching
-        serviceBrowser.searchForServices(ofType: configuration.netServiceType, inDomain: configuration.netServiceDomain)
+        serviceBrowser.searchForServices(ofType: Constants.netServiceType, inDomain: Constants.netServiceDomain)
     }
 
-    private func reset() {
+    func stop() {
         queue.sync {
             services.forEach { $0.stop() }
             services.removeAll()

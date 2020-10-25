@@ -10,10 +10,13 @@ import Foundation
 
 public struct Configuration {
 
-    public let netServiceType: String
-    public let netServiceDomain: String
+    public let projectName: String
+    public let deviceName: String
 
-    static func `default`() -> Configuration {
-        return Configuration(netServiceType: "_Proxyman._tcp", netServiceDomain: "")
+    public static func `default`() -> Configuration {
+        let project = Project.current
+        let deviceName = Device.current
+        return Configuration(projectName: project.name,
+                             deviceName: deviceName.name)
     }
 }

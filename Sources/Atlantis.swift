@@ -9,58 +9,57 @@
 import Foundation
 import ObjectiveC
 
-///
-/// Inspire from Flex
-/// https://github.com/FLEXTool/FLEX/tree/master/Classes/Network/PonyDebugger
-///
-/// Use method_setImplementation() instead of method_exchangeImplementations
-/// https://blog.newrelic.com/engineering/right-way-to-swizzle/
-///
+/// The main class of Atlantis
+/// Responsible to swizzle certain functions from URLSession and URLConnection
+/// to capture the network and send to Proxyman app via Bonjour Service
 public final class Atlantis: NSObject {
 
     private static let shared = Atlantis()
 
-    // MARK: - Class variables
-
-    /// Determine whether or not Atlantis start intercepting
-    /// When it's enabled, Atlantis starts swizzling all available network methods
-    public static var isEnabled: Bool = false {
-        didSet {
-            guard self.isEnabled != oldValue else { return }
-            Atlantis.shared.transporter.start()
-            Atlantis.shared.injector.injectAllNetworkClasses()
-        }
-    }
-
     // MARK: - Components
 
-    private(set) lazy var transporter: Transporter = {
-        return NetServiceTransport(configuration: configuration)
-    }()
-    private(set) var injector: Injector = NetworkInjector()
+    private let transporter: Transporter
+    private var injector: Injector = NetworkInjector()
     private(set) var configuration: Configuration = Configuration.default()
     private var packages: [String: Package] = [:]
     private let queue = DispatchQueue(label: "com.proxyman.atlantis")
 
+    // MARK: - Variables
+
+    private static var isEnabled: Bool = false {
+        didSet {
+            guard self.isEnabled != oldValue else { return }
+            if isEnabled {
+
+            } else {
+                Atlantis.shared.transporter.stop()
+            }
+        }
+    }
+
     // MARK: - Init
 
     private override init() {
+        transporter = NetServiceTransport()
         super.init()
         injector.delegate = self
         safetyCheck()
     }
     
-    // MARK: - Public config
+    // MARK: - Public
 
-    /// Config different type of transporter
-    /// It might be NSNetService or classess that conforms Transporter protocol
-    /// - Parameter transporter: Transporter
-    public class func setTransporter(_ transporter: Transporter) {
-        Atlantis.shared.transporter = transporter
+    public class func start(_ configuration: Configuration = Configuration.default()) {
+        guard !isEnabled else { return }
+        self.isEnabled = true
+        Atlantis.shared.configuration = configuration
+        Atlantis.shared.transporter.start()
+        Atlantis.shared.injector.injectAllNetworkClasses()
     }
 
-    public class func setConfiguration(_ config: Configuration) {
-        Atlantis.shared.configuration = config
+    public class func stop() {
+        guard isEnabled else { return }
+        self.isEnabled = false
+        Atlantis.shared.transporter.stop()
     }
 }
 
