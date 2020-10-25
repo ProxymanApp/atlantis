@@ -53,30 +53,29 @@ final class NetServiceTransport: NSObject {
 extension NetServiceTransport: Transporter {
 
     func start(_ config: Configuration) {
-        queue.async {[weak self] in
-            guard let strongSelf = self else { return }
+        // Reset all current connections if need
+        stop()
 
-            // Reset all current connections if need
-            strongSelf.stop()
-
+        // Safe thread
+        queue.sync {
             // Create a first connection message
             // which contains the project, device metadata
             let connectionMessage = Message.buildConnectionMessage(id: config.id, item: ConnectionPackage(config: config))
 
             // Add to top of the pending list, when the connection is available, it will send firstly
-            strongSelf.pendingPackages.insert(connectionMessage, at: 0)
-
-            // Start searching
-            strongSelf.serviceBrowser.searchForServices(ofType: Constants.netServiceType, inDomain: Constants.netServiceDomain)
+            pendingPackages.insert(connectionMessage, at: 0)
         }
+
+        // Start searching
+        // Have to run on MainThread, otherwise, the service will stop for some reason
+        serviceBrowser.searchForServices(ofType: Constants.netServiceType, inDomain: Constants.netServiceDomain)
     }
 
     func stop() {
-        queue.async {[weak self] in
-            guard let strongSelf = self else { return }
-            strongSelf.services.forEach { $0.stop() }
-            strongSelf.services.removeAll()
-            strongSelf.serviceBrowser.stop()
+        queue.sync {
+            services.forEach { $0.stop() }
+            services.removeAll()
+            serviceBrowser.stop()
         }
     }
 

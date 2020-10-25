@@ -26,6 +26,11 @@ struct ConnectionPackage: Codable, Serializable {
     }
 
     func toData() -> Data? {
+        do {
+            return try JSONEncoder().encode(self)
+        } catch let error {
+            print(error)
+        }
         return nil
     }
 }
@@ -90,7 +95,7 @@ struct Device: Codable {
     init() {
         let device = UIDevice.current
         name = device.name
-        model = "\(device.model) (\(device.systemName) \(device.systemVersion)"
+        model = "\(device.name) (\(device.systemName) \(device.systemVersion))"
     }
 }
 
