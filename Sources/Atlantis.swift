@@ -47,6 +47,7 @@ public final class Atlantis: NSObject {
     private override init() {
         super.init()
         injector.delegate = self
+        safetyCheck()
     }
     
     // MARK: - Public config
@@ -66,6 +67,13 @@ public final class Atlantis: NSObject {
 // MARK: - Private
 
 extension Atlantis {
+
+    private func safetyCheck() {
+        print("------------------------------------------------------------")
+        print("---------- 🧊 Atlantis is running (version \(Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "Unknown"))")
+        print("---------- If you found any problems, please report at: https://github.com/ProxymanApp/atlantis")
+        print("------------------------------------------------------------")
+    }
 
     private func getPackage(_ task: URLSessionTask) -> Package? {
         // This method should be called from our queue
@@ -96,6 +104,7 @@ extension Atlantis: InjectorDelegate {
 
             // Cache
             _ = strongSelf.getPackage(task)
+            print("Did Add new package, count = \(strongSelf.packages.count)")
         }
     }
 
@@ -131,7 +140,7 @@ extension Atlantis: InjectorDelegate {
             // Then remove it from our cache
             strongSelf.packages.removeValue(forKey: package.id)
 
-            print("------------- Did Complete")
+            print("------------- Did Complete. Count = \(strongSelf.packages.count)")
         }
     }
 }
