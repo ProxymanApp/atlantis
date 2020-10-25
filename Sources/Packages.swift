@@ -9,22 +9,30 @@
 import Foundation
 import UIKit
 
-public protocol Package {
+struct ConnectionPackage: Codable, Serializable {
 
-    var id: String { get }
+    let device: Device
+    let project: Project
+    let icon: Data?
 
-    func updateResponse(_ response: URLResponse)
-    func updateError(_ error: Error?)
-    func append(_ data: Data)
-    func toData() -> Data?
+    init(config: Configuration) {
+        var currentDevice = Device.current
+        currentDevice.name = config.deviceName
+        var currentProject = Project.current
+        currentProject.name = config.projectName
+        self.device = currentDevice
+        self.project = currentProject
+        self.icon = nil
+    }
+
+    func toData() -> Data? {
+        return nil
+    }
 }
 
-final class PrimaryPackage: Package, Codable, CustomDebugStringConvertible {
+final class TrafficPackage: Codable, CustomDebugStringConvertible, Serializable {
 
     let id: String
-    private let device: Device
-    private let project: Project
-
     private let request: Request
     private var response: Response?
     private(set) var error: CustomError?
@@ -32,18 +40,16 @@ final class PrimaryPackage: Package, Codable, CustomDebugStringConvertible {
     
     private init?(id: String, request: Request, sessionTask: URLSessionTask) {
         self.id = id
-        self.device = Device.current
-        self.project = Project.current
         self.request = request
         self.response = nil
     }
 
     // MARK: - Builder
 
-    static func buildRequest(sessionTask: URLSessionTask, id: String) -> PrimaryPackage? {
+    static func buildRequest(sessionTask: URLSessionTask, id: String) -> TrafficPackage? {
         guard let currentRequest = sessionTask.currentRequest,
             let request = Request(currentRequest) else { return nil }
-        return PrimaryPackage(id: id, request: request, sessionTask: sessionTask)
+        return TrafficPackage(id: id, request: request, sessionTask: sessionTask)
     }
 
     func updateResponse(_ response: URLResponse) {
@@ -70,21 +76,21 @@ final class PrimaryPackage: Package, Codable, CustomDebugStringConvertible {
     }
 
     var debugDescription: String {
-        return "Package: id=\(id), device=\(device), project=\(project), request=\(String(describing: request)), response=\(String(describing: response))"
+        return "Package: id=\(id), request=\(String(describing: request)), response=\(String(describing: response))"
     }
 }
 
 struct Device: Codable {
 
-    let name: String
-    let mode: String
+    var name: String
+    let model: String
 
     static let current = Device()
 
     init() {
         let device = UIDevice.current
         name = device.name
-        mode = "\(device.model) (\(device.systemName) \(device.systemVersion)"
+        model = "\(device.model) (\(device.systemName) \(device.systemVersion)"
     }
 }
 
@@ -92,7 +98,7 @@ struct Project: Codable {
 
     static let current = Project()
 
-    let name: String
+    var name: String
     let bundleIdentifier: String
 
     init() {

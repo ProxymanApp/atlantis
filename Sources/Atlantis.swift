@@ -21,7 +21,7 @@ public final class Atlantis: NSObject {
     private let transporter: Transporter
     private var injector: Injector = NetworkInjector()
     private(set) var configuration: Configuration = Configuration.default()
-    private var packages: [String: Package] = [:]
+    private var packages: [String: TrafficPackage] = [:]
     private let queue = DispatchQueue(label: "com.proxyman.atlantis")
 
     // MARK: - Variables
@@ -52,7 +52,7 @@ public final class Atlantis: NSObject {
         guard !isEnabled else { return }
         self.isEnabled = true
         Atlantis.shared.configuration = configuration
-        Atlantis.shared.transporter.start()
+        Atlantis.shared.transporter.start(configuration)
         Atlantis.shared.injector.injectAllNetworkClasses()
     }
 
@@ -74,7 +74,7 @@ extension Atlantis {
         print("------------------------------------------------------------")
     }
 
-    private func getPackage(_ task: URLSessionTask) -> Package? {
+    private func getPackage(_ task: URLSessionTask) -> TrafficPackage? {
         // This method should be called from our queue
 
         // Receive package from the cache
@@ -84,7 +84,7 @@ extension Atlantis {
         }
 
         // If not found, just generate and cache
-        guard let package = PrimaryPackage.buildRequest(sessionTask: task, id: id) else {
+        guard let package = TrafficPackage.buildRequest(sessionTask: task, id: id) else {
             assertionFailure("Should build package from Request")
             return nil
         }
@@ -134,7 +134,8 @@ extension Atlantis: InjectorDelegate {
 
             // At this time, the package has all the data
             // It's time to send it
-            strongSelf.transporter.send(package: package)
+            let message = Message.buildTrafficMessage(id: strongSelf.configuration.id, item: package)
+            strongSelf.transporter.send(package: message)
 
             // Then remove it from our cache
             strongSelf.packages.removeValue(forKey: package.id)

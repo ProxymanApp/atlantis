@@ -8,11 +8,16 @@
 
 import Foundation
 
-public protocol Transporter {
+protocol Transporter {
 
-    func start()
+    func start(_ config: Configuration)
     func stop()
-    func send(package: Package)
+    func send(package: Serializable)
+}
+
+protocol Serializable {
+
+    func toData() -> Data?
 }
 
 final class NetServiceTransport: NSObject {
@@ -29,10 +34,7 @@ final class NetServiceTransport: NSObject {
     private let queue = DispatchQueue(label: "com.proxyman.atlantis.netservices") // Serial on purpose
     private let session: URLSession
     private var task: URLSessionStreamTask?
-    private var pendingPackages: [Package] = []
-
-    // States
-    
+    private var pendingPackages: [Serializable] = []
 
     // MARK: - Public
 
@@ -44,29 +46,41 @@ final class NetServiceTransport: NSObject {
         super.init()
         serviceBrowser.delegate = self
     }
-
-    func start() {
-        // Reset all current connections if need
-        stop()
-
-        // Start searching
-        serviceBrowser.searchForServices(ofType: Constants.netServiceType, inDomain: Constants.netServiceDomain)
-    }
-
-    func stop() {
-        queue.sync {
-            services.forEach { $0.stop() }
-            services.removeAll()
-            serviceBrowser.stop()
-        }
-    }
 }
 
 // MARK: - Transporter
 
 extension NetServiceTransport: Transporter {
 
-    func send(package: Package) {
+    func start(_ config: Configuration) {
+        queue.async {[weak self] in
+            guard let strongSelf = self else { return }
+
+            // Reset all current connections if need
+            strongSelf.stop()
+
+            // Create a first connection message
+            // which contains the project, device metadata
+            let connectionMessage = Message.buildConnectionMessage(id: config.id, item: ConnectionPackage(config: config))
+
+            // Add to top of the pending list, when the connection is available, it will send firstly
+            strongSelf.pendingPackages.insert(connectionMessage, at: 0)
+
+            // Start searching
+            strongSelf.serviceBrowser.searchForServices(ofType: Constants.netServiceType, inDomain: Constants.netServiceDomain)
+        }
+    }
+
+    func stop() {
+        queue.async {[weak self] in
+            guard let strongSelf = self else { return }
+            strongSelf.services.forEach { $0.stop() }
+            strongSelf.services.removeAll()
+            strongSelf.serviceBrowser.stop()
+        }
+    }
+
+    func send(package: Serializable) {
         queue.async {[weak self] in
             guard let strongSelf = self else { return }
             print("Send package = \(package)")
@@ -86,7 +100,7 @@ extension NetServiceTransport: Transporter {
         }
     }
 
-    private func stream(package: Package) {
+    private func stream(package: Serializable) {
         guard let data = package.toData() else { return }
 
         // Compose a message
@@ -109,6 +123,7 @@ extension NetServiceTransport: Transporter {
     }
 
     private func flushAllPendingIfNeed() {
+        guard !pendingPackages.isEmpty else { return }
         for package in pendingPackages {
             stream(package: package)
         }
