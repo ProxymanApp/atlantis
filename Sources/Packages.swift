@@ -49,11 +49,14 @@ final class TrafficPackage: Codable, CustomDebugStringConvertible, Serializable 
     private var response: Response?
     private(set) var error: CustomError?
     private var responseBodyData = Data()
-    
+    private let startAt: TimeInterval
+    private var endAt: TimeInterval?
+
     private init?(id: String, request: Request, sessionTask: URLSessionTask) {
         self.id = id
         self.request = request
         self.response = nil
+        self.startAt = Date().timeIntervalSince1970
     }
 
     // MARK: - Builder
@@ -69,9 +72,11 @@ final class TrafficPackage: Codable, CustomDebugStringConvertible, Serializable 
         self.response = Response(response)
     }
     
-    func updateError(_ error: Error?) {
-        guard let error = error else { return }
-        self.error = CustomError(error)
+    func updateDidComplete(_ error: Error?) {
+        endAt = Date().timeIntervalSince1970
+        if let error = error {
+            self.error = CustomError(error)
+        }
     }
 
     func append(_ data: Data) {
@@ -137,7 +142,7 @@ struct Request: Codable {
 
     let url: String
     let method: String
-    let headers: [Header]?
+    let headers: [Header]
     let body: Data?
 
     // MARK: - Init
@@ -146,7 +151,7 @@ struct Request: Codable {
         guard let urlRequest = urlRequest else { return nil }
         url = urlRequest.url?.absoluteString ?? "-"
         method = urlRequest.httpMethod ?? "-"
-        headers = urlRequest.allHTTPHeaderFields?.map { Header(key: $0.key, value: $0.value ) }
+        headers = urlRequest.allHTTPHeaderFields?.map { Header(key: $0.key, value: $0.value ) } ?? []
         body = urlRequest.httpBody
     }
 }
@@ -154,7 +159,7 @@ struct Request: Codable {
 struct Response: Codable {
 
     let statusCode: Int
-    let headers: [Header]?
+    let headers: [Header]
 
     init?(_ response: URLResponse) {
         guard let httpResponse = response as? HTTPURLResponse else {

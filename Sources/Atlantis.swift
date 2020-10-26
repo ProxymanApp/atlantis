@@ -134,7 +134,9 @@ extension Atlantis: InjectorDelegate {
                 assertionFailure("Internal error. We should have Package")
                 return
             }
-            package.updateError(error)
+
+            // All done
+            package.updateDidComplete(error)
 
             // At this time, the package has all the data
             // It's time to send it
