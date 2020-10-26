@@ -27,6 +27,7 @@
 		BA7D93D32544336F00C46587 /* NetworkInjector+URLConnection.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA7D93D12544336F00C46587 /* NetworkInjector+URLConnection.swift */; };
 		BA7D93D525456DFF00C46587 /* Message.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA7D93D425456DFF00C46587 /* Message.swift */; };
 		BA7D93D625456DFF00C46587 /* Message.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA7D93D425456DFF00C46587 /* Message.swift */; };
+		BA7D93EF2546CFEE00C46587 /* Transporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA268F1B25427D5300DD9DEC /* Transporter.swift */; };
 		BABB88B42541BF0F00B19641 /* Atlantis.swift in Sources */ = {isa = PBXBuildFile; fileRef = BABB88B32541BF0F00B19641 /* Atlantis.swift */; };
 		BABB88B52541BF0F00B19641 /* Atlantis.swift in Sources */ = {isa = PBXBuildFile; fileRef = BABB88B32541BF0F00B19641 /* Atlantis.swift */; };
 		BABB88B92541C64C00B19641 /* DispatchQueue+Once.swift in Sources */ = {isa = PBXBuildFile; fileRef = BABB88B82541C64C00B19641 /* DispatchQueue+Once.swift */; };
@@ -383,6 +384,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				BA7D93CA25440C6600C46587 /* PackageIdentifier.swift in Sources */,
+				BA7D93EF2546CFEE00C46587 /* Transporter.swift in Sources */,
 				BA7D93832542CB0500C46587 /* Configuration.swift in Sources */,
 				BA7D93D02544237600C46587 /* NetworkInjector+URLSession.swift in Sources */,
 				BA268F2425428D0A00DD9DEC /* NetworkInjector.swift in Sources */,

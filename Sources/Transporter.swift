@@ -41,7 +41,9 @@ final class NetServiceTransport: NSObject {
     override init() {
         self.serviceBrowser = NetServiceBrowser()
         let config = URLSessionConfiguration.default
+        #if os(iOS)
         config.waitsForConnectivity = true
+        #endif
         session = URLSession(configuration: config)
         super.init()
         serviceBrowser.delegate = self

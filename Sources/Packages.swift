@@ -7,7 +7,14 @@
 //
 
 import Foundation
+
+#if os(OSX)
+import AppKit
+typealias Image = NSImage
+#elseif os(iOS)
 import UIKit
+typealias Image = UIImage
+#endif
 
 struct ConnectionPackage: Codable, Serializable {
 
@@ -22,7 +29,7 @@ struct ConnectionPackage: Codable, Serializable {
         currentProject.name = config.projectName
         self.device = currentDevice
         self.project = currentProject
-        self.icon = UIImage.appIcon?.pngData()
+        self.icon = Image.appIcon?.getPNGData()
     }
 
     func toData() -> Data? {
@@ -93,9 +100,15 @@ struct Device: Codable {
     static let current = Device()
 
     init() {
+        #if os(OSX)
+        let macName = Host.current().name ?? "Unknown Mac Devices"
+        name = macName
+        model = "\(macName) \(ProcessInfo.processInfo.operatingSystemVersionString)"
+        #elseif os(iOS)
         let device = UIDevice.current
         name = device.name
         model = "\(device.name) (\(device.systemName) \(device.systemVersion))"
+        #endif
     }
 }
 
@@ -170,12 +183,30 @@ struct CustomError: Codable {
     }
 }
 
-extension UIImage {
-    static var appIcon: UIImage? {
+extension Image {
+
+    static var appIcon: Image? {
+        #if os(OSX)
+        return NSApplication.shared.applicationIconImage
+        #elseif os(iOS)
         guard let iconsDictionary = Bundle.main.infoDictionary?["CFBundleIcons"] as? [String:Any],
               let primaryIconsDictionary = iconsDictionary["CFBundlePrimaryIcon"] as? [String:Any],
               let iconFiles = primaryIconsDictionary["CFBundleIconFiles"] as? [String],
               let lastIcon = iconFiles.last else { return nil }
-        return UIImage(named: lastIcon)
+        return Image(named: lastIcon)
+        #endif
+    }
+
+    func getPNGData() -> Data? {
+        #if os(OSX)
+        guard let cgImage = self.cgImage(forProposedRect: nil, context: nil, hints: nil) else { return nil }
+        let newRep = NSBitmapImageRep(cgImage: cgImage)
+        // Resize, we don't need 1024px size
+        newRep.size = CGSize(width: 64, height: 64)
+        return newRep.representation(using: .png, properties: [:])
+        #elseif os(iOS)
+        // It's already by 64px
+        return self.pngData()
+        #endif
     }
 }
