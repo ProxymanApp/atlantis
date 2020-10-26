@@ -26,6 +26,10 @@ public final class Atlantis: NSObject {
 
     // MARK: - Variables
 
+    static var buildNumber: String? = {
+        return Bundle(for: Atlantis.self).infoDictionary?["CFBundleVersion"] as? String
+    }()
+
     private static var isEnabled: Bool = false {
         didSet {
             guard self.isEnabled != oldValue else { return }

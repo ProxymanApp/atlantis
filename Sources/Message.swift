@@ -20,6 +20,7 @@ struct Message: Codable {
     private let id: String
     private let messageType: MessageType
     private let content: Data?
+    private let buildNumber: String? = Atlantis.buildNumber
 
     // MARK: - Helper Builder
 
