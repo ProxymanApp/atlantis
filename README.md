@@ -2,9 +2,9 @@
 
 A little and powerful iOS framework for intercepting HTTP/HTTPS Traffic from your app. No more messing around with proxy, certificate config. 
 
-[![Version](https://img.shields.io/cocoapods/v/atlantis.svg?style=flat)](https://cocoapods.org/pods/atlantis)
-[![License](https://img.shields.io/cocoapods/l/atlantis.svg?style=flat)](https://cocoapods.org/pods/atlantis)
-[![Platform](https://img.shields.io/cocoapods/p/atlantis.svg?style=flat)](https://cocoapods.org/pods/atlantis)
+[![Version](https://img.shields.io/cocoapods/v/atlantis.svg?style=flat)](https://cocoapods.org/pods/atlantis-proxyman)
+[![License](https://img.shields.io/cocoapods/l/atlantis.svg?style=flat)](https://cocoapods.org/pods/atlantis-proxyman)
+[![Platform](https://img.shields.io/cocoapods/p/atlantis.svg?style=flat)](https://cocoapods.org/pods/atlantis-proxyman)
 
 ## Features
 - [x] Automatically intercept all HTTP/HTTPS Traffic with ease
@@ -42,7 +42,7 @@ Atlantis.start()
 - Add the following line to your Podfile
 
 ```bash 
-pod atlantis
+pod 'atlantis-proxyman'
 ```
 
 ## FAQ
