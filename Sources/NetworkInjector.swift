@@ -66,9 +66,6 @@ extension NetworkInjector {
     }
 
     private func injectIntoURLSessionDelegate(anyClass: AnyClass) {
-        print("Start inject into delegate for class \(anyClass)")
-
-        // URLSession
         _swizzleURLSessionDataTaskDidReceiveResponse(baseClass: anyClass)
         _swizzleURLSessionDataTaskDidReceiveData(baseClass: anyClass)
         _swizzleURLSessionTaskDidCompleteWithError(baseClass: anyClass)

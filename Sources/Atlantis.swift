@@ -26,20 +26,23 @@ public final class Atlantis: NSObject {
 
     // MARK: - Variables
 
+    /// Current build number of Atlantis Framework
     static var buildNumber: String? = {
         return Bundle(for: Atlantis.self).infoDictionary?["CFBundleVersion"] as? String
     }()
 
-    private static var isEnabled: Bool = false {
-        didSet {
-            guard self.isEnabled != oldValue else { return }
-            if isEnabled {
-
-            } else {
-                Atlantis.shared.transporter.stop()
-            }
+    /// Check whether or not Bonjour Service is available in current devices
+    private static var isServiceAvailable: Bool = {
+        // Require extra config for iOS 14
+        if #available(iOS 14, *) {
+            return Bundle.main.hasBonjourServices && Bundle.main.hasLocalNetworkUsageDescription
         }
-    }
+        // Below iOS 14, Bonjour service is always available
+        return true
+    }()
+
+    /// Interal state
+    private static var isEnabled: Bool = false
 
     // MARK: - Init
 
@@ -53,6 +56,14 @@ public final class Atlantis: NSObject {
     // MARK: - Public
 
     public class func start(_ configuration: Configuration = Configuration.default()) {
+
+        // don't start the service if it's unavailable
+        guard Atlantis.isServiceAvailable else {
+            // init to call the safe-check
+            _ = Atlantis.shared
+            return
+        }
+
         guard !isEnabled else { return }
         self.isEnabled = true
         Atlantis.shared.configuration = configuration
@@ -72,10 +83,12 @@ public final class Atlantis: NSObject {
 extension Atlantis {
 
     private func safetyCheck() {
-        print("-----------------------------------------------------------------------")
-        print("---------- 🧊 Atlantis is running (version \(Bundle(for: Atlantis.self).object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "Unknown"))")
-        print("---------- If you found any problems, please report at: https://github.com/ProxymanApp/atlantis")
-        print("-----------------------------------------------------------------------")
+        if Atlantis.isServiceAvailable {
+            print("---------------------------------------------------------------------------------")
+            print("---------- 🧊 Atlantis is running (version \(Bundle(for: Atlantis.self).object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "Unknown"))")
+            print("---------- Github: https://github.com/ProxymanApp/atlantis")
+            print("---------------------------------------------------------------------------------")
+        }
 
         // Check required config for Local Network in the main app's info.plist
         // Ref: https://developer.apple.com/news/?id=0oi77447
@@ -100,9 +113,9 @@ extension Atlantis {
             }
             if !instruction.isEmpty {
                 let message = """
-                -----------------------------------------------------------------------
-                --------- MISSING REQUIRED CONFIG from Info.plist for iOS 14+ --------
-                -----------------------------------------------------------------------
+                ---------------------------------------------------------------------------------
+                --------- [Atlantis] MISSING REQUIRED CONFIG from Info.plist for iOS 14+ --------
+                ---------------------------------------------------------------------------------
                 Read more at: https://docs.proxyman.io/atlantis/atlantis-for-ios
                 Please add the following config to your MainApp's Info.plist
 
