@@ -2,6 +2,10 @@
 
 A little and powerful iOS framework for intercepting HTTP/HTTPS Traffic from your app. No more messing around with proxy, certificate config. 
 
+[![Version](https://img.shields.io/cocoapods/v/atlantis.svg?style=flat)](https://cocoapods.org/pods/atlantis)
+[![License](https://img.shields.io/cocoapods/l/atlantis.svg?style=flat)](https://cocoapods.org/pods/atlantis)
+[![Platform](https://img.shields.io/cocoapods/p/atlantis.svg?style=flat)](https://cocoapods.org/pods/atlantis)
+
 ## Features
 - [x] Automatically intercept all HTTP/HTTPS Traffic with ease
 - [x] No need to config HTTP Proxy, Install or Trust any Certificate
