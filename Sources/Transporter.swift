@@ -22,7 +22,7 @@ protocol Serializable {
 
 final class NetServiceTransport: NSObject {
 
-    private struct Constants {
+    struct Constants {
         static let netServiceType = "_Proxyman._tcp"
         static let netServiceDomain = ""
     }

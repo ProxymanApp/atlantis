@@ -72,10 +72,46 @@ public final class Atlantis: NSObject {
 extension Atlantis {
 
     private func safetyCheck() {
-        print("------------------------------------------------------------")
-        print("---------- 🧊 Atlantis is running (version \(Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "Unknown"))")
+        print("-----------------------------------------------------------------------")
+        print("---------- 🧊 Atlantis is running (version \(Bundle(for: Atlantis.self).object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "Unknown"))")
         print("---------- If you found any problems, please report at: https://github.com/ProxymanApp/atlantis")
-        print("------------------------------------------------------------")
+        print("-----------------------------------------------------------------------")
+
+        // Check required config for Local Network in the main app's info.plist
+        // Ref: https://developer.apple.com/news/?id=0oi77447
+        // Only for iOS 14
+        if #available(iOS 14, *) {
+            var instruction: [String] = []
+            if !Bundle.main.hasLocalNetworkUsageDescription {
+                let config = """
+                <key>NSLocalNetworkUsageDescription</key>
+                <string>Atlantis would use Bonjour Service to discover Proxyman app from your local network.</string>
+                """
+                instruction.append(config)
+            }
+            if !Bundle.main.hasBonjourServices {
+                let config = """
+                <key>NSBonjourServices</key>
+                <array>
+                    <string>_Proxyman._tcp</string>
+                </array>
+                """
+                instruction.append(config)
+            }
+            if !instruction.isEmpty {
+                let message = """
+                -----------------------------------------------------------------------
+                --------- MISSING REQUIRED CONFIG from Info.plist for iOS 14+ --------
+                -----------------------------------------------------------------------
+                Read more at: https://docs.proxyman.io/atlantis/atlantis-for-ios
+                Please add the following config to your MainApp's Info.plist
+
+                \(instruction.joined(separator: "\n"))
+
+                """
+                print(message)
+            }
+        }
     }
 
     private func getPackage(_ task: URLSessionTask) -> TrafficPackage? {
@@ -145,8 +181,21 @@ extension Atlantis: InjectorDelegate {
 
             // Then remove it from our cache
             strongSelf.packages.removeValue(forKey: package.id)
-
             print("------------- Did Complete. Count = \(strongSelf.packages.count)")
         }
+    }
+}
+
+extension Bundle {
+
+    var hasLocalNetworkUsageDescription: Bool {
+        return Bundle.main.object(forInfoDictionaryKey: "NSLocalNetworkUsageDescription") as? String != nil
+    }
+
+    var hasBonjourServices: Bool {
+        guard let services = Bundle.main.object(forInfoDictionaryKey: "NSBonjourServices") as? [String],
+              let proxymanService = services.first,
+              proxymanService == NetServiceTransport.Constants.netServiceType else { return false }
+        return true
     }
 }
