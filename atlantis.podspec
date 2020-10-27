@@ -9,7 +9,7 @@
 Pod::Spec.new do |spec|
   spec.name         = "atlantis"
   spec.version      = "1.0.0"
-  spec.summary      = "A little and powerful iOS framework for intercepting HTTP/HTTPS Traffic from your app. No more messing around with proxy, certificate config."
+  spec.summary      = "A little and powerful iOS framework for intercepting HTTP/HTTPS Traffic"
   spec.description  = <<-DESC
   A little and powerful iOS framework for intercepting HTTP/HTTPS Traffic from your app. No more messing around with proxy, certificate config.
   Automatically intercept all HTTP/HTTPS Traffic with ease
@@ -18,7 +18,7 @@ Pod::Spec.new do |spec|
   Categorize the log by project and devices.
                    DESC
 
-  spec.homepage     = "http://EXAMPLE/atlantis"
+  spec.homepage     = "https://github.com/ProxymanApp/atlantis"
   spec.documentation_url = 'https://docs.proxyman.io/atlantis/atlantis-for-ios'
   spec.screenshots  = "https://raw.githubusercontent.com/ProxymanApp/atlantis/main/images/cover.png"
   spec.license      = { :type => "Apache License, Version 2.0", :file => "LICENSE" }
