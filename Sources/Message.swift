@@ -20,7 +20,16 @@ struct Message: Codable {
     private let id: String
     private let messageType: MessageType
     private let content: Data?
-    private let buildNumber: String? = Atlantis.buildNumber
+    private let buildNumber: String?
+
+    // MARK: - Init
+
+    private init(id: String, messageType: Message.MessageType, content: Data?) {
+        self.id = id
+        self.messageType = messageType
+        self.content = content
+        self.buildNumber = Atlantis.buildNumber
+    }
 
     // MARK: - Helper Builder
 

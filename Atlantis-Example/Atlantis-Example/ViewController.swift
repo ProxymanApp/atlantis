@@ -67,7 +67,6 @@ class ViewController: UIViewController, URLSessionDataDelegate {
     }
 
     func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
-        print("didCompleteWithError \(error)")
+        print("didCompleteWithError \(String(describing: error))")
     }
 }
-
