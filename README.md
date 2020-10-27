@@ -12,14 +12,19 @@ A little and powerful iOS framework for intercepting HTTP/HTTPS Traffic from you
 - Integrate Atlantis with one single line of code:
 
 ```swift
+// import atlantis
 // Intercept all traffics and send to Proxyman app
-Atlantis.isEnable = true
+Atlantis.start()
+```
+
+```swift
+Atlantis.stop()
 ```
 
 - We suggest to enable Atlantis only in Debug environment
 ```swift
 #if DEBUG
-Atlantis.isEnable = true
+Atlantis.start()
 #endif
 ```
 
