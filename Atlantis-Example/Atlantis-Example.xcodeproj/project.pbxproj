@@ -3,35 +3,23 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 50;
+	objectVersion = 51;
 	objects = {
 
 /* Begin PBXBuildFile section */
+		938D1391670C50CF6442F7A2 /* Pods_Atlantis_Example.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 089E760963F33F8E39CC9F40 /* Pods_Atlantis_Example.framework */; };
 		BA268EEE2541D55D00DD9DEC /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA268EED2541D55D00DD9DEC /* AppDelegate.swift */; };
 		BA268EF02541D55D00DD9DEC /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA268EEF2541D55D00DD9DEC /* SceneDelegate.swift */; };
 		BA268EF22541D55D00DD9DEC /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA268EF12541D55D00DD9DEC /* ViewController.swift */; };
 		BA268EF52541D55D00DD9DEC /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = BA268EF32541D55D00DD9DEC /* Main.storyboard */; };
 		BA268EF72541D55E00DD9DEC /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = BA268EF62541D55E00DD9DEC /* Assets.xcassets */; };
 		BA268EFA2541D55E00DD9DEC /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = BA268EF82541D55E00DD9DEC /* LaunchScreen.storyboard */; };
-		BA7D93A92542E0B300C46587 /* atlantis.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BA7D93A82542E0B300C46587 /* atlantis.framework */; };
-		BA7D93AA2542E0B300C46587 /* atlantis.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = BA7D93A82542E0B300C46587 /* atlantis.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
-/* Begin PBXCopyFilesBuildPhase section */
-		BA7D93AB2542E0B400C46587 /* Embed Frameworks */ = {
-			isa = PBXCopyFilesBuildPhase;
-			buildActionMask = 2147483647;
-			dstPath = "";
-			dstSubfolderSpec = 10;
-			files = (
-				BA7D93AA2542E0B300C46587 /* atlantis.framework in Embed Frameworks */,
-			);
-			name = "Embed Frameworks";
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-/* End PBXCopyFilesBuildPhase section */
-
 /* Begin PBXFileReference section */
+		089E760963F33F8E39CC9F40 /* Pods_Atlantis_Example.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Atlantis_Example.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		57B711F0FF6DA87D9A804291 /* Pods-Atlantis-Example.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Atlantis-Example.release.xcconfig"; path = "Target Support Files/Pods-Atlantis-Example/Pods-Atlantis-Example.release.xcconfig"; sourceTree = "<group>"; };
+		955592B6B39520D7F2E2C03A /* Pods-Atlantis-Example.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Atlantis-Example.debug.xcconfig"; path = "Target Support Files/Pods-Atlantis-Example/Pods-Atlantis-Example.debug.xcconfig"; sourceTree = "<group>"; };
 		BA268EEA2541D55D00DD9DEC /* Atlantis-Example.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Atlantis-Example.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		BA268EED2541D55D00DD9DEC /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		BA268EEF2541D55D00DD9DEC /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
@@ -49,19 +37,29 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				BA7D93A92542E0B300C46587 /* atlantis.framework in Frameworks */,
+				938D1391670C50CF6442F7A2 /* Pods_Atlantis_Example.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		A9A97400A421A91044E0F00E /* Pods */ = {
+			isa = PBXGroup;
+			children = (
+				955592B6B39520D7F2E2C03A /* Pods-Atlantis-Example.debug.xcconfig */,
+				57B711F0FF6DA87D9A804291 /* Pods-Atlantis-Example.release.xcconfig */,
+			);
+			path = Pods;
+			sourceTree = "<group>";
+		};
 		BA268EE12541D55D00DD9DEC = {
 			isa = PBXGroup;
 			children = (
 				BA268EEC2541D55D00DD9DEC /* Atlantis-Example */,
 				BA268EEB2541D55D00DD9DEC /* Products */,
 				BA7D93A32542DD8C00C46587 /* Frameworks */,
+				A9A97400A421A91044E0F00E /* Pods */,
 			);
 			sourceTree = "<group>";
 		};
@@ -92,6 +90,7 @@
 			children = (
 				BA7D93A82542E0B300C46587 /* atlantis.framework */,
 				BA7D93A42542DD8C00C46587 /* atlantis.framework */,
+				089E760963F33F8E39CC9F40 /* Pods_Atlantis_Example.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -103,10 +102,11 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = BA268EFE2541D55E00DD9DEC /* Build configuration list for PBXNativeTarget "Atlantis-Example" */;
 			buildPhases = (
+				7550804F2880D0E21BBA6E84 /* [CP] Check Pods Manifest.lock */,
 				BA268EE62541D55D00DD9DEC /* Sources */,
 				BA268EE72541D55D00DD9DEC /* Frameworks */,
 				BA268EE82541D55D00DD9DEC /* Resources */,
-				BA7D93AB2542E0B400C46587 /* Embed Frameworks */,
+				EF16D359BBD4F7A63C56ADB3 /* [CP] Embed Pods Frameworks */,
 			);
 			buildRules = (
 			);
@@ -162,6 +162,48 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		7550804F2880D0E21BBA6E84 /* [CP] Check Pods Manifest.lock */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
+				"${PODS_ROOT}/Manifest.lock",
+			);
+			name = "[CP] Check Pods Manifest.lock";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(DERIVED_FILE_DIR)/Pods-Atlantis-Example-checkManifestLockResult.txt",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
+			showEnvVarsInLog = 0;
+		};
+		EF16D359BBD4F7A63C56ADB3 /* [CP] Embed Pods Frameworks */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-Atlantis-Example/Pods-Atlantis-Example-frameworks-${CONFIGURATION}-input-files.xcfilelist",
+			);
+			name = "[CP] Embed Pods Frameworks";
+			outputFileListPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-Atlantis-Example/Pods-Atlantis-Example-frameworks-${CONFIGURATION}-output-files.xcfilelist",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-Atlantis-Example/Pods-Atlantis-Example-frameworks.sh\"\n";
+			showEnvVarsInLog = 0;
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		BA268EE62541D55D00DD9DEC /* Sources */ = {
@@ -314,6 +356,7 @@
 		};
 		BA268EFF2541D55E00DD9DEC /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 955592B6B39520D7F2E2C03A /* Pods-Atlantis-Example.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
@@ -332,6 +375,7 @@
 		};
 		BA268F002541D55E00DD9DEC /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 57B711F0FF6DA87D9A804291 /* Pods-Atlantis-Example.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;

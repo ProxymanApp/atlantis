@@ -5,6 +5,6 @@
       location = "group:Atlantis-Example.xcodeproj">
    </FileRef>
    <FileRef
-      location = "group:../atlantis.xcodeproj">
+      location = "group:Pods/Pods.xcodeproj">
    </FileRef>
 </Workspace>

@@ -7,7 +7,7 @@
 //
 
 import UIKit
-import atlantis
+import Atlantis
 
 class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
