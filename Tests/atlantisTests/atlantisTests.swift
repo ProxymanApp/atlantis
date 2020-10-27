@@ -8,7 +8,7 @@
 
 import Foundation
 import XCTest
-import atlantis
+import Atlantis
 
 class atlantisTests: XCTestCase {
     func testExample() {
