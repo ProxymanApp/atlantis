@@ -19,7 +19,8 @@ let package = Package(
         .target(
             name: "Atlantis",
             dependencies: [],
-            path: "Sources"),
+            path: "Sources",
+            exclude: ["Atlantis-Example", "Configs", "Images", "Tests"]),
         .testTarget(
             name: "AtlantisTests",
             dependencies: ["Atlantis"]),
