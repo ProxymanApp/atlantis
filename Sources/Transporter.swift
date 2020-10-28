@@ -35,6 +35,7 @@ final class NetServiceTransport: NSObject {
     private let session: URLSession
     private var task: URLSessionStreamTask?
     private var pendingPackages: [Serializable] = []
+    private var config: Configuration?
 
     // MARK: - Public
 
@@ -55,18 +56,10 @@ final class NetServiceTransport: NSObject {
 extension NetServiceTransport: Transporter {
 
     func start(_ config: Configuration) {
+        self.config = config
+
         // Reset all current connections if need
         stop()
-
-        // Safe thread
-        queue.sync {
-            // Create a first connection message
-            // which contains the project, device metadata
-            let connectionMessage = Message.buildConnectionMessage(id: config.id, item: ConnectionPackage(config: config))
-
-            // Add to top of the pending list, when the connection is available, it will send firstly
-            pendingPackages.insert(connectionMessage, at: 0)
-        }
 
         // Start searching
         // Have to run on MainThread, otherwise, the service will stop for some reason
@@ -84,17 +77,13 @@ extension NetServiceTransport: Transporter {
     func send(package: Serializable) {
         queue.async {[weak self] in
             guard let strongSelf = self else { return }
-            print("Send package = \(package)")
             guard let task = strongSelf.task, task.state == .running else {
                 // It means the connection is not ready
                 // We add the package to the pending list
-                print("Add package to the pending list...")
                 strongSelf.pendingPackages.append(package)
+                print("Add package to the pending list, count=\(strongSelf.pendingPackages.count)...")
                 return
             }
-
-            // Flush all pending data if need
-            strongSelf.flushAllPendingIfNeed()
 
             // Send the main one
             strongSelf.stream(package: package)
@@ -113,8 +102,6 @@ extension NetServiceTransport: Transporter {
         buffer.append(&lengthPackage, length: Int(MemoryLayout<UInt64>.stride))
         buffer.append([UInt8](data), length: data.count)
 
-        print("------ Write length message = \(data.count)")
-
         // Write data
         task?.write(buffer as Data, timeout: 5) { (error) in
             if let error = error {
@@ -125,7 +112,7 @@ extension NetServiceTransport: Transporter {
 
     private func flushAllPendingIfNeed() {
         guard !pendingPackages.isEmpty else { return }
-        print("Flush \(pendingPackages.count) items")
+        print("[Atlantis] Flush \(pendingPackages.count) items")
         for package in pendingPackages {
             stream(package: package)
         }
@@ -138,7 +125,7 @@ extension NetServiceTransport: Transporter {
 extension NetServiceTransport {
 
     private func connectToService(_ service: NetService) {
-        print("Connect to server address count = \(service.addresses?.count ?? 0)")
+
         // Stop previous connection if need
         if let task = task {
             task.closeWrite()
@@ -150,6 +137,18 @@ extension NetServiceTransport {
 
         // All pending
         queue.async {[weak self] in
+            guard let strongSelf = self else { return }
+
+            //
+            if let config = strongSelf.config {
+                // Create a first connection message
+                // which contains the project, device metadata
+                let connectionMessage = Message.buildConnectionMessage(id: config.id, item: ConnectionPackage(config: config))
+
+                // Add to top of the pending list, when the connection is available, it will send firstly
+                strongSelf.pendingPackages.insert(connectionMessage, at: 0)
+            }
+
             self?.flushAllPendingIfNeed()
         }
     }
@@ -160,7 +159,6 @@ extension NetServiceTransport {
 extension NetServiceTransport: NetServiceBrowserDelegate {
 
     func netServiceBrowser(_ browser: NetServiceBrowser, didFind service: NetService, moreComing: Bool) {
-        print("didFind service \(service)")
         queue.async {[weak self] in
             guard let strongSelf = self else { return }
             strongSelf.services.append(service)
@@ -170,12 +168,13 @@ extension NetServiceTransport: NetServiceBrowserDelegate {
     }
 
     func netServiceBrowser(_ browser: NetServiceBrowser, didRemove service: NetService, moreComing: Bool) {
-        print("didRemove service \(service)")
         queue.async {[weak self] in
             guard let strongSelf = self else { return }
-            if let index = strongSelf.services.firstIndex(where: { $0 === service }) {
-                strongSelf.services.remove(at: index)
-            }
+
+            // For some reason, we the service in this method is not the same with the server when we append.
+            // It's impossible to know which service is
+            // Best case, we should remove all
+            strongSelf.services.removeAll()
         }
     }
 
@@ -184,11 +183,9 @@ extension NetServiceTransport: NetServiceBrowserDelegate {
     }
 
     func netServiceBrowserWillSearch(_ browser: NetServiceBrowser) {
-        print("netServiceBrowserWillSearch")
     }
 
     func netServiceBrowserDidStopSearch(_ browser: NetServiceBrowser) {
-        print("netServiceBrowserDidStopSearch")
     }
 }
 
@@ -197,7 +194,6 @@ extension NetServiceTransport: NetServiceBrowserDelegate {
 extension NetServiceTransport: NetServiceDelegate {
 
     func netServiceDidResolveAddress(_ sender: NetService) {
-        print("netServiceDidResolveAddress")
         connectToService(sender)
     }
 

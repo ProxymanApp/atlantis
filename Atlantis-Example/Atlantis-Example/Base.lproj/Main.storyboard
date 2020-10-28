@@ -26,8 +26,7 @@
                                 <rect key="frame" x="108" y="493" width="198" height="30"/>
                                 <state key="normal" title="Send Message with delegate"/>
                                 <connections>
-                                    <action selector="sendMessageBtnOnTap:" destination="BYZ-38-t0r" eventType="touchUpInside" id="u07-Cf-HUO"/>
-                                    <action selector="sendMessageByDeleteOnTap:" destination="BYZ-38-t0r" eventType="touchUpInside" id="PKo-qy-vlq"/>
+                                    <action selector="sendMessageByDeleteOnTap:" destination="BYZ-38-t0r" eventType="touchUpInside" id="f5H-Xc-g4q"/>
                                 </connections>
                             </button>
                         </subviews>

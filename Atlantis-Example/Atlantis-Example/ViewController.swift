@@ -18,34 +18,34 @@ class ViewController: UIViewController, URLSessionDataDelegate {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-
-        makeSimpleRequest()
     }
 
     func makeSimpleRequest() {
-//        let url = URL(string: "https://httpbin.org/get?name=proxyman&id=\(UUID().uuidString)&randon=\(Int.random(in: 0..<10000))")!
-//        let task = URLSession.shared.dataTask(with: url) { (data, response, error) in
-//            if let error = error {
-//                print(error)
-//                return
-//            }
-//
-//            if let response = response as? HTTPURLResponse {
-//                print(response)
-//
-//                if let data = data {
-//                    print("------ Body")
-//                    let dict = try? JSONSerialization.jsonObject(with: data, options: [])
-//                    print(dict)
-//                }
-//            }
-//        }
-//        task.resume()
+        let url = URL(string: "https://httpbin.org/get?name=proxyman&id=\(UUID().uuidString)&randon=\(Int.random(in: 0..<10000))")!
+        let task = URLSession.shared.dataTask(with: url) { (data, response, error) in
+            if let error = error {
+                print(error)
+                return
+            }
+
+            if let response = response as? HTTPURLResponse {
+                print(response)
+
+                if let data = data {
+                    print("------ Body")
+                    let dict = try? JSONSerialization.jsonObject(with: data, options: [])
+                    print(dict)
+                }
+            }
+        }
+        task.resume()
     }
 
     func makeRequestWithDelegate() {
         let url = URL(string: "https://httpbin.org/get?name=proxyman&id=\(UUID().uuidString)&randon=\(Int.random(in: 0..<10000))")!
-        let task = session.dataTask(with: url)
+        var request = URLRequest(url: url)
+        request.addValue(UUID().uuidString, forHTTPHeaderField: "X-Proxyman-Example")
+        let task = session.dataTask(with: request)
         task.resume()
     }
 
@@ -63,10 +63,10 @@ class ViewController: UIViewController, URLSessionDataDelegate {
     }
 
     func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive data: Data) {
-        print("receive data \(data.count)")
+
     }
 
     func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
-        print("didCompleteWithError \(String(describing: error))")
+        
     }
 }
