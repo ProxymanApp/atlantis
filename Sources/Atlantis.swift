@@ -26,11 +26,6 @@ public final class Atlantis: NSObject {
 
     // MARK: - Variables
 
-    /// Current build number of Atlantis Framework
-    static var buildNumber: String? = {
-        return Bundle(for: Atlantis.self).infoDictionary?["CFBundleVersion"] as? String
-    }()
-
     /// Check whether or not Bonjour Service is available in current devices
     private static var isServiceAvailable: Bool = {
         // Require extra config for iOS 14
@@ -41,8 +36,9 @@ public final class Atlantis: NSObject {
         return true
     }()
 
-    /// Interal state
-    private static var isEnabled: Bool = false
+    /// Determine whether or not the Atlantis is active
+    /// It must be wrapped into an atomic for safe-threads
+    private static var isEnabled = Atomic<Bool>(false)
 
     // MARK: - Init
 
@@ -55,6 +51,14 @@ public final class Atlantis: NSObject {
     
     // MARK: - Public
 
+    /// Build version of Atlantis
+    /// It's essential for Proxyman to known if it's compatible with this version
+    /// Instead of receving the number from the info.plist, we should hardcode here because the info file doesn't exist in SPM
+    public static let buildVersion: String = "1.0.4"
+
+    /// Start Swizzle all network functions and monitoring the traffic
+    /// It also starts looking Bonjour network from Proxyman app
+    /// - Parameter configuration: Configuration for Project and Device metadata
     public class func start(_ configuration: Configuration = Configuration.default()) {
 
         // don't start the service if it's unavailable
@@ -64,16 +68,17 @@ public final class Atlantis: NSObject {
             return
         }
 
-        guard !isEnabled else { return }
-        self.isEnabled = true
+        guard !isEnabled.value else { return }
+        isEnabled.mutate { $0 = true }
         Atlantis.shared.configuration = configuration
         Atlantis.shared.transporter.start(configuration)
         Atlantis.shared.injector.injectAllNetworkClasses()
     }
 
+    /// Stop monitoring
     public class func stop() {
-        guard isEnabled else { return }
-        self.isEnabled = false
+        guard isEnabled.value else { return }
+        isEnabled.mutate { $0 = false }
         Atlantis.shared.transporter.stop()
     }
 }
@@ -151,6 +156,9 @@ extension Atlantis {
 extension Atlantis: InjectorDelegate {
 
     func injectorSessionDidCallResume(task: URLSessionTask) {
+        // Since it's not possible to revert the Method Swizzling change
+        // We use isEnable instead
+        guard Atlantis.isEnabled.value else { return }
         queue.async {[weak self] in
             guard let strongSelf = self else { return }
 
@@ -161,6 +169,7 @@ extension Atlantis: InjectorDelegate {
     }
 
     func injectorSessionDidReceiveResponse(dataTask: URLSessionTask, response: URLResponse) {
+        guard Atlantis.isEnabled.value else { return }
         queue.async {[weak self] in
             guard let strongSelf = self else { return }
             let package = strongSelf.getPackage(dataTask)
@@ -169,6 +178,7 @@ extension Atlantis: InjectorDelegate {
     }
 
     func injectorSessionDidReceiveData(dataTask: URLSessionDataTask, data: Data) {
+        guard Atlantis.isEnabled.value else { return }
         queue.async {[weak self] in
             guard let strongSelf = self else { return }
             let package = strongSelf.getPackage(dataTask)
@@ -177,6 +187,7 @@ extension Atlantis: InjectorDelegate {
     }
 
     func injectorSessionDidComplete(task: URLSessionTask, error: Error?) {
+        guard Atlantis.isEnabled.value else { return }
         queue.async {[weak self] in
             guard let strongSelf = self else { return }
             guard let package = strongSelf.getPackage(task) else {
@@ -194,6 +205,7 @@ extension Atlantis: InjectorDelegate {
 
             // Then remove it from our cache
             strongSelf.packages.removeValue(forKey: package.id)
+            print("Remove Pakcage couont \(strongSelf.packages.count)")
         }
     }
 }

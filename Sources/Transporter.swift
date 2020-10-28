@@ -37,7 +37,7 @@ final class NetServiceTransport: NSObject {
     private var pendingPackages: [Serializable] = []
     private var config: Configuration?
 
-    // MARK: - Public
+    // MARK: - Init
 
     override init() {
         self.serviceBrowser = NetServiceBrowser()
@@ -81,7 +81,7 @@ extension NetServiceTransport: Transporter {
                 // It means the connection is not ready
                 // We add the package to the pending list
                 strongSelf.pendingPackages.append(package)
-                print("Add package to the pending list, count=\(strongSelf.pendingPackages.count)...")
+                print("[Atlantis] Add package to the pending list, count=\(strongSelf.pendingPackages.count)...")
                 return
             }
 
@@ -131,8 +131,14 @@ extension NetServiceTransport {
             task.closeWrite()
         }
 
-        // Create a newone
-        task = session.streamTask(with: service)
+        guard let hostName = service.hostName else {
+            print("[Atlantis][ERROR] Could not receive the host name from NetService!")
+            return
+        }
+
+        // use HostName and Port instead of streamTask(with service: NetService)
+        // It's crashed on iOS 14 for some reasons
+        task = session.streamTask(withHostName: hostName, port: service.port)
         task?.resume()
 
         // All pending
