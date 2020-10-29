@@ -16,6 +16,8 @@ A little and powerful iOS framework for intercepting HTTP/HTTPS Traffic from you
 - [x] Categorize the log by project and devices.
 - [ ] Ready for Production
 
+![Atlantis: Debug iOS with ease](https://raw.githubusercontent.com/ProxymanApp/atlantis/main/images/proxyman_atlantis.png)
+
 ## How to use
 1. Install Atlantis by CocoaPod or SPM, then starting one single line of code:
 ```swift
