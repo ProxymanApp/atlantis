@@ -10,6 +10,7 @@ A little and powerful iOS framework for intercepting HTTP/HTTPS Traffic from you
 
 ## Features
 - [x] Automatically intercept all HTTP/HTTPS Traffic with ease
+- [x] Support iOS Physical Devices and Simulators
 - [x] No need to config HTTP Proxy, Install or Trust any Certificate
 - [x] Review traffic log from [Proxyman](https://proxyman.io)
 - [x] Categorize the log by project and devices.
@@ -31,6 +32,19 @@ Atlantis.start()
 - iOS 12.0+ / macOS 10.12+
 - Xcode 11+
 - Swift 5.0+
+
+### Required Configuration for iOS 14+
+From iOS 14, it's required to add `NSLocalNetworkUsageDescription` and `NSBonjourServices` to your info.plist
+- Open Info.plist file and adding the following keys and values:
+
+```xml
+<key>NSLocalNetworkUsageDescription</key>
+<string>Atlantis would use Bonjour Service to discover Proxyman app from your local network.</string>
+<key>NSBonjourServices</key>
+<array>
+    <string>_Proxyman._tcp</string>
+</array>
+```
 
 ## Install
 ### CocoaPod
