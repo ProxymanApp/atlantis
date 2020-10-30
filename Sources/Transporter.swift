@@ -81,7 +81,7 @@ extension NetServiceTransport: Transporter {
                 // It means the connection is not ready
                 // We add the package to the pending list
                 strongSelf.pendingPackages.append(package)
-                print("[Atlantis] Add package to the pending list, count=\(strongSelf.pendingPackages.count)...")
+                print("[Atlantis] Append to the pending list, count = \(strongSelf.pendingPackages.count)...")
                 return
             }
 
@@ -103,9 +103,18 @@ extension NetServiceTransport: Transporter {
         buffer.append([UInt8](data), length: data.count)
 
         // Write data
-        task?.write(buffer as Data, timeout: 5) { (error) in
-            if let error = error {
-                print(error)
+        task?.write(buffer as Data, timeout: 5) {[weak self] (error) in
+            guard let strongSelf = self else { return }
+            if let nsError = error as NSError? {
+                // The socket is disconnected, we should add to the pending list
+                if nsError.code == 57 {
+                    // Should be called in the serial queue because it's called from URLSession's queue
+                    strongSelf.queue.async {
+                        strongSelf.pendingPackages.append(package)
+                    }
+                } else {
+                    print("[Atlantis][ERROR] Write socket Error: \(String(describing: error))")
+                }
             }
         }
     }
