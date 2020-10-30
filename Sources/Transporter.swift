@@ -57,7 +57,10 @@ extension NetServiceTransport: Transporter {
 
     func start(_ config: Configuration) {
         self.config = config
+        start()
+    }
 
+    private func start() {
         // Reset all current connections if need
         stop()
 
@@ -205,7 +208,8 @@ extension NetServiceTransport: NetServiceBrowserDelegate {
     }
 
     func netServiceBrowser(_ browser: NetServiceBrowser, didNotSearch errorDict: [String : NSNumber]) {
-        print("[Atlantis][ERROR] didNotSearch \(errorDict)")
+        // Retry again after going from the foregronud
+        start()
     }
 
     func netServiceBrowserWillSearch(_ browser: NetServiceBrowser) {
