@@ -105,7 +105,7 @@ extension NetServiceTransport: Transporter {
         buffer.append([UInt8](data), length: data.count)
 
         // Write data
-        task?.write(buffer as Data, timeout: 5) {[weak self] (error) in
+        task?.write(buffer as Data, timeout: 60) {[weak self] (error) in
             guard let strongSelf = self else { return }
             if let nsError = error as NSError? {
                 // The socket is disconnected, we should add to the pending list
