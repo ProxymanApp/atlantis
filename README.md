@@ -27,7 +27,7 @@ import Atlantis
 Atlantis.start()
 ```
 
-2. Make sure your iOS devices/simulator and macOS Proxyman are in the same Wifi Network
+2. Make sure your iOS devices/simulator and macOS Proxyman are in the same Wifi Network or connect your iOS Devices with your Mac by USB cables 
 3. Open macOS Proxyman (build 2.11.0+) and inspect your traffic
 
 ## Requirement
