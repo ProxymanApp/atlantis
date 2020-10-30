@@ -53,3 +53,19 @@ final class Atomic<A> {
         }
     }
 }
+
+extension URLSessionTask {
+
+    static var AtlantisIDKey: UInt8 = 0
+
+    func setFromAtlantisFramework() {
+        objc_setAssociatedObject(self, &URLSessionStreamTask.AtlantisIDKey, "_atlantis_URLSessionStreamTask", .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+    }
+
+    func isFromAtlantisFramework() -> Bool {
+        if let _ = objc_getAssociatedObject(self, &URLSessionStreamTask.AtlantisIDKey) as? String {
+            return true
+        }
+        return false
+    }
+}

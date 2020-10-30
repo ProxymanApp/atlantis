@@ -27,6 +27,13 @@ extension NetworkInjector {
             let original: NewClosureType = unsafeBitCast(originalImp, to: NewClosureType.self)
             original(me, selector)
 
+
+            // If it's from Atlantis, skip it
+            if let task = me as? URLSessionTask,
+               task.isFromAtlantisFramework() {
+                return
+            }
+
             // Safe-check
             if let task = me as? URLSessionTask {
                 self?.delegate?.injectorSessionDidCallResume(task: task)

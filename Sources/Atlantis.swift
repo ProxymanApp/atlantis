@@ -164,7 +164,6 @@ extension Atlantis: InjectorDelegate {
 
             // Cache
             _ = strongSelf.getPackage(task)
-            print("Did Add new package, count = \(strongSelf.packages.count)")
         }
     }
 

@@ -80,8 +80,7 @@ extension NetServiceTransport: Transporter {
             guard let task = strongSelf.task, task.state == .running else {
                 // It means the connection is not ready
                 // We add the package to the pending list
-                strongSelf.pendingPackages.append(package)
-                print("[Atlantis] Append to the pending list, count = \(strongSelf.pendingPackages.count)...")
+                strongSelf.appendToPendingList(package)
                 return
             }
 
@@ -110,13 +109,18 @@ extension NetServiceTransport: Transporter {
                 if nsError.code == 57 {
                     // Should be called in the serial queue because it's called from URLSession's queue
                     strongSelf.queue.async {
-                        strongSelf.pendingPackages.append(package)
+                        strongSelf.appendToPendingList(package)
                     }
                 } else {
                     print("[Atlantis][ERROR] Write socket Error: \(String(describing: error))")
                 }
             }
         }
+    }
+
+    private func appendToPendingList(_ package: Serializable) {
+        pendingPackages.append(package)
+        print("[Atlantis] Append to the pending list, count = \(pendingPackages.count)...")
     }
 
     private func flushAllPendingIfNeed() {
@@ -148,6 +152,13 @@ extension NetServiceTransport {
         // use HostName and Port instead of streamTask(with service: NetService)
         // It's crashed on iOS 14 for some reasons
         task = session.streamTask(withHostName: hostName, port: service.port)
+
+        // As we're going to call the -resume method, it will be swizzled by Atlantis
+        // We should not do it
+        // Set a runtime id that we can receive later
+        task?.setFromAtlantisFramework()
+
+        // Start the socket
         task?.resume()
 
         // All pending
