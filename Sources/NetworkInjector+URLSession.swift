@@ -18,22 +18,25 @@ extension NetworkInjector {
             return
         }
 
-        // Get original method to call later
-        let originalIMP = method_getImplementation(method)
+        // 
+        typealias NewClosureType =  @convention(c) (AnyObject, Selector) -> Void
+        let originalImp: IMP = method_getImplementation(method)
+        let block: @convention(block) (AnyObject) -> Void = {[weak self](me) in
 
-        // swizzle the original with the new one and start intercepting the content
-        let swizzleIMP = imp_implementationWithBlock({[weak self](slf: URLSessionTask) -> Void in
+            // call the original
+            let original: NewClosureType = unsafeBitCast(originalImp, to: NewClosureType.self)
+            original(me, selector)
 
-            // Notify
-            self?.delegate?.injectorSessionDidCallResume(task: slf)
+            // Safe-check
+            if let task = me as? URLSessionTask {
+                self?.delegate?.injectorSessionDidCallResume(task: task)
+            } else {
+                assertionFailure("Could not get URLSessionDataTask from _swizzleURLSessionDataTaskDidReceiveData. It might causes due to the latest iOS changes. Please contact the author!")
+            }
+        }
 
-            // Make sure the original method is called
-            let oldIMP = unsafeBitCast(originalIMP, to: (@convention(c) (URLSessionTask, Selector) -> Void).self)
-            oldIMP(slf, selector)
-            } as @convention(block) (URLSessionTask) -> Void)
-
-        //
-        method_setImplementation(method, swizzleIMP)
+        // Start method swizzling
+        method_setImplementation(method, imp_implementationWithBlock(block))
     }
 
     /// urlSession(_:dataTask:didReceive:completionHandler:)
@@ -54,26 +57,26 @@ extension NetworkInjector {
             return
         }
 
-        // Get original method to call later
-        let originalIMP = method_getImplementation(method)
+        // For safety, we should cast to AnyObject
+        // To prevent app crashes in the future if the object type is changed
+        typealias NewClosureType =  @convention(c) (AnyObject, Selector, AnyObject, Bool, Bool) -> Void
+        let originalImp: IMP = method_getImplementation(method)
+        let block: @convention(block) (AnyObject, AnyObject, Bool, Bool) -> Void = {[weak self](me, response, sniff, rewrite) in
 
-        // swizzle the original with the new one and start intercepting the content
-        let swizzleIMP = imp_implementationWithBlock({[weak self](slf: AnyObject, response: URLResponse, sniff: Bool, rewirte: Bool) -> Void in
+            // call the original
+            let original: NewClosureType = unsafeBitCast(originalImp, to: NewClosureType.self)
+            original(me, selector, response, sniff, rewrite)
 
             // Safe-check
-            if let task = slf.value(forKey: "task") as? URLSessionDataTask {
+            if let task = me.value(forKey: "task") as? URLSessionDataTask,
+               let response = response as? URLResponse {
                 self?.delegate?.injectorSessionDidReceiveResponse(dataTask: task, response: response)
             } else {
-                assertionFailure("Could not get URLSessionDataTask from _swizzleURLSessionDataTaskDidReceiveResponse. It might causes due to the latest iOS changes. Please contact the author!")
+                assertionFailure("Could not get URLSessionDataTask from _swizzleURLSessionDataTaskDidReceiveData. It might causes due to the latest iOS changes. Please contact the author!")
             }
+        }
 
-            // Make sure the original method is called
-            let oldIMP = unsafeBitCast(originalIMP, to: (@convention(c) (AnyObject, Selector, URLResponse, Bool, Bool) -> Void).self)
-            oldIMP(slf, selector, response, sniff, rewirte)
-            } as @convention(block) (AnyObject, URLResponse, Bool, Bool) -> Void)
-
-        //
-        method_setImplementation(method, swizzleIMP)
+        method_setImplementation(method, imp_implementationWithBlock(block))
     }
 
     private func _swizzleURLSessionDataTaskDidReceiveResponseForBelowIOS13(baseClass: AnyClass) {
@@ -84,31 +87,30 @@ extension NetworkInjector {
             return
         }
 
-        // Get original method to call later
-        let originalIMP = method_getImplementation(method)
+        typealias NewClosureType =  @convention(c) (AnyObject, Selector, AnyObject, Bool) -> Void
+        let originalImp: IMP = method_getImplementation(method)
+        let block: @convention(block) (AnyObject, AnyObject, Bool) -> Void = {[weak self](me, response, sniff) in
 
-        // swizzle the original with the new one and start intercepting the content
-        let swizzleIMP = imp_implementationWithBlock({[weak self](slf: AnyObject, response: URLResponse, sniff: Bool) -> Void in
+            // call the original
+            let original: NewClosureType = unsafeBitCast(originalImp, to: NewClosureType.self)
+            original(me, selector, response, sniff)
 
             // Safe-check
-            if let task = slf.value(forKey: "task") as? URLSessionDataTask {
+            if let task = me.value(forKey: "task") as? URLSessionDataTask,
+               let response = response as? URLResponse {
                 self?.delegate?.injectorSessionDidReceiveResponse(dataTask: task, response: response)
             } else {
-                assertionFailure("Could not get URLSessionDataTask from _swizzleURLSessionDataTaskDidReceiveResponse. It might causes due to the latest iOS changes. Please contact the author!")
+                assertionFailure("Could not get URLSessionDataTask from _swizzleURLSessionDataTaskDidReceiveData. It might causes due to the latest iOS changes. Please contact the author!")
             }
+        }
 
-            // Make sure the original method is called
-            let oldIMP = unsafeBitCast(originalIMP, to: (@convention(c) (AnyObject, Selector, URLResponse, Bool) -> Void).self)
-            oldIMP(slf, selector, response, sniff)
-            } as @convention(block) (AnyObject, URLResponse, Bool) -> Void)
-
-        //
-        method_setImplementation(method, swizzleIMP)
+        method_setImplementation(method, imp_implementationWithBlock(block))
     }
 
     /// urlSession(_:dataTask:didReceive:)
     /// https://developer.apple.com/documentation/foundation/urlsessiondatadelegate/1411528-urlsession
     func _swizzleURLSessionDataTaskDidReceiveData(baseClass: AnyClass) {
+
         // Prepare
         let selector = NSSelectorFromString("_didReceiveData:")
         guard let method = class_getInstanceMethod(baseClass, selector),
@@ -116,26 +118,24 @@ extension NetworkInjector {
             return
         }
 
-        // Get original method to call later
-        let originalIMP = method_getImplementation(method)
+        typealias NewClosureType =  @convention(c) (AnyObject, Selector, AnyObject) -> Void
+        let originalImp: IMP = method_getImplementation(method)
+        let block: @convention(block) (AnyObject, AnyObject) -> Void = {[weak self](me, data) in
 
-        // swizzle the original with the new one and start intercepting the content
-        let swizzleIMP = imp_implementationWithBlock({[weak self](slf: AnyObject, data: Data) -> Void in
+            // call the original
+            let original: NewClosureType = unsafeBitCast(originalImp, to: NewClosureType.self)
+            original(me, selector, data)
 
             // Safe-check
-            if let task = slf.value(forKey: "task") as? URLSessionDataTask {
+            if let task = me.value(forKey: "task") as? URLSessionDataTask,
+               let data = data as? Data {
                 self?.delegate?.injectorSessionDidReceiveData(dataTask: task, data: data)
             } else {
                 assertionFailure("Could not get URLSessionDataTask from _swizzleURLSessionDataTaskDidReceiveData. It might causes due to the latest iOS changes. Please contact the author!")
             }
+        }
 
-            // Make sure the original method is called
-            let oldIMP = unsafeBitCast(originalIMP, to: (@convention(c) (AnyObject, Selector, Data) -> Void).self)
-            oldIMP(slf, selector, data)
-            } as @convention(block) (AnyObject, Data) -> Void)
-
-        //
-        method_setImplementation(method, swizzleIMP)
+        method_setImplementation(method, imp_implementationWithBlock(block))
     }
 
     /// urlSession(_:task:didCompleteWithError:)
@@ -148,25 +148,23 @@ extension NetworkInjector {
             return
         }
 
-        // Get original method to call later
-        let originalIMP = method_getImplementation(method)
+        typealias NewClosureType =  @convention(c) (AnyObject, Selector, AnyObject?) -> Void
+        let originalImp: IMP = method_getImplementation(method)
+        let block: @convention(block) (AnyObject, AnyObject?) -> Void = {[weak self](me, error) in
 
-        // swizzle the original with the new one and start intercepting the content
-        let swizzleIMP = imp_implementationWithBlock({[weak self](slf: AnyObject, error: Error?) -> Void in
+            // call the original
+            let original: NewClosureType = unsafeBitCast(originalImp, to: NewClosureType.self)
+            original(me, selector, error)
 
             // Safe-check
-            if let task = slf.value(forKey: "task") as? URLSessionTask {
+            if let task = me.value(forKey: "task") as? URLSessionTask {
+                let error = error as? Error
                 self?.delegate?.injectorSessionDidComplete(task: task, error: error)
             } else {
                 assertionFailure("Could not get URLSessionTask from _swizzleURLSessionTaskDidCompleteWithError. It might causes due to the latest iOS changes. Please contact the author!")
             }
+        }
 
-            // Make sure the original method is called
-            let oldIMP = unsafeBitCast(originalIMP, to: (@convention(c) (AnyObject, Selector, Error?) -> Void).self)
-            oldIMP(slf, selector, error)
-            } as @convention(block) (AnyObject, Error?) -> Void)
-
-        //
-        method_setImplementation(method, swizzleIMP)
+        method_setImplementation(method, imp_implementationWithBlock(block))
     }
 }
