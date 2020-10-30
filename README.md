@@ -19,7 +19,7 @@ A little and powerful iOS framework for intercepting HTTP/HTTPS Traffic from you
 ![Atlantis: Debug iOS with ease](https://raw.githubusercontent.com/ProxymanApp/atlantis/main/images/proxyman_atlantis.png)
 
 ## How to use
-1. Install Atlantis by CocoaPod or SPM, then starting one single line of code:
+1. Install Atlantis by CocoaPod or SPM, then starting Atlantis
 ```swift
 import Atlantis
 
@@ -28,7 +28,8 @@ Atlantis.start()
 ```
 
 2. Make sure your iOS devices/simulator and macOS Proxyman are in the same Wifi Network or connect your iOS Devices with your Mac by USB cables 
-3. Open macOS Proxyman (build 2.11.0+) and inspect your traffic
+3. Open macOS [Proxyman](https://proxyman.io) (or [download the lasted here](https://proxyman.io/release/osx/Proxyman_latest.dmg))
+4. Open your iOS app and Inspect traffic logs from Proxyman app
 
 ## Requirement
 - macOS Proxyman app 2.11.0+ (Release soon)
