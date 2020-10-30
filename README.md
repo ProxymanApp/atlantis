@@ -9,9 +9,9 @@ A little and powerful iOS framework for intercepting HTTP/HTTPS Traffic from you
 [![License](https://img.shields.io/cocoapods/l/atlantis-proxyman.svg?style=flat)](https://cocoapods.org/pods/atlantis-proxyman)
 
 ## Features
-- [x] Automatically intercept all HTTP/HTTPS Traffic with ease
+- [x] **Automatically** intercept all HTTP/HTTPS Traffic with ease
 - [x] Support iOS Physical Devices and Simulators
-- [x] No need to config HTTP Proxy, Install or Trust any Certificate
+- [x] **No need to config HTTP Proxy, Install or Trust any Certificate**
 - [x] Review traffic log from [Proxyman](https://proxyman.io)
 - [x] Categorize the log by project and devices.
 - [ ] Ready for Production
