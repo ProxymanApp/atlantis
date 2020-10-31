@@ -8,13 +8,13 @@
 
 import Foundation
 
-public struct Configuration {
+struct Configuration {
 
-    public let projectName: String
-    public let deviceName: String
+    let projectName: String
+    let deviceName: String
     let id: String
 
-    public static func `default`() -> Configuration {
+    static func `default`() -> Configuration {
         let project = Project.current
         let deviceName = Device.current
         return Configuration(projectName: project.name,

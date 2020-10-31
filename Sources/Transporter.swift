@@ -93,7 +93,11 @@ extension NetServiceTransport: Transporter {
     }
 
     private func stream(package: Serializable) {
-        guard let data = package.toData() else { return }
+        guard let rawData = package.toData() else { return }
+
+        // Compress data by gzip
+        // Fallback to raw data if it's unsuccess
+        let data = rawData.gzip() ?? rawData
 
         // Compose a message
         // [1]: the length of the second message. We reserver 8 bytes to store this data
