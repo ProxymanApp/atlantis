@@ -132,22 +132,35 @@ extension Atlantis {
         }
     }
 
-    private func getPackage(_ task: URLSessionTask) -> TrafficPackage? {
+    private func getPackage(_ taskOrConnection: AnyObject) -> TrafficPackage? {
         // This method should be called from our queue
 
         // Receive package from the cache
-        let id = PackageIdentifier.getID(task: task)
+        let id = PackageIdentifier.getID(taskOrConnection: taskOrConnection)
         if let package = packages[id] {
             return package
         }
 
         // If not found, just generate and cache
-        guard let package = TrafficPackage.buildRequest(sessionTask: task, id: id) else {
-            assertionFailure("Should build package from Request")
-            return nil
+        switch taskOrConnection {
+        case let task as URLSessionTask:
+            guard let package = TrafficPackage.buildRequest(sessionTask: task, id: id) else {
+                assertionFailure("Should build package from URLSessionTask")
+                return nil
+            }
+            packages[id] = package
+            return package
+        case let connection as NSURLConnection:
+            guard let package = TrafficPackage.buildRequest(connection: connection, id: id) else {
+                assertionFailure("Should build package from NSURLConnection")
+                return nil
+            }
+            packages[id] = package
+            return package
+        default:
+            assertionFailure("Do not support new Type \(String(describing: taskOrConnection.className))")
         }
-        packages[id] = package
-        return package
+        return nil
     }
 }
 
@@ -186,11 +199,47 @@ extension Atlantis: InjectorDelegate {
     }
 
     func injectorSessionDidComplete(task: URLSessionTask, error: Error?) {
+        handleDidFinish(task, error: error)
+    }
+
+    func injectorConnectionDidReceive(connection: NSURLConnection, response: URLResponse) {
         guard Atlantis.isEnabled.value else { return }
         queue.async {[weak self] in
             guard let strongSelf = self else { return }
-            guard let package = strongSelf.getPackage(task) else {
-                assertionFailure("Internal error. We should have Package")
+
+            // Cache
+            let package = strongSelf.getPackage(connection)
+            package?.updateResponse(response)
+        }
+    }
+
+    func injectorConnectionDidReceive(connection: NSURLConnection, data: Data) {
+        guard Atlantis.isEnabled.value else { return }
+        queue.async {[weak self] in
+            guard let strongSelf = self else { return }
+            let package = strongSelf.getPackage(connection)
+            package?.append(data)
+        }
+    }
+
+    func injectorConnectionDidFailWithError(connection: NSURLConnection, error: Error) {
+        handleDidFinish(connection, error: error)
+    }
+
+    func injectorConnectionDidFinishLoading(connection: NSURLConnection) {
+        handleDidFinish(connection, error: nil)
+    }
+}
+
+// MARK: - Private
+
+extension Atlantis {
+
+    private func handleDidFinish(_ taskOrConnection: AnyObject, error: Error?) {
+        guard Atlantis.isEnabled.value else { return }
+        queue.async {[weak self] in
+            guard let strongSelf = self else { return }
+            guard let package = strongSelf.getPackage(taskOrConnection) else {
                 return
             }
 
@@ -206,23 +255,9 @@ extension Atlantis: InjectorDelegate {
             strongSelf.packages.removeValue(forKey: package.id)
         }
     }
-
-    func injectorConnectionDidReceive(connection: NSURLConnection, response: URLResponse) {
-        
-    }
-
-    func injectorConnectionDidReceive(connection: NSURLConnection, data: Data) {
-
-    }
-
-    func injectorConnectionDidFailWithError(connection: NSURLConnection, error: Error) {
-        
-    }
-
-    func injectorConnectionDidFinishLoading(connection: NSURLConnection) {
-        
-    }
 }
+
+// MARK: - Helper
 
 extension Bundle {
 

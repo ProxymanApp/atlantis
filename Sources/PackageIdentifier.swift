@@ -12,13 +12,13 @@ struct PackageIdentifier {
 
     static var PackageIDKey: UInt8 = 0
 
-    static func getID(task: URLSessionTask) -> String {
-        if let requestID = objc_getAssociatedObject(task, &PackageIDKey) as? String {
+    static func getID(taskOrConnection: AnyObject) -> String {
+        if let requestID = objc_getAssociatedObject(taskOrConnection, &PackageIDKey) as? String {
             return requestID
         }
 
         let id = UUID().uuidString
-        objc_setAssociatedObject(task, &PackageIDKey, id, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+        objc_setAssociatedObject(taskOrConnection, &PackageIDKey, id, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
         return id
     }
 }
