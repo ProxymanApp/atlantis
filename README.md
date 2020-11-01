@@ -70,6 +70,8 @@ github "ProxymanApp/atlantis"
 3. Drag Atlantis.framework from your project
 3. Create a Carthage Script as the [Carthage guideline](https://github.com/Carthage/Carthage#quick-start)  
 
+For Carthage with Xcode 12, please check out the workaround: https://github.com/Carthage/Carthage/blob/master/Documentation/Xcode12Workaround.md
+
 ## FAQ
 #### 1. How does Atlantis work?
 
