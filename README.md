@@ -15,7 +15,7 @@ A little and powerful iOS framework for intercepting HTTP/HTTPS Traffic from you
 - [x] Support iOS Physical Devices and Simulators
 - [x] Review traffic log from [Proxyman](https://proxyman.io)
 - [x] Categorize the log by project and devices.
-- [ ] Ready for Production
+- [x] Ready for Production
 
 ![Atlantis: Debug iOS with ease](https://raw.githubusercontent.com/ProxymanApp/atlantis/main/images/proxyman_atlantis_3.png)
 
@@ -34,7 +34,7 @@ Atlantis.start()
 5. Enjoy debugging ❤️
 
 ## Requirement
-- macOS Proxyman app 2.11.0+ (Release soon)
+- macOS Proxyman app 2.11.0+
 - iOS 12.0+ / macOS 10.12+
 - Xcode 11+
 - Swift 5.0+
