@@ -210,6 +210,18 @@ extension Atlantis: InjectorDelegate {
     func injectorConnectionDidReceive(connection: NSURLConnection, response: URLResponse) {
         
     }
+
+    func injectorConnectionDidReceive(connection: NSURLConnection, data: Data) {
+
+    }
+
+    func injectorConnectionDidFailWithError(connection: NSURLConnection, error: Error) {
+        
+    }
+
+    func injectorConnectionDidFinishLoading(connection: NSURLConnection) {
+        
+    }
 }
 
 extension Bundle {
