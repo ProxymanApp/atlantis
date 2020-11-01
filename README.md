@@ -61,6 +61,15 @@ pod 'atlantis-proxyman'
 ### Swift Packages Manager
 - Add `https://github.com/ProxymanApp/atlantis` to your project by: Open Xcode -> File Menu -> Swift Packages -> Add Package Dependency...
 
+### Carthage
+1. Add to your Cartfile
+```
+github "ProxymanApp/atlantis"
+```
+2. Run `carthage update`
+3. Drag Atlantis.framework from your project
+3. Create a Carthage Script as the [Carthage guideline](https://github.com/Carthage/Carthage#quick-start)  
+
 ## FAQ
 #### 1. How does Atlantis work?
 
