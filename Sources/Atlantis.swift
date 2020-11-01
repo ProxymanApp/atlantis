@@ -206,6 +206,10 @@ extension Atlantis: InjectorDelegate {
             strongSelf.packages.removeValue(forKey: package.id)
         }
     }
+
+    func injectorConnectionDidReceive(connection: NSURLConnection, response: URLResponse) {
+        
+    }
 }
 
 extension Bundle {

@@ -25,22 +25,23 @@ extension NetworkInjector {
             return
         }
 
-        // Get original method to call later
-        let originalIMP = method_getImplementation(method)
+        typealias NewClosureType =  @convention(c) (AnyObject, Selector, AnyObject, AnyObject) -> Void
+        let originalImp: IMP = method_getImplementation(method)
+        let block: @convention(block) (AnyObject, AnyObject, AnyObject) -> Void = {[weak self] (me, connection, response) in
 
-        // swizzle the original with the new one and start intercepting the content
-        let swizzleIMP = imp_implementationWithBlock({(slf: NSURLConnectionDataDelegate, connection: NSURLConnection, response: URLResponse) -> Void in
+            // call the original
+            let original: NewClosureType = unsafeBitCast(originalImp, to: NewClosureType.self)
+            original(me, selector, connection, response)
 
-            // Notify
-            print("------")
-//            self?.delegate?.injectorSessionDidReceiveResponse(dataTask: dataTask, response: response)
+            // Safe-check
+            if let connection = connection as? NSURLConnection, let response = response as? URLResponse {
+                self?.delegate?.injectorConnectionDidReceive(connection: connection, response: response)
+            } else {
+                assertionFailure("Could not get data from _swizzleConnectionDidReceiveResponse. It might causes due to the latest iOS changes. Please contact the author!")
+            }
+        }
 
-            // Make sure the original method is called
-            let oldIMP = unsafeBitCast(originalIMP, to: (@convention(c) (NSURLConnectionDataDelegate, Selector, NSURLConnection, URLResponse) -> Void).self)
-            oldIMP(slf, selector, connection, response)
-            } as @convention(block) (NSURLConnectionDataDelegate, NSURLConnection, URLResponse) -> Void)
-
-        //
-        method_setImplementation(method, swizzleIMP)
+        // Start method swizzling
+        method_setImplementation(method, imp_implementationWithBlock(block))
     }
 }

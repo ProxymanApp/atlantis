@@ -38,7 +38,7 @@ extension NetworkInjector {
             if let task = me as? URLSessionTask {
                 self?.delegate?.injectorSessionDidCallResume(task: task)
             } else {
-                assertionFailure("Could not get URLSessionDataTask from _swizzleURLSessionDataTaskDidReceiveData. It might causes due to the latest iOS changes. Please contact the author!")
+                assertionFailure("Could not get data from _swizzleURLSessionResumeSelector. It might causes due to the latest iOS changes. Please contact the author!")
             }
         }
 
@@ -79,7 +79,7 @@ extension NetworkInjector {
                let response = response as? URLResponse {
                 self?.delegate?.injectorSessionDidReceiveResponse(dataTask: task, response: response)
             } else {
-                assertionFailure("Could not get URLSessionDataTask from _swizzleURLSessionDataTaskDidReceiveData. It might causes due to the latest iOS changes. Please contact the author!")
+                assertionFailure("Could not get data from _swizzleURLSessionDataTaskDidReceiveResponseForIOS13AndLater. It might causes due to the latest iOS changes. Please contact the author!")
             }
         }
 
@@ -107,7 +107,7 @@ extension NetworkInjector {
                let response = response as? URLResponse {
                 self?.delegate?.injectorSessionDidReceiveResponse(dataTask: task, response: response)
             } else {
-                assertionFailure("Could not get URLSessionDataTask from _swizzleURLSessionDataTaskDidReceiveData. It might causes due to the latest iOS changes. Please contact the author!")
+                assertionFailure("Could not get data from _swizzleURLSessionDataTaskDidReceiveResponseForBelowIOS13. It might causes due to the latest iOS changes. Please contact the author!")
             }
         }
 
@@ -138,7 +138,7 @@ extension NetworkInjector {
                let data = data as? Data {
                 self?.delegate?.injectorSessionDidReceiveData(dataTask: task, data: data)
             } else {
-                assertionFailure("Could not get URLSessionDataTask from _swizzleURLSessionDataTaskDidReceiveData. It might causes due to the latest iOS changes. Please contact the author!")
+                assertionFailure("Could not get data from _swizzleURLSessionDataTaskDidReceiveData. It might causes due to the latest iOS changes. Please contact the author!")
             }
         }
 
@@ -168,7 +168,7 @@ extension NetworkInjector {
                 let error = error as? Error
                 self?.delegate?.injectorSessionDidComplete(task: task, error: error)
             } else {
-                assertionFailure("Could not get URLSessionTask from _swizzleURLSessionTaskDidCompleteWithError. It might causes due to the latest iOS changes. Please contact the author!")
+                assertionFailure("Could not get data from _swizzleURLSessionTaskDidCompleteWithError. It might causes due to the latest iOS changes. Please contact the author!")
             }
         }
 
