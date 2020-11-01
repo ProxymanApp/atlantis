@@ -52,7 +52,7 @@ final class TrafficPackage: Codable, CustomDebugStringConvertible, Serializable 
     private let startAt: TimeInterval
     private var endAt: TimeInterval?
 
-    private init?(id: String, request: Request, sessionTask: URLSessionTask) {
+    private init?(id: String, request: Request) {
         self.id = id
         self.request = request
         self.response = nil
@@ -64,7 +64,12 @@ final class TrafficPackage: Codable, CustomDebugStringConvertible, Serializable 
     static func buildRequest(sessionTask: URLSessionTask, id: String) -> TrafficPackage? {
         guard let currentRequest = sessionTask.currentRequest,
             let request = Request(currentRequest) else { return nil }
-        return TrafficPackage(id: id, request: request, sessionTask: sessionTask)
+        return TrafficPackage(id: id, request: request)
+    }
+
+    static func buildRequest(connection: NSURLConnection, id: String) -> TrafficPackage? {
+        guard let request = Request(connection.currentRequest) else { return nil }
+        return TrafficPackage(id: id, request: request)
     }
 
     func updateResponse(_ response: URLResponse) {

@@ -25,22 +25,112 @@ extension NetworkInjector {
             return
         }
 
-        // Get original method to call later
-        let originalIMP = method_getImplementation(method)
+        typealias NewClosureType =  @convention(c) (AnyObject, Selector, AnyObject, AnyObject) -> Void
+        let originalImp: IMP = method_getImplementation(method)
+        let block: @convention(block) (AnyObject, AnyObject, AnyObject) -> Void = {[weak self] (me, connection, response) in
 
-        // swizzle the original with the new one and start intercepting the content
-        let swizzleIMP = imp_implementationWithBlock({(slf: NSURLConnectionDataDelegate, connection: NSURLConnection, response: URLResponse) -> Void in
+            // call the original
+            let original: NewClosureType = unsafeBitCast(originalImp, to: NewClosureType.self)
+            original(me, selector, connection, response)
 
-            // Notify
-            print("------")
-//            self?.delegate?.injectorSessionDidReceiveResponse(dataTask: dataTask, response: response)
+            // Safe-check
+            if let connection = connection as? NSURLConnection, let response = response as? URLResponse {
+                self?.delegate?.injectorConnectionDidReceive(connection: connection, response: response)
+            } else {
+                assertionFailure("Could not get data from _swizzleConnectionDidReceiveResponse. It might causes due to the latest iOS changes. Please contact the author!")
+            }
+        }
 
-            // Make sure the original method is called
-            let oldIMP = unsafeBitCast(originalIMP, to: (@convention(c) (NSURLConnectionDataDelegate, Selector, NSURLConnection, URLResponse) -> Void).self)
-            oldIMP(slf, selector, connection, response)
-            } as @convention(block) (NSURLConnectionDataDelegate, NSURLConnection, URLResponse) -> Void)
+        // Start method swizzling
+        method_setImplementation(method, imp_implementationWithBlock(block))
+    }
 
+    /// https://developer.apple.com/documentation/foundation/nsurlconnectiondatadelegate/1414090-connection
+    func _swizzleConnectionDidReceiveData(anyClass: AnyClass) {
         //
-        method_setImplementation(method, swizzleIMP)
+        // Have to explicitly tell the compiler which func
+        // because there are two different objc methods, but different argments
+        // It causes the bug: Ambiguous use of 'connection(_:didReceive:)'
+        //
+        let selector : Selector = #selector((NSURLConnectionDataDelegate.connection(_:didReceive:)!)
+            as (NSURLConnectionDataDelegate) -> (NSURLConnection, Data) -> Void)
+
+        guard let method = class_getInstanceMethod(anyClass, selector),
+            anyClass.instancesRespond(to: selector) else {
+            return
+        }
+
+        typealias NewClosureType =  @convention(c) (AnyObject, Selector, AnyObject, AnyObject) -> Void
+        let originalImp: IMP = method_getImplementation(method)
+        let block: @convention(block) (AnyObject, AnyObject, AnyObject) -> Void = {[weak self] (me, connection, data) in
+
+            // call the original
+            let original: NewClosureType = unsafeBitCast(originalImp, to: NewClosureType.self)
+            original(me, selector, connection, data)
+
+            // Safe-check
+            if let connection = connection as? NSURLConnection, let data = data as? Data {
+                self?.delegate?.injectorConnectionDidReceive(connection: connection, data: data)
+            } else {
+                assertionFailure("Could not get data from _swizzleConnectionDidReceiveResponse. It might causes due to the latest iOS changes. Please contact the author!")
+            }
+        }
+
+        // Start method swizzling
+        method_setImplementation(method, imp_implementationWithBlock(block))
+    }
+
+    func _swizzleConnectionDidFailWithError(anyClass: AnyClass) {
+        let selector = #selector(NSURLConnectionDelegate.connection(_:didFailWithError:))
+        guard let method = class_getInstanceMethod(anyClass, selector),
+            anyClass.instancesRespond(to: selector) else {
+            return
+        }
+
+        typealias NewClosureType =  @convention(c) (AnyObject, Selector, AnyObject, AnyObject) -> Void
+        let originalImp: IMP = method_getImplementation(method)
+        let block: @convention(block) (AnyObject, AnyObject, AnyObject) -> Void = {[weak self] (me, connection, error) in
+
+            // call the original
+            let original: NewClosureType = unsafeBitCast(originalImp, to: NewClosureType.self)
+            original(me, selector, connection, error)
+
+            // Safe-check
+            if let connection = connection as? NSURLConnection, let error = error as? Error {
+                self?.delegate?.injectorConnectionDidFailWithError(connection: connection, error: error)
+            } else {
+                assertionFailure("Could not get data from _swizzleConnectionDidFailWithError. It might causes due to the latest iOS changes. Please contact the author!")
+            }
+        }
+
+        // Start method swizzling
+        method_setImplementation(method, imp_implementationWithBlock(block))
+    }
+
+    func _swizzleConnectionDidFinishLoading(anyClass: AnyClass) {
+        let selector = #selector(NSURLConnectionDataDelegate.connectionDidFinishLoading(_:))
+        guard let method = class_getInstanceMethod(anyClass, selector),
+            anyClass.instancesRespond(to: selector) else {
+            return
+        }
+
+        typealias NewClosureType =  @convention(c) (AnyObject, Selector, AnyObject) -> Void
+        let originalImp: IMP = method_getImplementation(method)
+        let block: @convention(block) (AnyObject, AnyObject) -> Void = {[weak self] (me, connection) in
+
+            // call the original
+            let original: NewClosureType = unsafeBitCast(originalImp, to: NewClosureType.self)
+            original(me, selector, connection)
+
+            // Safe-check
+            if let connection = connection as? NSURLConnection {
+                self?.delegate?.injectorConnectionDidFinishLoading(connection: connection)
+            } else {
+                assertionFailure("Could not get data from _swizzleConnectionDidFailWithError. It might causes due to the latest iOS changes. Please contact the author!")
+            }
+        }
+
+        // Start method swizzling
+        method_setImplementation(method, imp_implementationWithBlock(block))
     }
 }
