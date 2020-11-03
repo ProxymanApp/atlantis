@@ -100,6 +100,13 @@ Atlantis and Proxyman app do not store any of your data on any server.
 
 They are required to categorize the traffic on the Proxyman app by project and device name. Therefore, it's easier to know where the request/response comes from.
 
+## Troubleshooting
+### 1. I could not see any request from Atlantis on Proxyman app?
+For some reasons, Bonjour service might not be able to find Proxyman app if you're in a company network. 
+
+Please try to plugin your iPhone to your Macbook and try again. Bonjour services can discovert by using UBS Cables.
+
+
 ## Credit
 - FLEX and maintainer team: https://github.com/FLEXTool/FLEX
 - @yagiz from Bagel project: https://github.com/yagiz/Bagel
