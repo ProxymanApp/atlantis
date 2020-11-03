@@ -102,10 +102,9 @@ They are required to categorize the traffic on the Proxyman app by project and d
 
 ## Troubleshooting
 ### 1. I could not see any request from Atlantis on Proxyman app?
-For some reasons, Bonjour service might not be able to find Proxyman app if you're in a company network. 
+For some reason, Bonjour service might not be able to find Proxyman app if you're in a company network. 
 
-Please try to plugin your iPhone to your Macbook and try again. Bonjour services can discovert by using UBS Cables.
-
+Please try to plugin your iOS Devices to your Macbook and try again. Bonjour services can discover by using a USB Cable.
 
 ## Credit
 - FLEX and maintainer team: https://github.com/FLEXTool/FLEX
