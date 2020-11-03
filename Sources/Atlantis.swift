@@ -58,8 +58,8 @@ public final class Atlantis: NSObject {
 
     /// Start Swizzle all network functions and monitoring the traffic
     /// It also starts looking Bonjour network from Proxyman app
-    public class func start() {
-        let configuration = Configuration.default()
+    public class func start(port: UInt16 = 10909) {
+        let configuration = Configuration.default(port: port)
 
         // don't start the service if it's unavailable
         guard Atlantis.isServiceAvailable else {

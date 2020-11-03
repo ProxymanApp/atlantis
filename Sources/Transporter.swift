@@ -58,6 +58,8 @@ extension NetServiceTransport: Transporter {
     func start(_ config: Configuration) {
         self.config = config
         start()
+        print("[Atlantis] Start looking Proxyman app at port \(config.port)")
+        print("[Atlantis] Please make sure you've started Atlantis with port, which is the same Proxyman Bonjour port (Certificate Menu -> Install for iOS -> By Atlantis)")
     }
 
     private func start() {
@@ -146,6 +148,14 @@ extension NetServiceTransport {
 
     private func connectToService(_ service: NetService) {
 
+        // Connect To Service might be called several times because Bonjour might discover multiple Proxyman apps
+        // It's essential to check if it's a Proxyman we're trying to connect
+        // If not, just skip it
+        if let config = config,
+           service.port != config.port {
+            return
+        }
+
         // Stop previous connection if need
         if let task = task {
             task.closeWrite()
@@ -167,6 +177,7 @@ extension NetServiceTransport {
 
         // Start the socket
         task?.resume()
+        print("[Atlantis] Connected to Proxyman app at port \(service.port)")
 
         // All pending
         queue.async {[weak self] in
