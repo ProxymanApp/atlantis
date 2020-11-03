@@ -36,6 +36,7 @@ final class NetServiceTransport: NSObject {
     private var task: URLSessionStreamTask?
     private var pendingPackages: [Serializable] = []
     private var config: Configuration?
+    private var moreComing: Bool = false
 
     // MARK: - Init
 
@@ -146,6 +147,25 @@ extension NetServiceTransport {
 
     private func connectToService(_ service: NetService) {
 
+        // If user want to connect to particular host name
+        // We shoul check
+        // by default, config.hostName is nil, it will connect to the first Proxyman
+        if let hostName = config?.hostName,
+           var serviceHostName = service.hostName {
+            if serviceHostName.hasSuffix(".") {
+                serviceHostName = String(serviceHostName.dropLast())
+            }
+
+            if hostName.lowercased() != serviceHostName.lowercased() {
+                // If there is no coming service, tell the user
+                if !moreComing {
+                    print("[Atlantis][ERROR] Could not connect to Proxyman with Host Name = \(hostName)")
+                    print("[Atlantis][INFO] Please find the correct Host Name in Proxyman app -> Certificate -> Install on iOS -> By Atlantis")
+                }
+                return
+            }
+        }
+
         // Stop previous connection if need
         if let task = task {
             task.closeWrite()
@@ -192,8 +212,10 @@ extension NetServiceTransport {
 extension NetServiceTransport: NetServiceBrowserDelegate {
 
     func netServiceBrowser(_ browser: NetServiceBrowser, didFind service: NetService, moreComing: Bool) {
+        print("")
         queue.async {[weak self] in
             guard let strongSelf = self else { return }
+            strongSelf.moreComing = moreComing
             strongSelf.services.append(service)
             service.delegate = strongSelf
             service.resolve(withTimeout: 30)
@@ -209,6 +231,10 @@ extension NetServiceTransport: NetServiceBrowserDelegate {
             // Best case, we should remove all
             strongSelf.services.removeAll()
         }
+    }
+
+    func netServiceBrowser(_ browser: NetServiceBrowser, didFindDomain domainString: String, moreComing: Bool) {
+        print(domainString)
     }
 
     func netServiceBrowser(_ browser: NetServiceBrowser, didNotSearch errorDict: [String : NSNumber]) {
