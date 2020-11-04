@@ -58,9 +58,9 @@ public final class Atlantis: NSObject {
 
     /// Start Swizzle all network functions and monitoring the traffic
     /// It also starts looking Bonjour network from Proxyman app.
-    /// If hostName is nil, it will looking for the first Proxyman app in the network. It's useful if we have only one machine.
+    /// If hostName is nil, Atlantis will find all Proxyman apps in the network. It's useful if we have only one machine for personal use.
     /// If hostName is not nil, Atlantis will try to connect to particular mac machine. It's useful if you have multiple Proxyman.
-    /// - Parameter hostName: Host name of Mac machine. You can find your current Host Name in Proxyman -> Certificate -> Install on iOS -> By Atlantis...
+    /// - Parameter hostName: Host name of Mac machine. You can find your current Host Name in Proxyman -> Certificate -> Install on iOS -> By Atlantis -> Show Start Atlantis
     public class func start(hostName: String? = nil) {
         let configuration = Configuration.default(hostName: hostName)
 

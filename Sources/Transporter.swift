@@ -36,7 +36,6 @@ final class NetServiceTransport: NSObject {
     private var task: URLSessionStreamTask?
     private var pendingPackages: [Serializable] = []
     private var config: Configuration?
-    private var moreComing: Bool = false
 
     // MARK: - Init
 
@@ -57,6 +56,12 @@ final class NetServiceTransport: NSObject {
 extension NetServiceTransport: Transporter {
 
     func start(_ config: Configuration) {
+        if let hostName = config.hostName {
+            print("[Atlantis] Try Connecting to Proxyman with HostName = \(hostName)")
+        } else {
+            print("[Atlantis] Looking for Proxman app in the network...")
+        }
+
         self.config = config
         start()
     }
@@ -128,7 +133,6 @@ extension NetServiceTransport: Transporter {
 
     private func appendToPendingList(_ package: Serializable) {
         pendingPackages.append(package)
-        print("[Atlantis] Append to the pending list, count = \(pendingPackages.count)...")
     }
 
     private func flushAllPendingIfNeed() {
@@ -147,25 +151,19 @@ extension NetServiceTransport {
 
     private func connectToService(_ service: NetService) {
 
+        if let hostName = service.hostName {
+            print("[Atlantis] Found Proxyman with HostName = \(hostName)")
+        }
+
         // If user want to connect to particular host name
-        // We shoul check
-        // by default, config.hostName is nil, it will connect to the first Proxyman
+        // We should find exact Proxyman
+        // by default, config.hostName is nil, it will connect all available Proxyman app
         if let hostName = config?.hostName,
-           var serviceHostName = service.hostName {
+           let serviceHostName = service.hostName {
 
-            // the trailling fullstop means it's from a local machine
-            // remove it to make it works
-            // https://developer.apple.com/library/archive/documentation/Networking/Conceptual/NSNetServiceProgGuide/Articles/PublishingServices.html#//apple_ref/doc/uid/20001076-SW1
-            if serviceHostName.hasSuffix(".") {
-                serviceHostName = String(serviceHostName.dropLast())
-            }
-
+            // Skip if it's not the service we're looking for
             if hostName.lowercased() != serviceHostName.lowercased() {
-                // If there is no coming service, tell the user
-                if !moreComing {
-                    print("[Atlantis][ERROR] Could not connect to Proxyman with Host Name = \(hostName)")
-                    print("[Atlantis][INFO] Please find the correct Host Name in Proxyman app -> Certificate -> Install on iOS -> By Atlantis")
-                }
+                print("[Atlantis] Skip connect to \(serviceHostName)")
                 return
             }
         }
@@ -182,6 +180,7 @@ extension NetServiceTransport {
 
         // use HostName and Port instead of streamTask(with service: NetService)
         // It's crashed on iOS 14 for some reasons
+        print("[Atlantis] ✅ Connect to \(hostName)")
         task = session.streamTask(withHostName: hostName, port: service.port)
 
         // As we're going to call the -resume method, it will be swizzled by Atlantis
@@ -216,10 +215,8 @@ extension NetServiceTransport {
 extension NetServiceTransport: NetServiceBrowserDelegate {
 
     func netServiceBrowser(_ browser: NetServiceBrowser, didFind service: NetService, moreComing: Bool) {
-        print("")
         queue.async {[weak self] in
             guard let strongSelf = self else { return }
-            strongSelf.moreComing = moreComing
             strongSelf.services.append(service)
             service.delegate = strongSelf
             service.resolve(withTimeout: 30)
@@ -235,10 +232,6 @@ extension NetServiceTransport: NetServiceBrowserDelegate {
             // Best case, we should remove all
             strongSelf.services.removeAll()
         }
-    }
-
-    func netServiceBrowser(_ browser: NetServiceBrowser, didFindDomain domainString: String, moreComing: Bool) {
-        print(domainString)
     }
 
     func netServiceBrowser(_ browser: NetServiceBrowser, didNotSearch errorDict: [String : NSNumber]) {
