@@ -23,7 +23,9 @@ A little and powerful iOS framework for intercepting HTTP/HTTPS Traffic from you
 ## How to use
 1. Install Atlantis by CocoaPod or SPM, then starting Atlantis
 
-- If you have only mac MacOS Machine that has Proxyman. Let use the simple version:
+By default, Bonjour service will try to connect all Proxyman app in the same network:
+
+- If you have only **ONE** MacOS machine that has Proxyman. Let use the simple version:
 
 ```swift
 import Atlantis
@@ -41,7 +43,9 @@ import Atlantis
 Atlantis.start(hostName: "_your_host_name")
 ```
 
-You can get the host name from Certificate -> Install for iOS -> Atlantis -> How to Start Atlantis -> and copy the `HostName`
+You can get the `hostName` from Proxyman -> Certificate menu -> Install for iOS -> Atlantis -> How to Start Atlantis -> and copy the `HostName`
+
+<img src="https://raw.githubusercontent.com/ProxymanApp/atlantis/main/images/atlantis_hostname.png" alt="Proxyman screenshot" width="70%" height="auto"/>
 
 2. Make sure your iOS devices/simulator and macOS Proxyman are in the same Wifi Network or connect your iOS Devices to Mac by USB cables
 3. Open macOS [Proxyman](https://proxyman.io) (or [download the lasted here](https://proxyman.io/release/osx/Proxyman_latest.dmg)) (2.11.0+)
