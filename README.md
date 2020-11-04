@@ -107,6 +107,9 @@ For some reason, Bonjour service might not be able to find Proxyman app if you'r
 
 Please try to plugin your iOS Devices to your Macbook and try again. Bonjour services can discover by using a USB Cable.
 
+Or check out this Ticket https://github.com/ProxymanApp/atlantis/issues/25 (We're going to release soon)
+
+
 ## Credit
 - FLEX and maintainer team: https://github.com/FLEXTool/FLEX
 - @yagiz from Bagel project: https://github.com/yagiz/Bagel
