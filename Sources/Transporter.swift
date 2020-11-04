@@ -56,6 +56,12 @@ final class NetServiceTransport: NSObject {
 extension NetServiceTransport: Transporter {
 
     func start(_ config: Configuration) {
+        if let hostName = config.hostName {
+            print("[Atlantis] Try Connecting to Proxyman with HostName = \(hostName)")
+        } else {
+            print("[Atlantis] Looking for Proxman app in the network...")
+        }
+
         self.config = config
         start()
     }
@@ -127,7 +133,6 @@ extension NetServiceTransport: Transporter {
 
     private func appendToPendingList(_ package: Serializable) {
         pendingPackages.append(package)
-        print("[Atlantis] Append to the pending list, count = \(pendingPackages.count)...")
     }
 
     private func flushAllPendingIfNeed() {
@@ -146,6 +151,23 @@ extension NetServiceTransport {
 
     private func connectToService(_ service: NetService) {
 
+        if let hostName = service.hostName {
+            print("[Atlantis] Found Proxyman with HostName = \(hostName)")
+        }
+
+        // If user want to connect to particular host name
+        // We should find exact Proxyman
+        // by default, config.hostName is nil, it will connect all available Proxyman app
+        if let hostName = config?.hostName,
+           let serviceHostName = service.hostName {
+
+            // Skip if it's not the service we're looking for
+            if hostName.lowercased() != serviceHostName.lowercased() {
+                print("[Atlantis] Skip connect to \(serviceHostName)")
+                return
+            }
+        }
+
         // Stop previous connection if need
         if let task = task {
             task.closeWrite()
@@ -158,6 +180,7 @@ extension NetServiceTransport {
 
         // use HostName and Port instead of streamTask(with service: NetService)
         // It's crashed on iOS 14 for some reasons
+        print("[Atlantis] ✅ Connect to \(hostName)")
         task = session.streamTask(withHostName: hostName, port: service.port)
 
         // As we're going to call the -resume method, it will be swizzled by Atlantis
