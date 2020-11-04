@@ -22,12 +22,26 @@ A little and powerful iOS framework for intercepting HTTP/HTTPS Traffic from you
 
 ## How to use
 1. Install Atlantis by CocoaPod or SPM, then starting Atlantis
+
+- If you have only mac MacOS Machine that has Proxyman. Let use the simple version:
+
 ```swift
 import Atlantis
 
 // Add to the end of `application(_:didFinishLaunchingWithOptions:)` in AppDelegate.swift or SceneDelegate.swift
 Atlantis.start()
 ```
+
+- If there are many Proxyman apps from colleague's Mac Machines, and you would Atlantis connects to your macOS machine. Let use `Atlantis.start(hostName:)` version
+
+```swift
+import Atlantis
+
+// Add to the end of `application(_:didFinishLaunchingWithOptions:)` in AppDelegate.swift or SceneDelegate.swift
+Atlantis.start(hostName: "_your_host_name")
+```
+
+You can get the host name from Certificate -> Install for iOS -> Atlantis -> How to Start Atlantis -> and copy the `HostName`
 
 2. Make sure your iOS devices/simulator and macOS Proxyman are in the same Wifi Network or connect your iOS Devices to Mac by USB cables
 3. Open macOS [Proxyman](https://proxyman.io) (or [download the lasted here](https://proxyman.io/release/osx/Proxyman_latest.dmg)) (2.11.0+)
@@ -103,11 +117,11 @@ They are required to categorize the traffic on the Proxyman app by project and d
 
 ## Troubleshooting
 ### 1. I could not see any request from Atlantis on Proxyman app?
-For some reason, Bonjour service might not be able to find Proxyman app if you're in a company network. 
+For some reason, Bonjour service might not be able to find Proxyman app. 
 
-Please try to plugin your iOS Devices to your Macbook and try again. Bonjour services can discover by using a USB Cable.
+=> Make sure your iOS devices and the Mac are in the same Wifi Network.
 
-Or check out this Ticket https://github.com/ProxymanApp/atlantis/issues/25 (We're going to release soon)
+=> Please use `Atlantis.start(hostName: "_your_host_name")` version
 
 
 ## Credit
