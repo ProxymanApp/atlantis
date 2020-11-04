@@ -152,6 +152,10 @@ extension NetServiceTransport {
         // by default, config.hostName is nil, it will connect to the first Proxyman
         if let hostName = config?.hostName,
            var serviceHostName = service.hostName {
+
+            // the trailling fullstop means it's from a local machine
+            // remove it to make it works
+            // https://developer.apple.com/library/archive/documentation/Networking/Conceptual/NSNetServiceProgGuide/Articles/PublishingServices.html#//apple_ref/doc/uid/20001076-SW1
             if serviceHostName.hasSuffix(".") {
                 serviceHostName = String(serviceHostName.dropLast())
             }
