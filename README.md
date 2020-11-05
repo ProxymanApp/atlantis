@@ -47,7 +47,7 @@ You can get the `hostName` from Proxyman -> Certificate menu -> Install for iOS 
 
 <img src="https://raw.githubusercontent.com/ProxymanApp/atlantis/main/images/atlantis_hostname.png" alt="Proxyman screenshot" width="70%" height="auto"/>
 
-2. Make sure your iOS devices/simulator and macOS Proxyman are in the same Wifi Network or connect your iOS Devices to Mac by USB cables
+2. Make sure your iOS devices/simulator and macOS Proxyman are in the **same Wifi Network** or connect your iOS Devices to Mac by a **USB cable**
 3. Open macOS [Proxyman](https://proxyman.io) (or [download the lasted here](https://proxyman.io/release/osx/Proxyman_latest.dmg)) (2.11.0+)
 4. Open your iOS app and Inspect traffic logs from Proxyman app
 5. Enjoy debugging ❤️
@@ -123,9 +123,9 @@ They are required to categorize the traffic on the Proxyman app by project and d
 ### 1. I could not see any request from Atlantis on Proxyman app?
 For some reason, Bonjour service might not be able to find Proxyman app. 
 
-=> Make sure your iOS devices and the Mac are in the same Wifi Network.
+=> Make sure your iOS devices and the Mac are in the **same Wifi Network** or connect to your Mac with **USB Cabel**
 
-=> Please use `Atlantis.start(hostName: "_your_host_name")` version
+=> Please use `Atlantis.start(hostName: "_your_host_name")` version to explicitly tell Atlantis connect to your Mac.
 
 ### 2. I could not use Debugging Tools on Atlantis's requests?
 Atlantis is built for inspecting the Network, not debugging purpose. If you would like to use Debugging Tools, please consider using normal HTTP Proxy
