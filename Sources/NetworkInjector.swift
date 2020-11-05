@@ -19,7 +19,7 @@ protocol InjectorDelegate: class {
     // For URLSession
     func injectorSessionDidCallResume(task: URLSessionTask)
     func injectorSessionDidReceiveResponse(dataTask: URLSessionTask, response: URLResponse)
-    func injectorSessionDidReceiveData(dataTask: URLSessionDataTask, data: Data)
+    func injectorSessionDidReceiveData(dataTask: URLSessionTask, data: Data)
     func injectorSessionDidComplete(task: URLSessionTask, error: Error?)
 
     // For URLConnection

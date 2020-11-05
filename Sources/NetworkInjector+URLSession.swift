@@ -75,7 +75,7 @@ extension NetworkInjector {
             original(me, selector, response, sniff, rewrite)
 
             // Safe-check
-            if let task = me.value(forKey: "task") as? URLSessionDataTask,
+            if let task = me.value(forKey: "task") as? URLSessionTask,
                let response = response as? URLResponse {
                 self?.delegate?.injectorSessionDidReceiveResponse(dataTask: task, response: response)
             } else {
@@ -103,7 +103,7 @@ extension NetworkInjector {
             original(me, selector, response, sniff)
 
             // Safe-check
-            if let task = me.value(forKey: "task") as? URLSessionDataTask,
+            if let task = me.value(forKey: "task") as? URLSessionTask,
                let response = response as? URLResponse {
                 self?.delegate?.injectorSessionDidReceiveResponse(dataTask: task, response: response)
             } else {
@@ -134,7 +134,7 @@ extension NetworkInjector {
             original(me, selector, data)
 
             // Safe-check
-            if let task = me.value(forKey: "task") as? URLSessionDataTask,
+            if let task = me.value(forKey: "task") as? URLSessionTask,
                let data = data as? Data {
                 self?.delegate?.injectorSessionDidReceiveData(dataTask: task, data: data)
             } else {
