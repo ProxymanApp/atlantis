@@ -127,6 +127,8 @@ For some reason, Bonjour service might not be able to find Proxyman app.
 
 => Please use `Atlantis.start(hostName: "_your_host_name")` version
 
+### 2. I could not use Debugging Tools on Atlantis's requests?
+Atlantis is built for inspecting the Network, not debugging purpose. If you would like to use Debugging Tools, please consider using normal HTTP Proxy
 
 ## Credit
 - FLEX and maintainer team: https://github.com/FLEXTool/FLEX
