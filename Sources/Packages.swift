@@ -48,15 +48,17 @@ final class TrafficPackage: Codable, CustomDebugStringConvertible, Serializable 
     private let request: Request
     private var response: Response?
     private(set) var error: CustomError?
-    private var responseBodyData = Data()
+    private var responseBodyData: Data
     private let startAt: TimeInterval
     private var endAt: TimeInterval?
 
-    private init?(id: String, request: Request) {
+    init(id: String, request: Request, response: Response? = nil, responseBodyData: Data? = nil) {
         self.id = id
         self.request = request
         self.response = nil
         self.startAt = Date().timeIntervalSince1970
+        self.response = response
+        self.responseBodyData = responseBodyData ?? Data()
     }
 
     // MARK: - Builder
@@ -74,18 +76,14 @@ final class TrafficPackage: Codable, CustomDebugStringConvertible, Serializable 
 
     static func buildRequest(urlRequest: URLRequest, urlResponse: URLResponse, bodyData: Data?) -> TrafficPackage? {
         guard let request = Request(urlRequest) else { return nil }
-        let package = TrafficPackage(id: UUID().uuidString, request: request)
-        package?.updateResponse(urlResponse)
-        if let bodyData = bodyData {
-            package?.append(bodyData)
-        }
-        return package
+        let response = Response(urlResponse)
+        return TrafficPackage(id: UUID().uuidString, request: request, response: response, responseBodyData: bodyData)
     }
 
     static func buildRequest(urlRequest: URLRequest, error: Error) -> TrafficPackage? {
         guard let request = Request(urlRequest) else { return nil }
         let package = TrafficPackage(id: UUID().uuidString, request: request)
-        package?.updateDidComplete(error)
+        package.updateDidComplete(error)
         return package
     }
 
@@ -156,8 +154,8 @@ struct Project: Codable {
 
 public struct Header: Codable {
 
-    public let key: String
-    public let value: String
+    let key: String
+    let value: String
 
     public init(key: String, value: String) {
         self.key = key
@@ -169,10 +167,10 @@ public struct Request: Codable {
 
     // MARK: - Variables
 
-    public let url: String
-    public let method: String
-    public let headers: [Header]
-    public let body: Data?
+    let url: String
+    let method: String
+    let headers: [Header]
+    let body: Data?
 
     // MARK: - Init
 
@@ -196,8 +194,8 @@ public struct Response: Codable {
 
     // MARK: - Variables
 
-    public let statusCode: Int
-    public let headers: [Header]
+    let statusCode: Int
+    let headers: [Header]
 
     // MARK: - Init
 

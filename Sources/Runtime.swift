@@ -69,3 +69,30 @@ extension URLSessionTask {
         return false
     }
 }
+
+/// Status codes for gRPC operations (replicated from status_code_enum.h)
+enum GRPCStatusCode: Int {
+    /// Not an error; returned on success.
+    case ok = 0
+    case cancelled = 1
+    case unknown = 2
+    case invalidArgument = 3
+    case deadlineExceeded = 4
+    case notFound = 5
+    case alreadyExists = 6
+    case permissionDenied = 7
+    case unauthenticated = 16
+    case resourceExhausted = 8
+    case failedPrecondition = 9
+    case aborted = 10
+    case outOfRange = 11
+    case unimplemented = 12
+    case internalError = 13
+    case unavailable = 14
+    case dataLoss = 15
+    case doNotUse = -1
+
+    var description: String {
+        return "\(self) (code=\(rawValue)"
+    }
+}
