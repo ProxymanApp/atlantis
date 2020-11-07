@@ -54,7 +54,7 @@ You can get the `hostName` from Proxyman -> Certificate menu -> Install for iOS 
 
 ## Requirement
 - macOS Proxyman app 2.11.0+
-- iOS 12.0+ / macOS 10.12+
+- iOS 11.0+ / macOS 10.12+
 - Xcode 11+
 - Swift 5.0+
 
