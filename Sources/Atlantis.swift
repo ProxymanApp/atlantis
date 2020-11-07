@@ -84,6 +84,17 @@ public final class Atlantis: NSObject {
         isEnabled.mutate { $0 = false }
         Atlantis.shared.transporter.stop()
     }
+
+
+    /// Handy func to manually add Request & Response to Atlantis, then sending to Proxyman app for inspecting.
+    /// It's useful if your app makes HTTP Request that not using URLSession or NSURLConnection. e.g. Swift-NIO-GRPC, C++ Network library, ...
+    /// - Parameters:
+    ///   - request: Request
+    ///   - response: Response
+    ///   - responseBody: The body Data of the response
+    public class func add(request: URLRequest, response: URLResponse, responseBody: Data? = nil) {
+        Atlantis.shared.startSendingMessage(request: request, response: response, responseBody: responseBody)
+    }
 }
 
 // MARK: - Private
@@ -251,12 +262,25 @@ extension Atlantis {
 
             // At this time, the package has all the data
             // It's time to send it
-            let message = Message.buildTrafficMessage(id: strongSelf.configuration.id, item: package)
-            strongSelf.transporter.send(package: message)
+            strongSelf.startSendingMessage(package: package)
 
             // Then remove it from our cache
             strongSelf.packages.removeValue(forKey: package.id)
         }
+    }
+
+    private func startSendingMessage(request: URLRequest, response: URLResponse, responseBody: Data?) {
+        // Build package from raw given input
+        guard let package = TrafficPackage.buildRequest(urlRequest: request, urlResponse: response, bodyData: responseBody) else {
+            print("[Atlantis][Error] Could not build TrafficPackage from manual input. Please contact the author!")
+            return
+        }
+        startSendingMessage(package: package)
+    }
+
+    private func startSendingMessage(package: TrafficPackage) {
+        let message = Message.buildTrafficMessage(id: configuration.id, item: package)
+        transporter.send(package: message)
     }
 }
 

@@ -72,6 +72,18 @@ final class TrafficPackage: Codable, CustomDebugStringConvertible, Serializable 
         return TrafficPackage(id: id, request: request)
     }
 
+    static func buildRequest(urlRequest: URLRequest, urlResponse: URLResponse, bodyData: Data?) -> TrafficPackage? {
+        guard let request = Request(urlRequest) else { return nil }
+        let package = TrafficPackage(id: UUID().uuidString, request: request)
+        package?.updateResponse(urlResponse)
+        if let bodyData = bodyData {
+            package?.append(bodyData)
+        }
+        return package
+    }
+    
+    // MARK: - Internal func
+
     func updateResponse(_ response: URLResponse) {
         // Construct the Response without body
         self.response = Response(response)
