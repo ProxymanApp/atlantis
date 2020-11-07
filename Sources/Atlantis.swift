@@ -14,7 +14,7 @@ import ObjectiveC
 /// to capture the network and send to Proxyman app via Bonjour Service
 public final class Atlantis: NSObject {
 
-    private static let shared = Atlantis()
+    static let shared = Atlantis()
 
     // MARK: - Components
 
@@ -83,17 +83,6 @@ public final class Atlantis: NSObject {
         guard isEnabled.value else { return }
         isEnabled.mutate { $0 = false }
         Atlantis.shared.transporter.stop()
-    }
-
-
-    /// Handy func to manually add Request & Response to Atlantis, then sending to Proxyman app for inspecting.
-    /// It's useful if your app makes HTTP Request that not using URLSession or NSURLConnection. e.g. Swift-NIO-GRPC, C++ Network library, ...
-    /// - Parameters:
-    ///   - request: Request
-    ///   - response: Response
-    ///   - responseBody: The body Data of the response
-    public class func add(request: URLRequest, response: URLResponse, responseBody: Data? = nil) {
-        Atlantis.shared.startSendingMessage(request: request, response: response, responseBody: responseBody)
     }
 }
 
@@ -269,16 +258,7 @@ extension Atlantis {
         }
     }
 
-    private func startSendingMessage(request: URLRequest, response: URLResponse, responseBody: Data?) {
-        // Build package from raw given input
-        guard let package = TrafficPackage.buildRequest(urlRequest: request, urlResponse: response, bodyData: responseBody) else {
-            print("[Atlantis][Error] Could not build TrafficPackage from manual input. Please contact the author!")
-            return
-        }
-        startSendingMessage(package: package)
-    }
-
-    private func startSendingMessage(package: TrafficPackage) {
+    internal func startSendingMessage(package: TrafficPackage) {
         let message = Message.buildTrafficMessage(id: configuration.id, item: package)
         transporter.send(package: message)
     }

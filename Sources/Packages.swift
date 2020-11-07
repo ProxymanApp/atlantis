@@ -81,7 +81,14 @@ final class TrafficPackage: Codable, CustomDebugStringConvertible, Serializable 
         }
         return package
     }
-    
+
+    static func buildRequest(urlRequest: URLRequest, error: Error) -> TrafficPackage? {
+        guard let request = Request(urlRequest) else { return nil }
+        let package = TrafficPackage(id: UUID().uuidString, request: request)
+        package?.updateDidComplete(error)
+        return package
+    }
+
     // MARK: - Internal func
 
     func updateResponse(_ response: URLResponse) {
@@ -147,22 +154,34 @@ struct Project: Codable {
     }
 }
 
-struct Header: Codable {
+public struct Header: Codable {
 
-    let key: String
-    let value: String
+    public let key: String
+    public let value: String
+
+    public init(key: String, value: String) {
+        self.key = key
+        self.value = value
+    }
 }
 
-struct Request: Codable {
+public struct Request: Codable {
 
     // MARK: - Variables
 
-    let url: String
-    let method: String
-    let headers: [Header]
-    let body: Data?
+    public let url: String
+    public let method: String
+    public let headers: [Header]
+    public let body: Data?
 
     // MARK: - Init
+
+    public init(url: String, method: String, headers: [Header], body: Data?) {
+        self.url = url
+        self.method = method
+        self.headers = headers
+        self.body = body
+    }
 
     init?(_ urlRequest: URLRequest?) {
         guard let urlRequest = urlRequest else { return nil }
@@ -173,10 +192,19 @@ struct Request: Codable {
     }
 }
 
-struct Response: Codable {
+public struct Response: Codable {
 
-    let statusCode: Int
-    let headers: [Header]
+    // MARK: - Variables
+
+    public let statusCode: Int
+    public let headers: [Header]
+
+    // MARK: - Init
+
+    public init(statusCode: Int, headers: [Header]) {
+        self.statusCode = statusCode
+        self.headers = headers
+    }
 
     init?(_ response: URLResponse) {
         guard let httpResponse = response as? HTTPURLResponse else {

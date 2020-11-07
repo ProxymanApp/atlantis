@@ -21,6 +21,7 @@
 /* End PBXAggregateTarget section */
 
 /* Begin PBXBuildFile section */
+		BA656C1E25566EFF00CABFC7 /* Atlantis+Manual.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA656C1D25566EFF00CABFC7 /* Atlantis+Manual.swift */; };
 		OBJ_37 /* Atlantis.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_8 /* Atlantis.swift */; };
 		OBJ_38 /* Configuration.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_9 /* Configuration.swift */; };
 		OBJ_39 /* DataCompression.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_10 /* DataCompression.swift */; };
@@ -58,6 +59,7 @@
 /* Begin PBXFileReference section */
 		"Atlantis::Atlantis::Product" /* Atlantis.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = Atlantis.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		"Atlantis::AtlantisTests::Product" /* AtlantisTests.xctest */ = {isa = PBXFileReference; lastKnownFileType = file; path = AtlantisTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		BA656C1D25566EFF00CABFC7 /* Atlantis+Manual.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Atlantis+Manual.swift"; sourceTree = "<group>"; };
 		OBJ_10 /* DataCompression.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataCompression.swift; sourceTree = "<group>"; };
 		OBJ_11 /* DispatchQueue+Once.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DispatchQueue+Once.swift"; sourceTree = "<group>"; };
 		OBJ_12 /* Message.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Message.swift; sourceTree = "<group>"; };
@@ -145,6 +147,7 @@
 			isa = PBXGroup;
 			children = (
 				OBJ_8 /* Atlantis.swift */,
+				BA656C1D25566EFF00CABFC7 /* Atlantis+Manual.swift */,
 				OBJ_9 /* Configuration.swift */,
 				OBJ_10 /* DataCompression.swift */,
 				OBJ_11 /* DispatchQueue+Once.swift */,
@@ -246,6 +249,7 @@
 			files = (
 				OBJ_37 /* Atlantis.swift in Sources */,
 				OBJ_38 /* Configuration.swift in Sources */,
+				BA656C1E25566EFF00CABFC7 /* Atlantis+Manual.swift in Sources */,
 				OBJ_39 /* DataCompression.swift in Sources */,
 				OBJ_40 /* DispatchQueue+Once.swift in Sources */,
 				OBJ_41 /* Message.swift in Sources */,
