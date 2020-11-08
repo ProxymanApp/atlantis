@@ -13,7 +13,7 @@ A little and powerful iOS framework for intercepting HTTP/HTTPS Traffic from you
 - [x] **Automatically** intercept all HTTP/HTTPS Traffic with ease
 - [x] ✅ **No need to config HTTP Proxy, Install or Trust any Certificate**
 - [x] Support iOS Physical Devices and Simulators
-- [x] Review traffic log from [Proxyman](https://proxyman.io)
+- [x] Review traffic log from macOS [Proxyman](https://proxyman.io) app ([Github](https://github.com/ProxymanApp/Proxyman))
 - [x] Categorize the log by project and devices.
 - [x] Only for Traffic Inspector, not for Debugging Tools
 - [x] Ready for Production
@@ -48,7 +48,7 @@ You can get the `hostName` from Proxyman -> Certificate menu -> Install for iOS 
 <img src="https://raw.githubusercontent.com/ProxymanApp/atlantis/main/images/atlantis_hostname.png" alt="Proxyman screenshot" width="70%" height="auto"/>
 
 2. Make sure your iOS devices/simulator and macOS Proxyman are in the **same Wifi Network** or connect your iOS Devices to Mac by a **USB cable**
-3. Open macOS [Proxyman](https://proxyman.io) (or [download the lasted here](https://proxyman.io/release/osx/Proxyman_latest.dmg)) (2.11.0+)
+3. Open macOS [Proxyman](https://proxyman.io) (or [download the lasted here](https://proxyman.io/release/osx/Proxyman_latest.dmg)) ([Github](https://github.com/ProxymanApp/Proxyman))(2.11.0+)
 4. Open your iOS app and Inspect traffic logs from Proxyman app
 5. Enjoy debugging ❤️
 
