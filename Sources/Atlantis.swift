@@ -14,7 +14,7 @@ import ObjectiveC
 /// to capture the network and send to Proxyman app via Bonjour Service
 public final class Atlantis: NSObject {
 
-    private static let shared = Atlantis()
+    static let shared = Atlantis()
 
     // MARK: - Components
 
@@ -251,12 +251,16 @@ extension Atlantis {
 
             // At this time, the package has all the data
             // It's time to send it
-            let message = Message.buildTrafficMessage(id: strongSelf.configuration.id, item: package)
-            strongSelf.transporter.send(package: message)
+            strongSelf.startSendingMessage(package: package)
 
             // Then remove it from our cache
             strongSelf.packages.removeValue(forKey: package.id)
         }
+    }
+
+    internal func startSendingMessage(package: TrafficPackage) {
+        let message = Message.buildTrafficMessage(id: configuration.id, item: package)
+        transporter.send(package: message)
     }
 }
 
