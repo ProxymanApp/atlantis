@@ -93,6 +93,6 @@ enum GRPCStatusCode: Int {
     case doNotUse = -1
 
     var description: String {
-        return "\(self) (code=\(rawValue)"
+        return "\(self) (code=\(rawValue))"
     }
 }

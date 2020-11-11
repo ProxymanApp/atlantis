@@ -17,7 +17,7 @@ extension Atlantis {
     ///   - responseBody: The body Data of the response
     public class func add(request: URLRequest,
                           response: URLResponse,
-                          responseBody: Data? = nil) {
+                          responseBody: Data?) {
         // Build package from raw given input
         guard let package = TrafficPackage.buildRequest(urlRequest: request, urlResponse: response, bodyData: responseBody) else {
             print("[Atlantis][Error] Could not build TrafficPackage from manual input. Please contact the author!")
@@ -53,7 +53,7 @@ extension Atlantis {
     ///   - responseBody: The body data of the response
     public class func add(request: Request,
                           response: Response,
-                          responseBody: Data? = nil) {
+                          responseBody: Data?) {
         // Build package from raw given input
         let package = TrafficPackage(id: UUID().uuidString, request: request, response: response, responseBodyData: responseBody)
 
@@ -70,12 +70,12 @@ extension Atlantis {
     ///   - success: success state. Get from `CallResult.success`
     ///   - statusCode: statusCode state. Get from `CallResult.statusCode`
     ///   - statusMessage: statusMessage state. Get from `CallResult.statusMessage`
-    public class func addGRPC<T>(url: String,
+    public class func addGRPC<T, U>(url: String,
                                  requestObject: T?,
-                                 responseObject: T?,
+                                 responseObject: U?,
                                  success: Bool,
                                  statusCode: Int,
-                                 statusMessage: String?) where T: Encodable {
+                                 statusMessage: String?) where T: Encodable, U: Encodable {
         // Attempt to convert GRPC objc to JSON format
         // It's crucial to send and show on Proxyman app
         var requestBody: Data?
