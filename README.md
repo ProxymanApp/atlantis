@@ -92,7 +92,7 @@ github "ProxymanApp/atlantis"
 
 For Carthage with Xcode 12, please check out the workaround: https://github.com/Carthage/Carthage/blob/master/Documentation/Xcode12Workaround.md
 
-## Advanded Usage
+## Advanced Usage
 By default, if your iOS app uses Apple's Networking classes (e.g URLSession or NSURLConnection) or using popular Networking libraries (e.g Alamofire and AFNetworking) to make an HTTP Request, Atlantis will work **OUT OF THE BOX**.
 
 However, if your app doesn't use any one of them, Atlantis is not able to automatically capture the network traffic. 
