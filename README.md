@@ -92,6 +92,82 @@ github "ProxymanApp/atlantis"
 
 For Carthage with Xcode 12, please check out the workaround: https://github.com/Carthage/Carthage/blob/master/Documentation/Xcode12Workaround.md
 
+## Advanded Usage
+By default, if your iOS app uses Apple's Networking classes (e.g URLSession or NSURLConnection) or using popular Networking libraries (e.g Alamofire and AFNetworking) to make an HTTP Request, Atlantis will work **OUT OF THE BOX**.
+
+However, if your app doesn't use any one of them, Atlantis is not able to automatically capture the network traffic. 
+
+To resolve it, Atlantis offers certain functions to help you **manually*** add your Request and Response that will present on the Proxyman app as usual.
+
+#### 1. My app uses C++ Network library and doesn't use URLSession, NSURLSession or any iOS Networking library
+You can construct the Request and Response for Atlantis from the following func
+```swift
+    /// Handy func to manually add Atlantis' Request & Response, then sending to Proxyman for inspecting
+    /// It's useful if your Request & Response are not URLRequest and URLResponse
+    /// - Parameters:
+    ///   - request: Atlantis' request model
+    ///   - response: Atlantis' response model
+    ///   - responseBody: The body data of the response
+    public class func add(request: Request,
+                          response: Response,
+                          responseBody: Data?) {
+```
+- Example:
+```swift
+@IBAction func getManualBtnOnClick(_ sender: Any) {
+    // Init Request and Response
+    let header = Header(key: "X-Data", value: "Atlantis")
+    let jsonType = Header(key: "Content-Type", value: "application/json")
+    let jsonObj: [String: Any] = ["country": "Singapore"]
+    let data = try! JSONSerialization.data(withJSONObject: jsonObj, options: [])
+    let request = Request(url: "https://proxyman.io/get/data", method: "GET", headers: [header, jsonType], body: data)
+    let response = Response(statusCode: 200, headers: [Header(key: "X-Response", value: "Internal Error server"), jsonType])
+    let responseObj: [String: Any] = ["error_response": "Not FOund"]
+    let responseData = try! JSONSerialization.data(withJSONObject: responseObj, options: [])
+    
+    // Add to Atlantis and show it on Proxyman app
+    Atlantis.add(request: request, response: response, responseBody: responseData)
+}
+```
+
+#### 2. My app use GRPC
+You can construct the Request and Response from GRPC models:
+```swift
+    /// Helper func to convert GRPC message to Atlantis format that could show on Proxyman app as a HTTP Message
+    /// - Parameters:
+    ///   - url: The url of the grpc message to distinguish each message
+    ///   - requestObject: Request object for the Request (Encodable)
+    ///   - responseObject: Response object for the Response (Encodable)
+    ///   - success: success state. Get from `CallResult.success`
+    ///   - statusCode: statusCode state. Get from `CallResult.statusCode`
+    ///   - statusMessage: statusMessage state. Get from `CallResult.statusMessage`
+    public class func addGRPC<T, U>(url: String,
+                                 requestObject: T?,
+                                 responseObject: U?,
+                                 success: Bool,
+                                 statusCode: Int,
+                                 statusMessage: String?) where T: Encodable, U: Encodable {}
+```
+- Example:
+```swift
+// Your GRPC services that is generated from SwiftGRPC
+private let client = NoteServiceServiceClient.init(address: "127.0.0.1:50051", secure: false)
+
+// Note is a struct that is generated from a protobuf file
+func insertNote(note: Note, completion: @escaping(Note?, CallResult?) -> Void) {
+    _ = try? client.insert(note, completion: { (createdNote, result) in
+    
+        // Add to atlantis and show it on Proxyman app
+        Atlantis.addGRPC(url: "https://my-server.com/grpc",
+                         requestObject: note,
+                         responseObject: createdNote,
+                         success: result.success,
+                         statusCode: result.statusCode.rawValue,
+                         statusMessage: result.statusMessage)
+    })
+}
+```
+
 ## FAQ
 #### 1. How does Atlantis work?
 
@@ -129,6 +205,7 @@ For some reason, Bonjour service might not be able to find Proxyman app.
 
 ### 2. I could not use Debugging Tools on Atlantis's requests?
 Atlantis is built for inspecting the Network, not debugging purpose. If you would like to use Debugging Tools, please consider using normal HTTP Proxy
+
 
 ## Credit
 - FLEX and maintainer team: https://github.com/FLEXTool/FLEX
