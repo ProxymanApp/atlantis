@@ -273,11 +273,10 @@ extension Bundle {
     }
 
     var hasBonjourServices: Bool {
-        guard let services = Bundle.main.object(forInfoDictionaryKey: "NSBonjourServices") as? [String],
-              let proxymanService = services.first(where: {
-                    $0 == NetServiceTransport.Constants.netServiceType
-              }),
-              proxymanService == NetServiceTransport.Constants.netServiceType else { return false }
-        return true
+        guard let services = Bundle.main.object(forInfoDictionaryKey: "NSBonjourServices") as? [String] else {
+            return false
+        }
+        // It works fine if the app has many Bonjour services
+        return services.contains(where: { $0 == NetServiceTransport.Constants.netServiceType })
     }
 }
