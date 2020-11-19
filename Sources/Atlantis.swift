@@ -54,7 +54,7 @@ public final class Atlantis: NSObject {
     /// Build version of Atlantis
     /// It's essential for Proxyman to known if it's compatible with this version
     /// Instead of receving the number from the info.plist, we should hardcode here because the info file doesn't exist in SPM
-    public static let buildVersion: String = "1.4.0"
+    public static let buildVersion: String = "1.4.1"
 
     /// Start Swizzle all network functions and monitoring the traffic
     /// It also starts looking Bonjour network from Proxyman app.
