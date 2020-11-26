@@ -94,16 +94,20 @@ extension NetworkInjector {
         if !ProcessInfo.processInfo.responds(to: #selector(getter: ProcessInfo.operatingSystemVersion)) {
             baseResumeClass = NSClassFromString("__NSCFLocalSessionTask")
         } else {
+            #if targetEnvironment(macCatalyst)
+            baseResumeClass = URLSessionTask.self
+            #else
             let majorVersion = ProcessInfo.processInfo.operatingSystemVersion.majorVersion
             if majorVersion < 9 || majorVersion >= 14 {
                 baseResumeClass = URLSessionTask.self
             } else {
                 baseResumeClass = NSClassFromString("__NSCFURLSessionTask")
             }
+            #endif
         }
 
         guard let resumeClass = baseResumeClass else {
-            assertionFailure()
+            assertionFailure("Could not find URLSessionTask. Please open support ticket at https://github.com/ProxymanApp/atlantis")
             return
         }
 
