@@ -172,31 +172,31 @@ extension Atlantis {
 extension Atlantis: InjectorDelegate {
 
     func injectorSessionDidCallResume(task: URLSessionTask) {
-        // Since it's not possible to revert the Method Swizzling change
-        // We use isEnable instead
-        guard Atlantis.isEnabled.value else { return }
-        queue.async {[weak self] in
-            guard let strongSelf = self else { return }
+        // Use sync to prevent task.currentRequest.httpBody is nil
+        // If we use async, sometime the httpbody is released -> Atlantis could get the Request's body
+        // It's safe to use sync here because URL has their own background queue
+        queue.sync {
+            // Since it's not possible to revert the Method Swizzling change
+            // We use isEnable instead
+            guard Atlantis.isEnabled.value else { return }
 
             // Cache
-            _ = strongSelf.getPackage(task)
+            _ = getPackage(task)
         }
     }
 
     func injectorSessionDidReceiveResponse(dataTask: URLSessionTask, response: URLResponse) {
-        guard Atlantis.isEnabled.value else { return }
-        queue.async {[weak self] in
-            guard let strongSelf = self else { return }
-            let package = strongSelf.getPackage(dataTask)
+        queue.sync {
+            guard Atlantis.isEnabled.value else { return }
+            let package = getPackage(dataTask)
             package?.updateResponse(response)
         }
     }
 
     func injectorSessionDidReceiveData(dataTask: URLSessionTask, data: Data) {
-        guard Atlantis.isEnabled.value else { return }
-        queue.async {[weak self] in
-            guard let strongSelf = self else { return }
-            let package = strongSelf.getPackage(dataTask)
+        queue.sync {
+            guard Atlantis.isEnabled.value else { return }
+            let package = getPackage(dataTask)
             package?.append(data)
         }
     }
@@ -206,21 +206,19 @@ extension Atlantis: InjectorDelegate {
     }
 
     func injectorConnectionDidReceive(connection: NSURLConnection, response: URLResponse) {
-        guard Atlantis.isEnabled.value else { return }
-        queue.async {[weak self] in
-            guard let strongSelf = self else { return }
+        queue.sync {
+            guard Atlantis.isEnabled.value else { return }
 
             // Cache
-            let package = strongSelf.getPackage(connection)
+            let package = getPackage(connection)
             package?.updateResponse(response)
         }
     }
 
     func injectorConnectionDidReceive(connection: NSURLConnection, data: Data) {
-        guard Atlantis.isEnabled.value else { return }
-        queue.async {[weak self] in
-            guard let strongSelf = self else { return }
-            let package = strongSelf.getPackage(connection)
+        queue.sync {
+            guard Atlantis.isEnabled.value else { return }
+            let package = getPackage(connection)
             package?.append(data)
         }
     }
@@ -239,10 +237,9 @@ extension Atlantis: InjectorDelegate {
 extension Atlantis {
 
     private func handleDidFinish(_ taskOrConnection: AnyObject, error: Error?) {
-        guard Atlantis.isEnabled.value else { return }
-        queue.async {[weak self] in
-            guard let strongSelf = self else { return }
-            guard let package = strongSelf.getPackage(taskOrConnection) else {
+        queue.sync {
+            guard Atlantis.isEnabled.value else { return }
+            guard let package = getPackage(taskOrConnection) else {
                 return
             }
 
@@ -251,10 +248,10 @@ extension Atlantis {
 
             // At this time, the package has all the data
             // It's time to send it
-            strongSelf.startSendingMessage(package: package)
+            startSendingMessage(package: package)
 
             // Then remove it from our cache
-            strongSelf.packages.removeValue(forKey: package.id)
+            packages.removeValue(forKey: package.id)
         }
     }
 
