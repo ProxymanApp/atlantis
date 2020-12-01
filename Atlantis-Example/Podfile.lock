@@ -1,5 +1,5 @@
 PODS:
-  - atlantis-proxyman (1.0.4)
+  - atlantis-proxyman (1.4.2)
 
 DEPENDENCIES:
   - atlantis-proxyman (from `../atlantis-proxyman.podspec`)
@@ -9,7 +9,7 @@ EXTERNAL SOURCES:
     :path: "../atlantis-proxyman.podspec"
 
 SPEC CHECKSUMS:
-  atlantis-proxyman: 7f8b7c9bb1edc3f80e48de52cf88a5eb7ee55dcf
+  atlantis-proxyman: 3fb72c5f5e1406ee707d86c362ee5514012911e4
 
 PODFILE CHECKSUM: 5e671eaef5969ada29220d36ba9fc9831b2c62c3
 

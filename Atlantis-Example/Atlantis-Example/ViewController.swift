@@ -21,8 +21,11 @@ class ViewController: UIViewController, URLSessionDataDelegate {
     }
 
     func makeSimpleRequest() {
-        let url = URL(string: "https://httpbin.org/get?name=proxyman&id=\(UUID().uuidString)&randon=\(Int.random(in: 0..<10000))")!
-        let task = URLSession.shared.dataTask(with: url) { (data, response, error) in
+        let url = URL(string: "https://httpbin.org/post?name=proxyman&id=\(UUID().uuidString)&randon=\(Int.random(in: 0..<10000))")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.httpBody = "it's raw text".data(using: .utf8)
+        let task = URLSession.shared.dataTask(with: request) { (data, response, error) in
             if let error = error {
                 print(error)
                 return
