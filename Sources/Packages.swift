@@ -11,7 +11,7 @@ import Foundation
 #if os(OSX)
 import AppKit
 typealias Image = NSImage
-#elseif os(iOS) || targetEnvironment(macCatalyst)
+#elseif os(iOS) || targetEnvironment(macCatalyst)  || os(tvOS)
 import UIKit
 typealias Image = UIImage
 #endif
@@ -131,7 +131,7 @@ struct Device: Codable {
         let macName = Host.current().name ?? "Unknown Mac Devices"
         name = macName
         model = "\(macName) \(ProcessInfo.processInfo.operatingSystemVersionString)"
-        #elseif os(iOS) || targetEnvironment(macCatalyst)
+        #elseif os(iOS) || targetEnvironment(macCatalyst) || os(tvOS)
         let device = UIDevice.current
         name = device.name
         model = "\(device.name) (\(device.systemName) \(device.systemVersion))"
@@ -241,7 +241,7 @@ extension Image {
             return nil
         }
         return Image(named: iconName)
-        #elseif os(iOS)
+        #elseif os(iOS) || os(tvOS)
         guard let iconsDictionary = Bundle.main.infoDictionary?["CFBundleIcons"] as? [String: Any],
               let primaryIconsDictionary = iconsDictionary["CFBundlePrimaryIcon"] as? [String: Any],
               let iconFiles = primaryIconsDictionary["CFBundleIconFiles"] as? [String],
@@ -257,7 +257,7 @@ extension Image {
         // Resize, we don't need 1024px size
         newRep.size = CGSize(width: 64, height: 64)
         return newRep.representation(using: .png, properties: [:])
-        #elseif os(iOS) || targetEnvironment(macCatalyst)
+        #elseif os(iOS) || targetEnvironment(macCatalyst) || os(tvOS)
         // It's already by 64px
         return self.pngData()
         #endif
