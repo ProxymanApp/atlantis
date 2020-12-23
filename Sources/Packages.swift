@@ -210,7 +210,8 @@ public struct Response: Codable {
             headers = httpResponse.allHeaderFields.map { Header(key: $0.key as? String ?? "Unknown Key", value: $0.value as? String ?? "Unknown Value" ) }
         } else {
             statusCode = 200
-            headers = [Header(key: "Content-Length", value: "\(response.expectedContentLength)")]
+            headers = [Header(key: "Content-Length", value: "\(response.expectedContentLength)"),
+                       Header(key: "Content-Type", value: response.mimeType ?? "plain/text")]
         }
     }
 }
