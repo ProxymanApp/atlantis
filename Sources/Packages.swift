@@ -52,6 +52,8 @@ final class TrafficPackage: Codable, CustomDebugStringConvertible, Serializable 
     private let startAt: TimeInterval
     private var endAt: TimeInterval?
 
+    private var lastData: Data?
+
     init(id: String, request: Request, response: Response? = nil, responseBodyData: Data? = nil) {
         self.id = id
         self.request = request
@@ -102,6 +104,19 @@ final class TrafficPackage: Codable, CustomDebugStringConvertible, Serializable 
     }
 
     func append(_ data: Data) {
+
+        // A dirty solution to prevent this method call twice from Method Swizzler
+        // It only occurs if it's a LocalDownloadTask
+        // LocalDownloadTask call it delegate, so the swap method is called twiced
+        //
+        // TODO: Inspired from Flex
+        // https://github.com/FLEXTool/FLEX/blob/e89fec4b2d7f081aa74067a86811ca115cde280b/Classes/Network/PonyDebugger/FLEXNetworkObserver.m#L133
+
+        // Skip if the same data (same pointer) is called twice
+        if let lastData = lastData, data == lastData {
+            return
+        }
+        lastData = data
         responseBodyData.append(data)
     }
 
@@ -205,12 +220,14 @@ public struct Response: Codable {
     }
 
     init?(_ response: URLResponse) {
-        guard let httpResponse = response as? HTTPURLResponse else {
-            assertionFailure("Only support HTTPURLResponse")
-            return nil
+        if let httpResponse = response as? HTTPURLResponse {
+            statusCode = httpResponse.statusCode
+            headers = httpResponse.allHeaderFields.map { Header(key: $0.key as? String ?? "Unknown Key", value: $0.value as? String ?? "Unknown Value" ) }
+        } else {
+            statusCode = 200
+            headers = [Header(key: "Content-Length", value: "\(response.expectedContentLength)"),
+                       Header(key: "Content-Type", value: response.mimeType ?? "plain/text")]
         }
-        statusCode = httpResponse.statusCode
-        headers = httpResponse.allHeaderFields.map { Header(key: $0.key as? String ?? "Unknown Key", value: $0.value as? String ?? "Unknown Value" ) }
     }
 }
 

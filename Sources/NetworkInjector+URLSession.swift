@@ -77,6 +77,7 @@ extension NetworkInjector {
             // Safe-check
             if let task = me.value(forKey: "task") as? URLSessionTask,
                let response = response as? URLResponse {
+                
                 self?.delegate?.injectorSessionDidReceiveResponse(dataTask: task, response: response)
             } else {
                 assertionFailure("Could not get data from _swizzleURLSessionDataTaskDidReceiveResponseForIOS13AndLater. It might causes due to the latest iOS changes. Please contact the author!")
