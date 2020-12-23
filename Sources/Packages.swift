@@ -205,12 +205,13 @@ public struct Response: Codable {
     }
 
     init?(_ response: URLResponse) {
-        guard let httpResponse = response as? HTTPURLResponse else {
-            assertionFailure("Only support HTTPURLResponse")
-            return nil
+        if let httpResponse = response as? HTTPURLResponse {
+            statusCode = httpResponse.statusCode
+            headers = httpResponse.allHeaderFields.map { Header(key: $0.key as? String ?? "Unknown Key", value: $0.value as? String ?? "Unknown Value" ) }
+        } else {
+            statusCode = 200
+            headers = [Header(key: "Content-Length", value: "\(response.expectedContentLength)")]
         }
-        statusCode = httpResponse.statusCode
-        headers = httpResponse.allHeaderFields.map { Header(key: $0.key as? String ?? "Unknown Key", value: $0.value as? String ?? "Unknown Value" ) }
     }
 }
 
