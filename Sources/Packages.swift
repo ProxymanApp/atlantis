@@ -45,7 +45,7 @@ struct ConnectionPackage: Codable, Serializable {
 final class TrafficPackage: Codable, CustomDebugStringConvertible, Serializable {
 
     let id: String
-    private let request: Request
+    private var request: Request
     private var response: Response?
     private(set) var error: CustomError?
     private var responseBodyData: Data
@@ -68,6 +68,11 @@ final class TrafficPackage: Codable, CustomDebugStringConvertible, Serializable 
     static func buildRequest(sessionTask: URLSessionTask, id: String) -> TrafficPackage? {
         guard let currentRequest = sessionTask.currentRequest,
             let request = Request(currentRequest) else { return nil }
+        return TrafficPackage(id: id, request: request)
+    }
+
+    static func buildRequest(request: NSURLRequest, id: String) -> TrafficPackage? {
+        guard let request = Request(request as URLRequest) else { return nil }
         return TrafficPackage(id: id, request: request)
     }
 
@@ -103,7 +108,12 @@ final class TrafficPackage: Codable, CustomDebugStringConvertible, Serializable 
         }
     }
 
-    func append(_ data: Data) {
+    func appendRequestData(_ data: Data) {
+        // This func should be called in Upload Tasks
+//        request.appendBody(data)
+    }
+
+    func appendResponseData(_ data: Data) {
 
         // A dirty solution to prevent this method call twice from Method Swizzler
         // It only occurs if it's a LocalDownloadTask
@@ -185,7 +195,7 @@ public struct Request: Codable {
     let url: String
     let method: String
     let headers: [Header]
-    let body: Data?
+    private(set) var body: Data?
 
     // MARK: - Init
 
@@ -202,6 +212,13 @@ public struct Request: Codable {
         method = urlRequest.httpMethod ?? "-"
         headers = urlRequest.allHTTPHeaderFields?.map { Header(key: $0.key, value: $0.value ) } ?? []
         body = urlRequest.httpBody
+    }
+
+    mutating func appendBody(_ data: Data) {
+        if self.body == nil {
+            self.body = Data()
+        }
+        self.body?.append(data)
     }
 }
 
