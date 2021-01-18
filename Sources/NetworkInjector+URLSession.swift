@@ -178,9 +178,9 @@ extension NetworkInjector {
 
     func _swizzleURLSessionUploadSelector(baseClass: AnyClass) {
         _swizzleURLSessionUploadFromFileSelector(baseClass)
-//        _swizzleURLSessionUploadFromFileWithCompleteHandlerSelector(baseClass)
-//        _swizzleURLSessionUploadFromDataSelector(baseClass)
-//        _swizzleURLSessionUploadFromDataWithCompleteHandlerSelector(baseClass)
+        _swizzleURLSessionUploadFromFileWithCompleteHandlerSelector(baseClass)
+        _swizzleURLSessionUploadFromDataSelector(baseClass)
+        _swizzleURLSessionUploadFromDataWithCompleteHandlerSelector(baseClass)
     }
 }
 
@@ -198,22 +198,24 @@ extension NetworkInjector {
 
         // For safety, we should cast to AnyObject
         // To prevent app crashes in the future if the object type is changed
-        typealias NewClosureType =  @convention(c) (AnyObject, Selector, AnyObject, AnyObject?) -> Void
+        typealias NewClosureType =  @convention(c) (AnyObject, Selector, AnyObject, AnyObject?) -> AnyObject
         let originalImp: IMP = method_getImplementation(method)
-        let block: @convention(block) (AnyObject, AnyObject, AnyObject?) -> Void = {[weak self](me, request, fileURL) in
+        let block: @convention(block) (AnyObject, AnyObject, AnyObject?) -> AnyObject = {[weak self](me, request, fileURL) in
 
             // call the original
             let original: NewClosureType = unsafeBitCast(originalImp, to: NewClosureType.self)
-            original(me, selector, request, fileURL)
+            let task = original(me, selector, request, fileURL)
 
             // Safe-check
-            if let request = request as? NSURLRequest,
+            if let task = task as? URLSessionTask,
+               let request = request as? NSURLRequest,
                let fileURL = fileURL as? URL {
                 let data = try? Data(contentsOf: fileURL)
-//                self?.delegate?.injectorSessionDidUpload(request: request, data: data)
+                self?.delegate?.injectorSessionDidUpload(task: task, request: request, data: data)
             } else {
                 assertionFailure("Could not get data from _swizzleURLSessionUploadSelector. It might causes due to the latest iOS changes. Please contact the author!")
             }
+            return task
         }
 
         method_setImplementation(method, imp_implementationWithBlock(block))
@@ -229,22 +231,25 @@ extension NetworkInjector {
 
         // For safety, we should cast to AnyObject
         // To prevent app crashes in the future if the object type is changed
-        typealias NewClosureType =  @convention(c) (AnyObject, Selector, AnyObject, AnyObject?, AnyObject) -> Void
+        typealias NewClosureType =  @convention(c) (AnyObject, Selector, AnyObject, AnyObject?, AnyObject) -> AnyObject
         let originalImp: IMP = method_getImplementation(method)
-        let block: @convention(block) (AnyObject, AnyObject, AnyObject?, AnyObject) -> Void = {[weak self](me, request, fileURL, block) in
+        let block: @convention(block) (AnyObject, AnyObject, AnyObject?, AnyObject) -> AnyObject = {[weak self](me, request, fileURL, block) in
 
             // call the original
             let original: NewClosureType = unsafeBitCast(originalImp, to: NewClosureType.self)
-            original(me, selector, request, fileURL, block)
+            let task = original(me, selector, request, fileURL, block)
 
             // Safe-check
-            if let request = request as? NSURLRequest,
+            if let task = task as? URLSessionTask,
+               let request = request as? NSURLRequest,
                 let fileURL = fileURL as? URL {
                 let data = try? Data(contentsOf: fileURL)
-                self?.delegate?.injectorSessionDidUpload(request: request, data: data)
+                self?.delegate?.injectorSessionDidUpload(task: task, request: request, data: data)
             } else {
                 assertionFailure("Could not get data from _swizzleURLSessionUploadSelector. It might causes due to the latest iOS changes. Please contact the author!")
             }
+
+            return task
         }
 
         method_setImplementation(method, imp_implementationWithBlock(block))
@@ -260,21 +265,24 @@ extension NetworkInjector {
 
         // For safety, we should cast to AnyObject
         // To prevent app crashes in the future if the object type is changed
-        typealias NewClosureType =  @convention(c) (AnyObject, Selector, AnyObject, AnyObject) -> Void
+        typealias NewClosureType =  @convention(c) (AnyObject, Selector, AnyObject, AnyObject) -> AnyObject
         let originalImp: IMP = method_getImplementation(method)
-        let block: @convention(block) (AnyObject, AnyObject, AnyObject) -> Void = {[weak self](me, request, data) in
+        let block: @convention(block) (AnyObject, AnyObject, AnyObject) -> AnyObject = {[weak self](me, request, data) in
 
             // call the original
             let original: NewClosureType = unsafeBitCast(originalImp, to: NewClosureType.self)
-            original(me, selector, request, data)
+            let task = original(me, selector, request, data)
 
             // Safe-check
-            if let request = request as? NSURLRequest,
+            if let task = task as? URLSessionTask,
+               let request = request as? NSURLRequest,
                let data = data as? Data {
-                self?.delegate?.injectorSessionDidUpload(request: request, data: data)
+                self?.delegate?.injectorSessionDidUpload(task: task, request: request, data: data)
             } else {
                 assertionFailure("Could not get data from _swizzleURLSessionUploadSelector. It might causes due to the latest iOS changes. Please contact the author!")
             }
+
+            return task
         }
 
         method_setImplementation(method, imp_implementationWithBlock(block))
@@ -290,21 +298,24 @@ extension NetworkInjector {
 
         // For safety, we should cast to AnyObject
         // To prevent app crashes in the future if the object type is changed
-        typealias NewClosureType =  @convention(c) (AnyObject, Selector, AnyObject, AnyObject, AnyObject) -> Void
+        typealias NewClosureType =  @convention(c) (AnyObject, Selector, AnyObject, AnyObject, AnyObject) -> AnyObject
         let originalImp: IMP = method_getImplementation(method)
-        let block: @convention(block) (AnyObject, AnyObject, AnyObject, AnyObject) -> Void = {[weak self](me, request, data, block) in
+        let block: @convention(block) (AnyObject, AnyObject, AnyObject, AnyObject) -> AnyObject = {[weak self](me, request, data, block) in
 
             // call the original
             let original: NewClosureType = unsafeBitCast(originalImp, to: NewClosureType.self)
-            original(me, selector, request, data, block)
+            let task = original(me, selector, request, data, block)
 
             // Safe-check
-            if let request = request as? NSURLRequest,
+            if let task = task as? URLSessionTask,
+               let request = request as? NSURLRequest,
                let data = data as? Data {
-                self?.delegate?.injectorSessionDidUpload(request: request, data: data)
+                self?.delegate?.injectorSessionDidUpload(task: task, request: request, data: data)
             } else {
                 assertionFailure("Could not get data from _swizzleURLSessionUploadSelector. It might causes due to the latest iOS changes. Please contact the author!")
             }
+
+            return task
         }
 
         method_setImplementation(method, imp_implementationWithBlock(block))

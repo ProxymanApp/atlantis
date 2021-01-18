@@ -21,7 +21,7 @@ protocol InjectorDelegate: class {
     func injectorSessionDidReceiveResponse(dataTask: URLSessionTask, response: URLResponse)
     func injectorSessionDidReceiveData(dataTask: URLSessionTask, data: Data)
     func injectorSessionDidComplete(task: URLSessionTask, error: Error?)
-    func injectorSessionDidUpload(request: NSURLRequest, data: Data?)
+    func injectorSessionDidUpload(task: URLSessionTask, request: NSURLRequest, data: Data?)
 
     // For URLConnection
     func injectorConnectionDidReceive(connection: NSURLConnection, response: URLResponse)

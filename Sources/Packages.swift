@@ -45,7 +45,7 @@ struct ConnectionPackage: Codable, Serializable {
 final class TrafficPackage: Codable, CustomDebugStringConvertible, Serializable {
 
     let id: String
-    private var request: Request
+    private let request: Request
     private var response: Response?
     private(set) var error: CustomError?
     private var responseBodyData: Data
@@ -110,7 +110,7 @@ final class TrafficPackage: Codable, CustomDebugStringConvertible, Serializable 
 
     func appendRequestData(_ data: Data) {
         // This func should be called in Upload Tasks
-//        request.appendBody(data)
+        request.appendBody(data)
     }
 
     func appendResponseData(_ data: Data) {
@@ -188,7 +188,7 @@ public struct Header: Codable {
     }
 }
 
-public struct Request: Codable {
+public final class Request: Codable {
 
     // MARK: - Variables
 
@@ -214,7 +214,7 @@ public struct Request: Codable {
         body = urlRequest.httpBody
     }
 
-    mutating func appendBody(_ data: Data) {
+    func appendBody(_ data: Data) {
         if self.body == nil {
             self.body = Data()
         }
