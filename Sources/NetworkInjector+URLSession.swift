@@ -175,4 +175,33 @@ extension NetworkInjector {
 
         method_setImplementation(method, imp_implementationWithBlock(block))
     }
+
+    func _swizzleURLSessionUploadSelector(baseClass: AnyClass) {
+        // Prepare
+        let selector = NSSelectorFromString("uploadTaskWithRequest:fromFile:")
+        guard let method = class_getInstanceMethod(baseClass, selector),
+            baseClass.instancesRespond(to: selector) else {
+            return
+        }
+
+        // For safety, we should cast to AnyObject
+        // To prevent app crashes in the future if the object type is changed
+        typealias NewClosureType =  @convention(c) (AnyObject, Selector, AnyObject, AnyObject) -> Void
+        let originalImp: IMP = method_getImplementation(method)
+        let block: @convention(block) (AnyObject, AnyObject, AnyObject) -> Void = {[weak self](me, request, fileURL) in
+
+            // call the original
+            let original: NewClosureType = unsafeBitCast(originalImp, to: NewClosureType.self)
+            original(me, selector, request, fileURL)
+
+            // Safe-check
+            if let fileURL = fileURL as? URL {
+                print("---------")
+            } else {
+                assertionFailure("Could not get data from _swizzleURLSessionUploadSelector. It might causes due to the latest iOS changes. Please contact the author!")
+            }
+        }
+
+        method_setImplementation(method, imp_implementationWithBlock(block))
+    }
 }

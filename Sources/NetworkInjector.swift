@@ -60,6 +60,9 @@ extension NetworkInjector {
 
         // Resume
         injectURLSessionResume()
+
+        // Upload
+        injectURLSessionUploadTasks()
     }
 
     private func injectAllURLConnection() {
@@ -112,5 +115,9 @@ extension NetworkInjector {
         }
 
         _swizzleURLSessionResumeSelector(baseClass: resumeClass)
+    }
+
+    private func injectURLSessionUploadTasks() {
+        _swizzleURLSessionUploadSelector(baseClass: URLSession.self)
     }
 }
