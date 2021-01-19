@@ -21,6 +21,7 @@ protocol InjectorDelegate: class {
     func injectorSessionDidReceiveResponse(dataTask: URLSessionTask, response: URLResponse)
     func injectorSessionDidReceiveData(dataTask: URLSessionTask, data: Data)
     func injectorSessionDidComplete(task: URLSessionTask, error: Error?)
+    func injectorSessionDidUpload(task: URLSessionTask, request: NSURLRequest, data: Data?)
 
     // For URLConnection
     func injectorConnectionDidReceive(connection: NSURLConnection, response: URLResponse)
@@ -60,6 +61,9 @@ extension NetworkInjector {
 
         // Resume
         injectURLSessionResume()
+
+        // Upload
+        injectURLSessionUploadTasks()
     }
 
     private func injectAllURLConnection() {
@@ -112,5 +116,9 @@ extension NetworkInjector {
         }
 
         _swizzleURLSessionResumeSelector(baseClass: resumeClass)
+    }
+
+    private func injectURLSessionUploadTasks() {
+        _swizzleURLSessionUploadSelector(baseClass: URLSession.self)
     }
 }

@@ -71,6 +71,11 @@ final class TrafficPackage: Codable, CustomDebugStringConvertible, Serializable 
         return TrafficPackage(id: id, request: request)
     }
 
+    static func buildRequest(request: NSURLRequest, id: String) -> TrafficPackage? {
+        guard let request = Request(request as URLRequest) else { return nil }
+        return TrafficPackage(id: id, request: request)
+    }
+
     static func buildRequest(connection: NSURLConnection, id: String) -> TrafficPackage? {
         guard let request = Request(connection.currentRequest) else { return nil }
         return TrafficPackage(id: id, request: request)
@@ -103,7 +108,12 @@ final class TrafficPackage: Codable, CustomDebugStringConvertible, Serializable 
         }
     }
 
-    func append(_ data: Data) {
+    func appendRequestData(_ data: Data) {
+        // This func should be called in Upload Tasks
+        request.appendBody(data)
+    }
+
+    func appendResponseData(_ data: Data) {
 
         // A dirty solution to prevent this method call twice from Method Swizzler
         // It only occurs if it's a LocalDownloadTask
@@ -178,14 +188,14 @@ public struct Header: Codable {
     }
 }
 
-public struct Request: Codable {
+public final class Request: Codable {
 
     // MARK: - Variables
 
     let url: String
     let method: String
     let headers: [Header]
-    let body: Data?
+    private(set) var body: Data?
 
     // MARK: - Init
 
@@ -202,6 +212,13 @@ public struct Request: Codable {
         method = urlRequest.httpMethod ?? "-"
         headers = urlRequest.allHTTPHeaderFields?.map { Header(key: $0.key, value: $0.value ) } ?? []
         body = urlRequest.httpBody
+    }
+
+    func appendBody(_ data: Data) {
+        if self.body == nil {
+            self.body = Data()
+        }
+        self.body?.append(data)
     }
 }
 

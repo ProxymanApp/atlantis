@@ -197,12 +197,26 @@ extension Atlantis: InjectorDelegate {
         queue.sync {
             guard Atlantis.isEnabled.value else { return }
             let package = getPackage(dataTask)
-            package?.append(data)
+            package?.appendResponseData(data)
         }
     }
 
     func injectorSessionDidComplete(task: URLSessionTask, error: Error?) {
         handleDidFinish(task, error: error)
+    }
+
+    func injectorSessionDidUpload(task: URLSessionTask, request: NSURLRequest, data: Data?) {
+        queue.sync {
+            // Since it's not possible to revert the Method Swizzling change
+            // We use isEnable instead
+            guard Atlantis.isEnabled.value else { return }
+
+            // Generate new request and add the data
+            let package = getPackage(task)
+            if let data = data {
+                package?.appendRequestData(data)
+            }
+        }
     }
 
     func injectorConnectionDidReceive(connection: NSURLConnection, response: URLResponse) {
@@ -219,7 +233,7 @@ extension Atlantis: InjectorDelegate {
         queue.sync {
             guard Atlantis.isEnabled.value else { return }
             let package = getPackage(connection)
-            package?.append(data)
+            package?.appendResponseData(data)
         }
     }
 
