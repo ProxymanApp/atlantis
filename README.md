@@ -199,7 +199,7 @@ They are required to categorize the traffic on the Proxyman app by project and d
 ### 1. I could not see any request from Atlantis on Proxyman app?
 For some reason, Bonjour service might not be able to find Proxyman app. 
 
-=> Make sure your iOS devices and the Mac are in the **same Wifi Network** or connect to your Mac with **USB Cabel**
+=> Make sure your iOS devices and the Mac are in the **same Wifi Network** or connect to your Mac with **USB Cable**
 
 => Please use `Atlantis.start(hostName: "_your_host_name")` version to explicitly tell Atlantis connect to your Mac.
 
