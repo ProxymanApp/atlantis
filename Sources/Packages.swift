@@ -44,14 +44,17 @@ struct ConnectionPackage: Codable, Serializable {
 
 public final class TrafficPackage: Codable, CustomDebugStringConvertible, Serializable {
 
-    let id: String
-    private let request: Request
-    private var response: Response?
-    private(set) var error: CustomError?
-    private var responseBodyData: Data
-    private let startAt: TimeInterval
-    private var endAt: TimeInterval?
-    private var lastData: Data?
+    // Should not change the variable names
+    // since we're using Codable in the main app and Atlantis
+
+    public let id: String
+    public let startAt: TimeInterval
+    public let request: Request
+    public private(set) var response: Response?
+    public private(set) var error: CustomError?
+    public private(set) var responseBodyData: Data
+    public private(set) var endAt: TimeInterval?
+    public private(set) var lastData: Data?
 
     init(id: String, request: Request, response: Response? = nil, responseBodyData: Data? = nil) {
         self.id = id
@@ -178,8 +181,8 @@ struct Project: Codable {
 
 public struct Header: Codable {
 
-    let key: String
-    let value: String
+    public let key: String
+    public let value: String
 
     public init(key: String, value: String) {
         self.key = key
@@ -191,10 +194,10 @@ public final class Request: Codable {
 
     // MARK: - Variables
 
-    let url: String
-    let method: String
-    let headers: [Header]
-    private(set) var body: Data?
+    public let url: String
+    public let method: String
+    public let headers: [Header]
+    public private(set) var body: Data?
 
     // MARK: - Init
 
@@ -225,8 +228,8 @@ public struct Response: Codable {
 
     // MARK: - Variables
 
-    let statusCode: Int
-    let headers: [Header]
+    public let statusCode: Int
+    public let headers: [Header]
 
     // MARK: - Init
 
@@ -247,10 +250,10 @@ public struct Response: Codable {
     }
 }
 
-struct CustomError: Codable {
+public struct CustomError: Codable {
 
-    let code: Int
-    let message: String
+    public let code: Int
+    public let message: String
 
     init(_ error: Error) {
         let nsError = error as NSError
