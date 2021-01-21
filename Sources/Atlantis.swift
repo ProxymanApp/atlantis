@@ -298,7 +298,13 @@ extension Atlantis {
 
     func startSendingMessage(package: TrafficPackage) {
         // Notify the delegate
-        delegate?.atlantisDidHaveNewPackage(package)
+        if let delegate = delegate {
+
+            // Should be called from the Main thread since the Traffic is running on different threads
+            DispatchQueue.main.async {
+                delegate.atlantisDidHaveNewPackage(package)
+            }
+        }
 
         // Send via Proxyman app
         if isEnabledTransportLayer {
