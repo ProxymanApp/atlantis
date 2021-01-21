@@ -42,7 +42,7 @@ struct ConnectionPackage: Codable, Serializable {
     }
 }
 
-final class TrafficPackage: Codable, CustomDebugStringConvertible, Serializable {
+public final class TrafficPackage: Codable, CustomDebugStringConvertible, Serializable {
 
     let id: String
     private let request: Request
@@ -51,7 +51,6 @@ final class TrafficPackage: Codable, CustomDebugStringConvertible, Serializable 
     private var responseBodyData: Data
     private let startAt: TimeInterval
     private var endAt: TimeInterval?
-
     private var lastData: Data?
 
     init(id: String, request: Request, response: Response? = nil, responseBodyData: Data? = nil) {
@@ -139,7 +138,7 @@ final class TrafficPackage: Codable, CustomDebugStringConvertible, Serializable 
         return nil
     }
 
-    var debugDescription: String {
+    public var debugDescription: String {
         return "Package: id=\(id), request=\(String(describing: request)), response=\(String(describing: response))"
     }
 }
