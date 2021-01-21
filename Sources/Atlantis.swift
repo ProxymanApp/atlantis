@@ -23,7 +23,7 @@ public final class Atlantis: NSObject {
 
     // MARK: - Components
 
-    public weak var delegate: AtlantisDelegate?
+    private weak var delegate: AtlantisDelegate?
     private let transporter: Transporter
     private var injector: Injector = NetworkInjector()
     private(set) var configuration: Configuration = Configuration.default()
@@ -108,8 +108,14 @@ public final class Atlantis: NSObject {
         }
     }
 
+    /// Enable Transport Layer (e.g. Bonjour)
     public class func setEnableTransportLayer(_ isEnabled: Bool) {
         Atlantis.shared.isEnabledTransportLayer = isEnabled
+    }
+
+    /// Set delegate to observe the traffic
+    public class func setDelegate(_ delegate: AtlantisDelegate) {
+        Atlantis.shared.delegate = delegate
     }
 }
 
