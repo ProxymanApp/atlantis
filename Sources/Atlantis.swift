@@ -70,7 +70,7 @@ public final class Atlantis: NSObject {
     /// If hostName is nil, Atlantis will find all Proxyman apps in the network. It's useful if we have only one machine for personal usage.
     /// If hostName is not nil, Atlantis will try to connect to particular mac machine. It's useful if you have multiple Proxyman.
     /// - Parameter hostName: Host name of Mac machine. You can find your current Host Name in Proxyman -> Certificate -> Install on iOS -> By Atlantis -> Show Start Atlantis
-    public class func start(hostName: String? = nil) {
+    @objc public class func start(hostName: String? = nil) {
         let configuration = Configuration.default(hostName: hostName)
 
         //
@@ -100,7 +100,7 @@ public final class Atlantis: NSObject {
     }
 
     /// Stop monitoring
-    public class func stop() {
+    @objc public class func stop() {
         guard isEnabled.value else { return }
         isEnabled.mutate { $0 = false }
         if Atlantis.shared.isEnabledTransportLayer {
