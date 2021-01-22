@@ -9,6 +9,11 @@
 import Foundation
 import ObjectiveC
 
+public protocol AtlantisDelegate: class {
+
+    func atlantisDidHaveNewPackage(_ package: TrafficPackage)
+}
+
 /// The main class of Atlantis
 /// Responsible to swizzle certain functions from URLSession and URLConnection
 /// to capture the network and send to Proxyman app via Bonjour Service
@@ -18,6 +23,7 @@ public final class Atlantis: NSObject {
 
     // MARK: - Components
 
+    private weak var delegate: AtlantisDelegate?
     private let transporter: Transporter
     private var injector: Injector = NetworkInjector()
     private(set) var configuration: Configuration = Configuration.default()
@@ -40,13 +46,16 @@ public final class Atlantis: NSObject {
     /// It must be wrapped into an atomic for safe-threads
     private static var isEnabled = Atomic<Bool>(false)
 
+    /// Determine whether or not the transport layer (e.g. Bonjour service) is enabled
+    /// If it's enabled, it will send the traffic to Proxyman macOS app
+    private var isEnabledTransportLayer = true
+
     // MARK: - Init
 
     private override init() {
         transporter = NetServiceTransport()
         super.init()
         injector.delegate = self
-        safetyCheck()
     }
     
     // MARK: - Public
@@ -58,31 +67,55 @@ public final class Atlantis: NSObject {
 
     /// Start Swizzle all network functions and monitoring the traffic
     /// It also starts looking Bonjour network from Proxyman app.
-    /// If hostName is nil, Atlantis will find all Proxyman apps in the network. It's useful if we have only one machine for personal use.
+    /// If hostName is nil, Atlantis will find all Proxyman apps in the network. It's useful if we have only one machine for personal usage.
     /// If hostName is not nil, Atlantis will try to connect to particular mac machine. It's useful if you have multiple Proxyman.
     /// - Parameter hostName: Host name of Mac machine. You can find your current Host Name in Proxyman -> Certificate -> Install on iOS -> By Atlantis -> Show Start Atlantis
     public class func start(hostName: String? = nil) {
         let configuration = Configuration.default(hostName: hostName)
 
-        // don't start the service if it's unavailable
-        guard Atlantis.isServiceAvailable else {
-            // init to call the safe-check
-            _ = Atlantis.shared
-            return
+        //
+        if Atlantis.shared.isEnabledTransportLayer {
+
+            // Check if Bonjour and required info's key are available
+            Atlantis.shared.safetyCheck()
+
+            // don't start the service if it's unavailable
+            guard Atlantis.isServiceAvailable else {
+                return
+            }
         }
 
+        // 
         guard !isEnabled.value else { return }
         isEnabled.mutate { $0 = true }
+
+        // Enable the injector
         Atlantis.shared.configuration = configuration
-        Atlantis.shared.transporter.start(configuration)
         Atlantis.shared.injector.injectAllNetworkClasses()
+
+        // Start transport layer if need
+        if Atlantis.shared.isEnabledTransportLayer {
+            Atlantis.shared.transporter.start(configuration)
+        }
     }
 
     /// Stop monitoring
     public class func stop() {
         guard isEnabled.value else { return }
         isEnabled.mutate { $0 = false }
-        Atlantis.shared.transporter.stop()
+        if Atlantis.shared.isEnabledTransportLayer {
+            Atlantis.shared.transporter.stop()
+        }
+    }
+
+    /// Enable Transport Layer (e.g. Bonjour)
+    public class func setEnableTransportLayer(_ isEnabled: Bool) {
+        Atlantis.shared.isEnabledTransportLayer = isEnabled
+    }
+
+    /// Set delegate to observe the traffic
+    public class func setDelegate(_ delegate: AtlantisDelegate) {
+        Atlantis.shared.delegate = delegate
     }
 }
 
@@ -269,9 +302,21 @@ extension Atlantis {
         }
     }
 
-    internal func startSendingMessage(package: TrafficPackage) {
-        let message = Message.buildTrafficMessage(id: configuration.id, item: package)
-        transporter.send(package: message)
+    func startSendingMessage(package: TrafficPackage) {
+        // Notify the delegate
+        if let delegate = delegate {
+
+            // Should be called from the Main thread since the Traffic is running on different threads
+            DispatchQueue.main.async {
+                delegate.atlantisDidHaveNewPackage(package)
+            }
+        }
+
+        // Send via Proxyman app
+        if isEnabledTransportLayer {
+            let message = Message.buildTrafficMessage(id: configuration.id, item: package)
+            transporter.send(package: message)
+        }
     }
 }
 
