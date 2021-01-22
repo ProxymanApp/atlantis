@@ -1,16 +1,23 @@
 PODS:
-  - atlantis-proxyman (1.4.2)
+  - Alamofire (5.4.1)
+  - atlantis-proxyman (1.6.0)
 
 DEPENDENCIES:
+  - Alamofire
   - atlantis-proxyman (from `../atlantis-proxyman.podspec`)
+
+SPEC REPOS:
+  trunk:
+    - Alamofire
 
 EXTERNAL SOURCES:
   atlantis-proxyman:
     :path: "../atlantis-proxyman.podspec"
 
 SPEC CHECKSUMS:
-  atlantis-proxyman: 3fb72c5f5e1406ee707d86c362ee5514012911e4
+  Alamofire: 2291f7d21ca607c491dd17642e5d40fdcda0e65c
+  atlantis-proxyman: f3b39b4660273db3d75bda7db0bab045416d0190
 
-PODFILE CHECKSUM: 5e671eaef5969ada29220d36ba9fc9831b2c62c3
+PODFILE CHECKSUM: f88828c88350704cff8b9aeda82327f0600e0f9c
 
-COCOAPODS: 1.10.0
+COCOAPODS: 1.10.1

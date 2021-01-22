@@ -1,0 +1,4 @@
+{
+  "status": "ok",
+  "log": "2020-12-11T11:38:06+0700 info com.apple.nio-connect-proxy.main : Listening on Optional([IPv4]127.0.0.1/127.0.0.1:9090)"
+}
