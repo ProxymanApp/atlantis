@@ -29,6 +29,9 @@ final class NetServiceTransport: NSObject {
 
     // MARK: - Variabls
 
+    // For some reason, Stream Task could send a big file
+    // https://github.com/ProxymanApp/atlantis/issues/57
+    private static let MaximumSizePackage = 104857600 // 100Mb
     private let serviceBrowser: NetServiceBrowser
     private var services: [NetService] = []
     private let queue = DispatchQueue(label: "com.proxyman.atlantis.netservices") // Serial on purpose
@@ -104,6 +107,13 @@ extension NetServiceTransport: Transporter {
         // Compress data by gzip
         // Fallback to raw data if it's unsuccess
         let data = rawData.gzip() ?? rawData
+
+        // Don't send a big file
+        // It causes crash for some reasons
+        if data.count > NetServiceTransport.MaximumSizePackage {
+            print("Skip Big Request/Response")
+            return
+        }
 
         // Compose a message
         // [1]: the length of the second message. We reserver 8 bytes to store this data
