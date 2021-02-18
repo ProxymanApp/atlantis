@@ -42,6 +42,8 @@ struct ConnectionPackage: Codable, Serializable {
     }
 }
 
+
+
 public final class TrafficPackage: Codable, CustomDebugStringConvertible, Serializable {
 
     // Should not change the variable names
@@ -55,6 +57,24 @@ public final class TrafficPackage: Codable, CustomDebugStringConvertible, Serial
     public private(set) var responseBodyData: Data
     public private(set) var endAt: TimeInterval?
     public private(set) var lastData: Data?
+
+    // MARK: - Variables
+
+    private var isLargeReponseBody: Bool {
+        if responseBodyData.count > NetServiceTransport.MaximumSizePackage {
+            return true
+        }
+        return false
+    }
+
+    private var isLargeRequestBody: Bool {
+        if let requestBody = request.body, requestBody.count > NetServiceTransport.MaximumSizePackage {
+            return true
+        }
+        return false
+    }
+
+    // MARK: - Init
 
     init(id: String, request: Request, response: Response? = nil, responseBodyData: Data? = nil) {
         self.id = id
@@ -133,6 +153,22 @@ public final class TrafficPackage: Codable, CustomDebugStringConvertible, Serial
     }
 
     func toData() -> Data? {
+        // Set nil to prevent being encode to JSON
+        // It might increase the size of the message
+        lastData = nil
+
+        // For some reason, JSONEncoder could not allocate enough RAM to encode a large body
+        // It crashes the app if the body might be > 100Mb
+        // We decice to skip the body, but send the request/response
+        // https://github.com/ProxymanApp/atlantis/issues/57
+        if isLargeReponseBody {
+            self.responseBodyData = "<Skip Large Body>".data(using: String.Encoding.utf8)!
+        }
+        if isLargeRequestBody {
+            self.request.resetBody()
+        }
+
+        // Encode to JSON
         do {
             return try JSONEncoder().encode(self)
         } catch let error {
@@ -221,6 +257,10 @@ public final class Request: Codable {
             self.body = Data()
         }
         self.body?.append(data)
+    }
+
+    func resetBody() {
+        self.body = nil
     }
 }
 
