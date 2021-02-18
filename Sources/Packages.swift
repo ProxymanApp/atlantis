@@ -60,12 +60,15 @@ public final class TrafficPackage: Codable, CustomDebugStringConvertible, Serial
 
     // MARK: - Variables
 
-    var isLargeBody: Bool {
-        let maximum = NetServiceTransport.MaximumSizePackage
-        if responseBodyData.count > maximum {
+    private var isLargeReponseBody: Bool {
+        if responseBodyData.count > NetServiceTransport.MaximumSizePackage {
             return true
         }
-        if let requestBody = request.body, requestBody.count > maximum {
+        return false
+    }
+
+    private var isLargeRequestBody: Bool {
+        if let requestBody = request.body, requestBody.count > NetServiceTransport.MaximumSizePackage {
             return true
         }
         return false
@@ -158,8 +161,10 @@ public final class TrafficPackage: Codable, CustomDebugStringConvertible, Serial
         // It crashes the app if the body might be > 100Mb
         // We decice to skip the body, but send the request/response
         // https://github.com/ProxymanApp/atlantis/issues/57
-        if isLargeBody {
+        if isLargeReponseBody {
             self.responseBodyData = "<Skip Large Body>".data(using: String.Encoding.utf8)!
+        }
+        if isLargeRequestBody {
             self.request.resetBody()
         }
 
