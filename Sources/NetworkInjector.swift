@@ -70,6 +70,11 @@ extension NetworkInjector {
 
         // Upload
         injectURLSessionUploadTasks()
+
+        // Websocket
+        if #available(iOS 13.0, *) {
+            injectURLSessionWebsocketTasks()
+        }
     }
 
     private func injectAllURLConnection() {
@@ -126,5 +131,10 @@ extension NetworkInjector {
 
     private func injectURLSessionUploadTasks() {
         _swizzleURLSessionUploadSelector(baseClass: URLSession.self)
+    }
+
+    @available(iOS 13.0, *)
+    private func injectURLSessionWebsocketTasks() {
+        _swizzleURLSessionWebsocketSelector(baseClass: URLSession.self)
     }
 }
