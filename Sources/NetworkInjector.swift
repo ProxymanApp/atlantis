@@ -26,6 +26,8 @@ protocol InjectorDelegate: class {
     // Websocket
     @available(iOS 13.0, *)
     func injectorSessionWebSocketDidSendMessage(task: URLSessionTask, message: URLSessionWebSocketTask.Message)
+    @available(iOS 13.0, *)
+    func injectorSessionWebSocketDidReceive(task: URLSessionTask, block: (Result<URLSessionWebSocketTask.Message, Error>) -> Void)
 
     // For URLConnection
     func injectorConnectionDidReceive(connection: NSURLConnection, response: URLResponse)
