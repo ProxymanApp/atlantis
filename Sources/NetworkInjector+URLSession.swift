@@ -175,6 +175,11 @@ extension NetworkInjector {
 
         method_setImplementation(method, imp_implementationWithBlock(block))
     }
+}
+
+// MARK: - Upload
+
+extension NetworkInjector {
 
     func _swizzleURLSessionUploadSelector(baseClass: AnyClass) {
         _swizzleURLSessionUploadFromFileSelector(baseClass)
@@ -182,11 +187,6 @@ extension NetworkInjector {
         _swizzleURLSessionUploadFromDataSelector(baseClass)
         _swizzleURLSessionUploadFromDataWithCompleteHandlerSelector(baseClass)
     }
-}
-
-// MARK: - Upload
-
-extension NetworkInjector {
 
     private func _swizzleURLSessionUploadFromFileSelector(_ baseClass: AnyClass) {
         // Prepare
@@ -313,6 +313,49 @@ extension NetworkInjector {
                 self?.delegate?.injectorSessionDidUpload(task: task, request: request, data: data)
             } else {
                 assertionFailure("Could not get data from _swizzleURLSessionUploadSelector. It might causes due to the latest iOS changes. Please contact the author!")
+            }
+
+            return task
+        }
+
+        method_setImplementation(method, imp_implementationWithBlock(block))
+    }
+}
+
+// MARK: - WebSocket
+
+extension NetworkInjector {
+
+    @available(iOS 13.0, *)
+    func _swizzleURLSessionWebsocketSelector(baseClass: AnyClass) {
+        _swizzleURLSessionWebSocketSendWithCompleteHandlerSelector(baseClass)
+    }
+
+    @available(iOS 13.0, *)
+    private func _swizzleURLSessionWebSocketSendWithCompleteHandlerSelector(_ baseClass: AnyClass) {
+        // Prepare
+        let selector = NSSelectorFromString("sendMessage:completionHandler:")
+        guard let method = class_getInstanceMethod(baseClass, selector),
+            baseClass.instancesRespond(to: selector) else {
+            return
+        }
+
+        // For safety, we should cast to AnyObject
+        // To prevent app crashes in the future if the object type is changed
+        typealias NewClosureType =  @convention(c) (AnyObject, Selector, AnyObject, AnyObject) -> AnyObject
+        let originalImp: IMP = method_getImplementation(method)
+        let block: @convention(block) (AnyObject, AnyObject, AnyObject) -> AnyObject = {[weak self](me, message, block) in
+
+            // call the original
+            let original: NewClosureType = unsafeBitCast(originalImp, to: NewClosureType.self)
+            let task = original(me, selector, message, block)
+
+            // Safe-check
+            if let task = task as? URLSessionTask,
+               let message = message as? URLSessionWebSocketTask.Message {
+                self?.delegate?.injectorSessionWebSocketDidSendMessage(task: task, message: message)
+            } else {
+                assertionFailure("Could not get data from _swizzleURLSessionWebSocketSendWithCompleteHandlerSelector. It might causes due to the latest iOS changes. Please contact the author!")
             }
 
             return task

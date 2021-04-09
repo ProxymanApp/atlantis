@@ -277,6 +277,11 @@ extension Atlantis: InjectorDelegate {
     func injectorConnectionDidFinishLoading(connection: NSURLConnection) {
         handleDidFinish(connection, error: nil)
     }
+
+    @available(iOS 13.0, *)
+    func injectorSessionWebSocketDidSendMessage(task: URLSessionTask, message: URLSessionWebSocketTask.Message) {
+        
+    }
 }
 
 // MARK: - Private

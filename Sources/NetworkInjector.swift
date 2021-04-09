@@ -23,6 +23,10 @@ protocol InjectorDelegate: class {
     func injectorSessionDidComplete(task: URLSessionTask, error: Error?)
     func injectorSessionDidUpload(task: URLSessionTask, request: NSURLRequest, data: Data?)
 
+    // Websocket
+    @available(iOS 13.0, *)
+    func injectorSessionWebSocketDidSendMessage(task: URLSessionTask, message: URLSessionWebSocketTask.Message)
+
     // For URLConnection
     func injectorConnectionDidReceive(connection: NSURLConnection, response: URLResponse)
     func injectorConnectionDidReceive(connection: NSURLConnection, data: Data)
