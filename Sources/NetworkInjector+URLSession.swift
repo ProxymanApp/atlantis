@@ -328,13 +328,14 @@ extension NetworkInjector {
 
     @available(iOS 13.0, *)
     func _swizzleURLSessionWebsocketSelector(baseClass: AnyClass) {
-        _swizzleURLSessionWebSocketSendWithCompleteHandlerSelector(URLSessionWebSocketTask.self)
-        _swizzleURLSessionWebSocketReceiveWithCompleteHandlerSelector(URLSessionWebSocketTask.self)
+        let websocketClass = NSClassFromString("__NSURLSessionWebSocketTask")!
+        print(Runtime.getAllMethod(anyClass: websocketClass))i
+        _swizzleURLSessionWebSocketSendWithCompleteHandlerSelector(websocketClass)
+        _swizzleURLSessionWebSocketReceiveWithCompleteHandlerSelector(websocketClass)
     }
 
     @available(iOS 13.0, *)
     private func _swizzleURLSessionWebSocketSendWithCompleteHandlerSelector(_ baseClass: AnyClass) {
-        print(Runtime.getAllMethod(anyClass: URLSessionWebSocketTask.self))
 
         // Prepare
         let selector = NSSelectorFromString("sendMessage:completionHandler:")
@@ -385,12 +386,12 @@ extension NetworkInjector {
             let original: NewClosureType = unsafeBitCast(originalImp, to: NewClosureType.self)
             original(me, selector, block)
 
-            typealias CompleteBlockType = (Result<URLSessionWebSocketTask.Message, Error>) -> Void
+            NSClassFromString("NSURLSessionWebSocketMessage")
 
             // Safe-check
-            if let task = me.value(forKey: "task") as? URLSessionTask,
-               let block = block as? CompleteBlockType {
-                self?.delegate?.injectorSessionWebSocketDidReceive(task: task, block: block)
+            if let task = me as? URLSessionTask {
+                print("--")
+//                self?.delegate?.injectorSessionWebSocketDidReceive(task: task, block: block)
             } else {
                 assertionFailure("Could not get data from _swizzleURLSessionWebSocketReceiveWithCompleteHandlerSelector. It might causes due to the latest iOS changes. Please contact the author!")
             }
