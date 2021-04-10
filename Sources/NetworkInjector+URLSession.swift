@@ -334,11 +334,9 @@ extension NetworkInjector {
     func _swizzleURLSessionWebsocketSelector(baseClass: AnyClass) {
         let websocketClass = NSClassFromString("__NSURLSessionWebSocketTask")!
         print(Runtime.getAllMethod(anyClass: websocketClass))
-        let helper = AtlantisHelper()
-        helper.test()
 
 //        _swizzleURLSessionWebSocketSendWithCompleteHandlerSelector(websocketClass)
-//        _swizzleURLSessionWebSocketReceiveWithCompleteHandlerSelector(websocketClass)
+        _swizzleURLSessionWebSocketReceiveWithCompleteHandlerSelector(websocketClass)
     }
 
     @available(iOS 13.0, *)
@@ -389,12 +387,21 @@ extension NetworkInjector {
         let originalImp: IMP = method_getImplementation(method)
         let block: @convention(block) (AnyObject, AnyObject) -> Void = {[weak self](me, handler) in
 
+            // Pass the handler (AnyObject) to AtlantisHelper
+            // We intentionally do this way because it's possible to use the class `NSURLSessionWebSocketMessage`
+            // Xcode prohibits use this class `NSURLSessionWebSocketMessage` in Swift, so there is no way to cast it
+            //
+            // Pass it to Objective-C world would help it
+            //
+            let wrapperHandler = AtlantisHelper.swizzleWebSocketReceiveMessage(withCompleteHandler: handler, responseHandler: { (str, data, error) in
+                //
+                print("------- Get data \(str), \(data), \(error)")
+            }) ?? handler
+
             // call the original
             let original: NewClosureType = unsafeBitCast(originalImp, to: NewClosureType.self)
-            original(me, selector, handler)
-            
-            NSClassFromString("NSURLSessionWebSocketMessage")
-            typealias CompleteBlockType = (URLSessionWebSocketTask.Message, Error) -> Void
+            original(me, selector, wrapperHandler as AnyObject)
+
 
             // Safe-check
 //            if let task = me as? URLSessionTask {

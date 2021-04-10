@@ -11,7 +11,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 @interface AtlantisHelper: NSObject
 
--(void) test;
++(id _Nullable) swizzleWebSocketReceiveMessageWithCompleteHandler:(id)handler responseHandler:(void (^_Nullable)(NSString* _Nullable str, NSData* _Nullable data, NSError* _Nullable error)) responseHandler;
 
 @end
 
