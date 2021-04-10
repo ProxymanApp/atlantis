@@ -27,6 +27,18 @@ struct Runtime {
         allClasses.deallocate()
         return classes
     }
+
+    static func getAllMethod(anyClass: AnyClass) -> [String] {
+        var methods: [String] = []
+        var methodCount: UInt32 = 0
+        let methodList = class_copyMethodList(anyClass, &methodCount)
+        for i in 0 ..< Int(methodCount) {
+            let selName = sel_getName(method_getName(methodList![i]))
+            let name = String(cString: selName)
+            methods.append(name)
+        }
+        return methods
+    }
 }
 
 /// A simple atomic lock
