@@ -135,6 +135,6 @@ extension NetworkInjector {
 
     @available(iOS 13.0, *)
     private func injectURLSessionWebsocketTasks() {
-        _swizzleURLSessionWebsocketSelector(baseClass: URLSession.self)
+        _swizzleURLSessionWebsocketSelector()
     }
 }

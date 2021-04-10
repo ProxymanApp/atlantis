@@ -331,11 +331,13 @@ extension NetworkInjector {
 extension NetworkInjector {
 
     @available(iOS 13.0, *)
-    func _swizzleURLSessionWebsocketSelector(baseClass: AnyClass) {
-        let websocketClass = NSClassFromString("__NSURLSessionWebSocketTask")!
-        print(Runtime.getAllMethod(anyClass: websocketClass))
-
-//        _swizzleURLSessionWebSocketSendWithCompleteHandlerSelector(websocketClass)
+    func _swizzleURLSessionWebsocketSelector() {
+        guard let websocketClass = NSClassFromString("__NSURLSessionWebSocketTask") else {
+            print("[Atlantis][ERROR] Could not inject __NSURLSessionWebSocketTask!!")
+            return
+        }
+        
+        _swizzleURLSessionWebSocketSendWithCompleteHandlerSelector(websocketClass)
         _swizzleURLSessionWebSocketReceiveWithCompleteHandlerSelector(websocketClass)
     }
 
@@ -360,9 +362,22 @@ extension NetworkInjector {
             original(me, selector, message, block)
 
             // Safe-check
-            if let task = me.value(forKey: "task") as? URLSessionTask,
-               let message = message as? URLSessionWebSocketTask.Message {
-                self?.delegate?.injectorSessionWebSocketDidSendMessage(task: task, message: message)
+            if let task = me as? URLSessionTask {
+
+                // As message is `NSURLSessionWebSocketMessage` and Xcode doesn't allow to cast it.
+                // We use value(forKey:) to get the value
+                let newMessage: URLSessionWebSocketTask.Message?
+                if let strValue = message.value(forKey: "string") as? String {
+                    newMessage = .string(strValue)
+                } else if let dataValue = message.value(forKey: "data") as? Data {
+                    newMessage = .data(dataValue)
+                } else {
+                    newMessage = nil
+                }
+
+                if let newMessage = newMessage {
+                    self?.delegate?.injectorSessionWebSocketDidSendMessage(task: task, message: newMessage)
+                }
             } else {
                 assertionFailure("Could not get data from _swizzleURLSessionWebSocketSendWithCompleteHandlerSelector. It might causes due to the latest iOS changes. Please contact the author!")
             }
