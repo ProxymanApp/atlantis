@@ -7,7 +7,7 @@
 
 #import "AtlantisHelper.h"
 
-@implementation NSObject (AtlantisHelper)
+@implementation AtlantisHelper
 
 - (void)test {
     NSLog(@"Hello!");

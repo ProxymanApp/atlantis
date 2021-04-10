@@ -335,10 +335,10 @@ extension NetworkInjector {
         let websocketClass = NSClassFromString("__NSURLSessionWebSocketTask")!
         print(Runtime.getAllMethod(anyClass: websocketClass))
         let helper = AtlantisHelper()
-//        helper.test()
+        helper.test()
 
 //        _swizzleURLSessionWebSocketSendWithCompleteHandlerSelector(websocketClass)
-        _swizzleURLSessionWebSocketReceiveWithCompleteHandlerSelector(websocketClass)
+//        _swizzleURLSessionWebSocketReceiveWithCompleteHandlerSelector(websocketClass)
     }
 
     @available(iOS 13.0, *)
