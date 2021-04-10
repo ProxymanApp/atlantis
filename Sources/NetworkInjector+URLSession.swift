@@ -7,7 +7,10 @@
 //
 
 import Foundation
+
+#if canImport(Atlantis_Objc)
 import Atlantis_Objc
+#endif
 
 extension NetworkInjector {
 
@@ -332,7 +335,7 @@ extension NetworkInjector {
         let websocketClass = NSClassFromString("__NSURLSessionWebSocketTask")!
         print(Runtime.getAllMethod(anyClass: websocketClass))
         let helper = AtlantisHelper()
-        helper.test()
+//        helper.test()
 
 //        _swizzleURLSessionWebSocketSendWithCompleteHandlerSelector(websocketClass)
         _swizzleURLSessionWebSocketReceiveWithCompleteHandlerSelector(websocketClass)
