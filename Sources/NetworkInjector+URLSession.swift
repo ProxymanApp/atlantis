@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import Atlantis_Objc
 
 extension NetworkInjector {
 
@@ -329,8 +330,11 @@ extension NetworkInjector {
     @available(iOS 13.0, *)
     func _swizzleURLSessionWebsocketSelector(baseClass: AnyClass) {
         let websocketClass = NSClassFromString("__NSURLSessionWebSocketTask")!
-        print(Runtime.getAllMethod(anyClass: websocketClass))i
-        _swizzleURLSessionWebSocketSendWithCompleteHandlerSelector(websocketClass)
+        print(Runtime.getAllMethod(anyClass: websocketClass))
+        let helper = AtlantisHelper()
+        helper.test()
+
+//        _swizzleURLSessionWebSocketSendWithCompleteHandlerSelector(websocketClass)
         _swizzleURLSessionWebSocketReceiveWithCompleteHandlerSelector(websocketClass)
     }
 
@@ -380,21 +384,22 @@ extension NetworkInjector {
         // To prevent app crashes in the future if the object type is changed
         typealias NewClosureType =  @convention(c) (AnyObject, Selector, AnyObject) -> Void
         let originalImp: IMP = method_getImplementation(method)
-        let block: @convention(block) (AnyObject, AnyObject) -> Void = {[weak self](me, block) in
+        let block: @convention(block) (AnyObject, AnyObject) -> Void = {[weak self](me, handler) in
 
             // call the original
             let original: NewClosureType = unsafeBitCast(originalImp, to: NewClosureType.self)
-            original(me, selector, block)
-
+            original(me, selector, handler)
+            
             NSClassFromString("NSURLSessionWebSocketMessage")
+            typealias CompleteBlockType = (URLSessionWebSocketTask.Message, Error) -> Void
 
             // Safe-check
-            if let task = me as? URLSessionTask {
-                print("--")
-//                self?.delegate?.injectorSessionWebSocketDidReceive(task: task, block: block)
-            } else {
-                assertionFailure("Could not get data from _swizzleURLSessionWebSocketReceiveWithCompleteHandlerSelector. It might causes due to the latest iOS changes. Please contact the author!")
-            }
+//            if let task = me as? URLSessionTask {
+//                print("--")
+////                self?.delegate?.injectorSessionWebSocketDidReceive(task: task, block: block)
+//            } else {
+//                assertionFailure("Could not get data from _swizzleURLSessionWebSocketReceiveWithCompleteHandlerSelector. It might causes due to the latest iOS changes. Please contact the author!")
+//            }
         }
 
         method_setImplementation(method, imp_implementationWithBlock(block))

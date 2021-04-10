@@ -18,13 +18,15 @@ let package = Package(
         // Targets are the basic building blocks of a package. A target can define a module or a test suite.
         // Targets can depend on other targets in this package, and on products in packages which this package depends on.
         .target(
+            name: "Atlantis-Objc",
+            path: "Objc",
+            exclude: ["Sources"],
+            publicHeadersPath: "internal"),
+        .target(
             name: "Atlantis",
-            dependencies: [],
+            dependencies: ["Atlantis-Objc"],
             path: "Sources",
-            exclude: ["Atlantis-Example", "Configs", "Images", "Tests"]),
-        .testTarget(
-            name: "AtlantisTests",
-            dependencies: ["Atlantis"]),
+            exclude: ["Atlantis-Example", "Configs", "Images", "Tests"])
     ],
     swiftLanguageVersions: [.v5]
 )
