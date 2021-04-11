@@ -30,6 +30,8 @@ protocol InjectorDelegate: class {
     func injectorSessionWebSocketDidReceive(task: URLSessionTask, message: URLSessionWebSocketTask.Message)
     @available(iOS 13.0, *)
     func injectorSessionWebSocketDidSendPingPong(task: URLSessionTask)
+    @available(iOS 13.0, *)
+    func injectorSessionWebSocketDidSendCancelWithReason(task: URLSessionTask, closeCode: URLSessionWebSocketTask.CloseCode, reason: Data?)
 
     // For URLConnection
     func injectorConnectionDidReceive(connection: NSURLConnection, response: URLResponse)

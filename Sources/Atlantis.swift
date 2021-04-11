@@ -318,6 +318,11 @@ extension Atlantis {
             }
         }
     }
+
+    @available(iOS 13.0, *)
+    func injectorSessionWebSocketDidSendCancelWithReason(task: URLSessionTask, closeCode: URLSessionWebSocketTask.CloseCode, reason: Data?) {
+
+    }
 }
 
 // MARK: - Private

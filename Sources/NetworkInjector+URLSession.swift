@@ -336,11 +336,13 @@ extension NetworkInjector {
             print("[Atlantis][ERROR] Could not inject __NSURLSessionWebSocketTask!!")
             return
         }
+        print(Runtime.getAllMethod(anyClass: websocketClass))
 
         //
         _swizzleURLSessionWebSocketSendMessageSelector(websocketClass)
         _swizzleURLSessionWebSocketReceiveMessageSelector(websocketClass)
         _swizzleURLSessionWebSocketSendPingPongSelector(websocketClass)
+        _swizzleURLSessionWebSocketCancelWithCloseCodeReasonSelector(websocketClass)
     }
 
     @available(iOS 13.0, *)
@@ -443,6 +445,39 @@ extension NetworkInjector {
                 self?.delegate?.injectorSessionWebSocketDidSendPingPong(task: task)
             } else {
                 assertionFailure("Could not get data from _swizzleURLSessionWebSocketSendPingPongSelector. It might causes due to the latest iOS changes. Please contact the author!")
+            }
+        }
+
+        method_setImplementation(method, imp_implementationWithBlock(block))
+    }
+
+    @available(iOS 13.0, *)
+    private func _swizzleURLSessionWebSocketCancelWithCloseCodeReasonSelector(_ baseClass: AnyClass) {
+
+        // Prepare
+        let selector = NSSelectorFromString("cancelWithCloseCode:reason:")
+        guard let method = class_getInstanceMethod(baseClass, selector),
+            baseClass.instancesRespond(to: selector) else {
+            return
+        }
+
+        // For safety, we should cast to AnyObject
+        // To prevent app crashes in the future if the object type is changed
+        typealias NewClosureType =  @convention(c) (AnyObject, Selector, NSInteger, AnyObject?) -> Void
+        let originalImp: IMP = method_getImplementation(method)
+        let block: @convention(block) (AnyObject, NSInteger, AnyObject?) -> Void = {[weak self](me, closeCode, reason) in
+
+            // call the original
+            let original: NewClosureType = unsafeBitCast(originalImp, to: NewClosureType.self)
+            original(me, selector, closeCode, reason)
+
+            // Safe-check
+            if let task = me as? URLSessionTask {
+                let newCloseCode = URLSessionWebSocketTask.CloseCode(rawValue: closeCode) ?? .invalid
+                let data = reason as? Data // optional data
+                self?.delegate?.injectorSessionWebSocketDidSendCancelWithReason(task: task, closeCode: newCloseCode, reason: data)
+            } else {
+                assertionFailure("Could not get data from _swizzleURLSessionWebSocketCancelWithCloseCodeReasonSelector. It might causes due to the latest iOS changes. Please contact the author!")
             }
         }
 
