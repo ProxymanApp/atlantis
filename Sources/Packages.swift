@@ -324,14 +324,46 @@ public struct CustomError: Codable {
     }
 }
 
-public struct WebsocketMessage: Codable {
+@available(iOS 13.0, *)
+struct WebsocketMessagePackage: Codable, Serializable {
 
-    public let stringValue: String?
-    public let dataValue: Data?
+    enum MessageType: String, Codable {
+        case pingPong
+        case send
+        case receive
+    }
 
-    init(stringValue: String?, dataValue: Data?) {
-        self.stringValue = stringValue
-        self.dataValue = dataValue
+    private let id: String
+    private let createdAt: TimeInterval
+    private let messageType: MessageType
+    private let stringValue: String?
+    private let dataValue: Data?
+
+    init?(package: TrafficPackage, message: URLSessionWebSocketTask.Message, messageType: MessageType) {
+        self.messageType = messageType
+        self.id = package.id
+        self.createdAt = Date().timeIntervalSince1970
+        switch message {
+        case .data(let data):
+            self.dataValue = data
+            self.stringValue = nil
+        case .string(let strValue):
+            self.stringValue = strValue
+            self.dataValue = nil
+        @unknown default:
+            assertionFailure("There is new value of URLSessionWebSocketTask.Message. Please contact the author!")
+            return nil
+        }
+    }
+
+    func toData() -> Data? {
+        // Encode to JSON
+        do {
+            return try JSONEncoder().encode(self)
+        } catch let error {
+            print(error)
+        }
+        return nil
     }
 }
 

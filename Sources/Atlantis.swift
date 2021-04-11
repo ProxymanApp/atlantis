@@ -277,20 +277,46 @@ extension Atlantis: InjectorDelegate {
     func injectorConnectionDidFinishLoading(connection: NSURLConnection) {
         handleDidFinish(connection, error: nil)
     }
+}
+
+// MARK: - Websocket
+
+extension Atlantis {
 
     @available(iOS 13.0, *)
     func injectorSessionWebSocketDidSendPingPong(task: URLSessionTask) {
-
+        let message = URLSessionWebSocketTask.Message.string("ping")
+        sendWebSocketMessage(task: task, messageType: .pingPong, message: message)
     }
 
     @available(iOS 13.0, *)
     func injectorSessionWebSocketDidReceive(task: URLSessionTask, message: URLSessionWebSocketTask.Message) {
-
+        sendWebSocketMessage(task: task, messageType: .receive, message: message)
     }
 
     @available(iOS 13.0, *)
     func injectorSessionWebSocketDidSendMessage(task: URLSessionTask, message: URLSessionWebSocketTask.Message) {
-        
+        sendWebSocketMessage(task: task, messageType: .send, message: message)
+    }
+
+    @available(iOS 13.0, *)
+    private func sendWebSocketMessage(task: URLSessionTask, messageType: WebsocketMessagePackage.MessageType, message: URLSessionWebSocketTask.Message) {
+        queue.sync {
+            // Since it's not possible to revert the Method Swizzling change
+            // We use isEnable instead
+            guard Atlantis.isEnabled.value else { return }
+
+            // Get the package from the cache
+            let id = PackageIdentifier.getID(taskOrConnection: task)
+            if let package = packages[id] {
+                if let wsPackage = WebsocketMessagePackage(package: package, message: message, messageType: messageType) {
+                    // Send to proxyman
+                    sendMessageToProxyman(wsPackage)
+                }
+            } else {
+                assertionFailure("Something went wrong! Should find a previous WS Package! Please contact the author!")
+            }
+        }
     }
 }
 
@@ -335,11 +361,18 @@ extension Atlantis {
             }
         }
 
-        // Send via Proxyman app
-        if isEnabledTransportLayer {
-            let message = Message.buildTrafficMessage(id: configuration.id, item: package)
-            transporter.send(package: message)
+        // Sending
+        sendMessageToProxyman(package)
+    }
+
+    private func sendMessageToProxyman(_ message: Serializable) {
+        // Send to Proxyman app
+        guard isEnabledTransportLayer else {
+            return
         }
+
+        let message = Message.buildTrafficMessage(id: configuration.id, item: message)
+        transporter.send(package: message)
     }
 }
 
