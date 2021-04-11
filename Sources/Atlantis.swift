@@ -279,13 +279,18 @@ extension Atlantis: InjectorDelegate {
     }
 
     @available(iOS 13.0, *)
-    func injectorSessionWebSocketDidSendMessage(task: URLSessionTask, message: URLSessionWebSocketTask.Message) {
-        
+    func injectorSessionWebSocketDidSendPingPong(task: URLSessionTask) {
+
     }
 
     @available(iOS 13.0, *)
-    func injectorSessionWebSocketDidReceive(task: URLSessionTask, block: (Result<URLSessionWebSocketTask.Message, Error>) -> Void) {
+    func injectorSessionWebSocketDidReceive(task: URLSessionTask, message: URLSessionWebSocketTask.Message) {
 
+    }
+
+    @available(iOS 13.0, *)
+    func injectorSessionWebSocketDidSendMessage(task: URLSessionTask, message: URLSessionWebSocketTask.Message) {
+        
     }
 }
 

@@ -365,23 +365,13 @@ extension NetworkInjector {
 
             // Safe-check
             if let task = me as? URLSessionTask {
-
                 // As message is `NSURLSessionWebSocketMessage` and Xcode doesn't allow to cast it.
                 // We use value(forKey:) to get the value
-                let newMessage: URLSessionWebSocketTask.Message?
-                if let strValue = message.value(forKey: "string") as? String {
-                    newMessage = .string(strValue)
-                } else if let dataValue = message.value(forKey: "data") as? Data {
-                    newMessage = .data(dataValue)
-                } else {
-                    newMessage = nil
-                }
-
-                if let newMessage = newMessage {
+                if let newMessage = self?.wrapWebSocketMessage(object: message) {
                     self?.delegate?.injectorSessionWebSocketDidSendMessage(task: task, message: newMessage)
                 }
             } else {
-                assertionFailure("Could not get data from _swizzleURLSessionWebSocketSendWithCompleteHandlerSelector. It might causes due to the latest iOS changes. Please contact the author!")
+                assertionFailure("Could not get data from _swizzleURLSessionWebSocketSendMessageSelector. It might causes due to the latest iOS changes. Please contact the author!")
             }
         }
 
@@ -410,23 +400,19 @@ extension NetworkInjector {
             //
             // Pass it to Objective-C world would help it
             //
-            let wrapperHandler = AtlantisHelper.swizzleWebSocketReceiveMessage(withCompleteHandler: handler, responseHandler: { (str, data, error) in
-                //
-                print("------- Get data \(str), \(data), \(error)")
+            let wrapperHandler = AtlantisHelper.swizzleWebSocketReceiveMessage(withCompleteHandler: handler, responseHandler: {[weak self] (str, data, error) in
+                if let task = me as? URLSessionTask {
+                    if let message = self?.wrapWebSocketMessage(strValue: str, dataValue: data) {
+                        self?.delegate?.injectorSessionWebSocketDidReceive(task: task, message: message)
+                    }
+                } else {
+                    assertionFailure("Could not get data from _swizzleURLSessionWebSocketReceiveMessageSelector. It might causes due to the latest iOS changes. Please contact the author!")
+                }
             }) ?? handler
 
             // call the original
             let original: NewClosureType = unsafeBitCast(originalImp, to: NewClosureType.self)
             original(me, selector, wrapperHandler as AnyObject)
-
-
-            // Safe-check
-//            if let task = me as? URLSessionTask {
-//                print("--")
-////                self?.delegate?.injectorSessionWebSocketDidReceive(task: task, block: block)
-//            } else {
-//                assertionFailure("Could not get data from _swizzleURLSessionWebSocketReceiveWithCompleteHandlerSelector. It might causes due to the latest iOS changes. Please contact the author!")
-//            }
         }
 
         method_setImplementation(method, imp_implementationWithBlock(block))
@@ -453,14 +439,33 @@ extension NetworkInjector {
             original(me, selector, handler)
 
             // Safe-check
-//            if let task = me as? URLSessionTask {
-//                print("--")
-////                self?.delegate?.injectorSessionWebSocketDidReceive(task: task, block: block)
-//            } else {
-//                assertionFailure("Could not get data from _swizzleURLSessionWebSocketReceiveWithCompleteHandlerSelector. It might causes due to the latest iOS changes. Please contact the author!")
-//            }
+            if let task = me as? URLSessionTask {
+                self?.delegate?.injectorSessionWebSocketDidSendPingPong(task: task)
+            } else {
+                assertionFailure("Could not get data from _swizzleURLSessionWebSocketSendPingPongSelector. It might causes due to the latest iOS changes. Please contact the author!")
+            }
         }
 
         method_setImplementation(method, imp_implementationWithBlock(block))
+    }
+
+    @available(iOS 13.0, *)
+    private func wrapWebSocketMessage(object: AnyObject) -> URLSessionWebSocketTask.Message? {
+        if let strValue = object.value(forKey: "string") as? String {
+            return URLSessionWebSocketTask.Message.string(strValue)
+        } else if let dataValue = object.value(forKey: "data") as? Data {
+            return URLSessionWebSocketTask.Message.data(dataValue)
+        }
+        return nil
+    }
+
+    @available(iOS 13.0, *)
+    private func wrapWebSocketMessage(strValue: String?, dataValue: Data?) -> URLSessionWebSocketTask.Message? {
+        if let strValue = strValue {
+            return URLSessionWebSocketTask.Message.string(strValue)
+        } else if let dataValue = dataValue {
+            return URLSessionWebSocketTask.Message.data(dataValue)
+        }
+        return nil
     }
 }
