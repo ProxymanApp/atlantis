@@ -313,7 +313,15 @@ extension Atlantis {
             startSendingMessage(package: package)
 
             // Then remove it from our cache
-            packages.removeValue(forKey: package.id)
+            switch package.packageType {
+            case .http:
+                packages.removeValue(forKey: package.id)
+            case .websocket:
+                // Don't remove the WS traffic
+                // Keep it in the packages, so we can send the WS Message
+                // Only remove the we receive the Close message
+                break
+            }
         }
     }
 

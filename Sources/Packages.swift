@@ -46,6 +46,11 @@ struct ConnectionPackage: Codable, Serializable {
 
 public final class TrafficPackage: Codable, CustomDebugStringConvertible, Serializable {
 
+    public enum PackageType: String, Codable {
+        case http
+        case websocket
+    }
+
     // Should not change the variable names
     // since we're using Codable in the main app and Atlantis
 
@@ -57,6 +62,7 @@ public final class TrafficPackage: Codable, CustomDebugStringConvertible, Serial
     public private(set) var responseBodyData: Data
     public private(set) var endAt: TimeInterval?
     public private(set) var lastData: Data?
+    public let packageType: PackageType
 
     // MARK: - Variables
 
@@ -76,13 +82,14 @@ public final class TrafficPackage: Codable, CustomDebugStringConvertible, Serial
 
     // MARK: - Init
 
-    init(id: String, request: Request, response: Response? = nil, responseBodyData: Data? = nil) {
+    init(id: String, request: Request, response: Response? = nil, responseBodyData: Data? = nil, packageType: PackageType = .http) {
         self.id = id
         self.request = request
         self.response = nil
         self.startAt = Date().timeIntervalSince1970
         self.response = response
         self.responseBodyData = responseBodyData ?? Data()
+        self.packageType = packageType
     }
 
     // MARK: - Builder
@@ -90,6 +97,16 @@ public final class TrafficPackage: Codable, CustomDebugStringConvertible, Serial
     static func buildRequest(sessionTask: URLSessionTask, id: String) -> TrafficPackage? {
         guard let currentRequest = sessionTask.currentRequest,
             let request = Request(currentRequest) else { return nil }
+
+        // Check if it's a websocket
+        if #available(iOS 13.0, *) {
+            if let websocketClass = NSClassFromString("__NSURLSessionWebSocketTask"),
+               sessionTask.isKind(of: websocketClass) {
+                return TrafficPackage(id: id, request: request, packageType: .websocket)
+            }
+        }
+
+        // Or normal websocket
         return TrafficPackage(id: id, request: request)
     }
 
@@ -304,6 +321,17 @@ public struct CustomError: Codable {
     init(_ error: NSError) {
         self.code = error.code
         self.message = error.localizedDescription
+    }
+}
+
+public struct WebsocketMessage: Codable {
+
+    public let stringValue: String?
+    public let dataValue: Data?
+
+    init(stringValue: String?, dataValue: Data?) {
+        self.stringValue = stringValue
+        self.dataValue = dataValue
     }
 }
 
