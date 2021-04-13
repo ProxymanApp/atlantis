@@ -1,0 +1,58 @@
+{
+  "entry": {
+    "label": "Atlantis",
+    "cell": "PSLinkCell",
+    "icon": ""
+  },
+  "items": [
+    {
+      "label": "",
+      "cell": "PSGroupCell",
+      "footerText": "Intercepting Http(s) Traffics by ProxyMan"
+    },
+    {
+      "cell": "PSSwitchCell",
+      "label": "Enable ProxyMan Host",
+      "default": false,
+      "defaults": "proxyman.atlantis.settings",
+      "key": "shouldEnableHost"
+    },
+    {
+      "defaults": "proxyman.atlantis.settings",
+      "cell": "PSEditTextCell",
+      "label": "Host(IP):",
+      "key": "host",
+      "keyboard": "",
+      "noAutoCorrect": true,
+      "default": ""
+    },
+    {
+      "ALAllowsSelection": "1",
+      "ALChangeNotification": "com.rpetrich.applist.sample.notification",
+      "ALSectionDescriptors": [
+        {
+          "cell-class-name": "ALSwitchCell",
+          "icon-size": "29",
+          "predicate": "isSystemApplication = FALSE",
+          "suppress-hidden-apps": "1",
+          "title": "User Applications"
+        },
+        {
+          "cell-class-name": "ALSwitchCell",
+          "icon-size": "29",
+          "predicate": "isSystemApplication = TRUE",
+          "suppress-hidden-apps": "1",
+          "title": "System Applications"
+        }
+      ],
+      "ALSettingsKeyPrefix": "Settings-",
+      "ALSettingsPath": "\/var\/mobile\/Library\/Preferences\/proxyman.atlantis.settings.plist",
+      "bundle": "AppList",
+      "cell": "PSLinkCell",
+      "icon": "\/Applications\/Preferences.app\/Settings.png",
+      "isController": "1",
+      "label": "Enabled App List"
+    }
+  ],
+  "title": "Intercepting Http(s) Traffics by ProxyMan"
+}
