@@ -1,0 +1,9 @@
+Package: proxyman.atlantis
+Name: atlantis
+Depends: mobilesubstrate
+Version: 0.0.1
+Architecture: iphoneos-arm64
+Description: http(s) intercepting for proxyman
+Maintainer: atlantis
+Author: atlantis
+Section: Tweaks
