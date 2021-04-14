@@ -331,6 +331,7 @@ struct WebsocketMessagePackage: Codable, Serializable {
         case pingPong
         case send
         case receive
+        case sendCloseMessage
     }
 
     private let id: String
@@ -354,6 +355,14 @@ struct WebsocketMessagePackage: Codable, Serializable {
             assertionFailure("There is new value of URLSessionWebSocketTask.Message. Please contact the author!")
             return nil
         }
+    }
+
+    init(package: TrafficPackage, closeCode: URLSessionWebSocketTask.CloseCode, reason: Data?) {
+        self.messageType = .sendCloseMessage
+        self.id = package.id
+        self.createdAt = Date().timeIntervalSince1970
+        self.stringValue = "\(closeCode.rawValue)" // Temporarily store the closeCode by String
+        self.dataValue = reason
     }
 
     func toData() -> Data? {

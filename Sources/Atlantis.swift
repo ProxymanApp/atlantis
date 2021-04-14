@@ -321,7 +321,20 @@ extension Atlantis {
 
     @available(iOS 13.0, *)
     func injectorSessionWebSocketDidSendCancelWithReason(task: URLSessionTask, closeCode: URLSessionWebSocketTask.CloseCode, reason: Data?) {
+        queue.sync {
+            // Since it's not possible to revert the Method Swizzling change
+            // We use isEnable instead
+            guard Atlantis.isEnabled.value else { return }
 
+            // Get the package from the cache
+            let id = PackageIdentifier.getID(taskOrConnection: task)
+            if let package = packages[id] {
+                let wsPackage = WebsocketMessagePackage(package: package, closeCode: closeCode, reason: reason)
+                sendMessageToProxyman(wsPackage)
+            } else {
+                assertionFailure("Something went wrong! Should find a previous WS Package! Please contact the author!")
+            }
+        }
     }
 }
 
