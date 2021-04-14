@@ -310,8 +310,7 @@ extension Atlantis {
             let id = PackageIdentifier.getID(taskOrConnection: task)
             if let package = packages[id] {
                 if let wsPackage = WebsocketMessagePackage(package: package, message: message, messageType: messageType) {
-                    // Send to proxyman
-                    sendMessageToProxyman(wsPackage)
+                    startSendingWebsocketMessage(wsPackage)
                 }
             } else {
                 assertionFailure("Something went wrong! Should find a previous WS Package! Please contact the author!")
@@ -330,7 +329,7 @@ extension Atlantis {
             let id = PackageIdentifier.getID(taskOrConnection: task)
             if let package = packages[id] {
                 let wsPackage = WebsocketMessagePackage(package: package, closeCode: closeCode, reason: reason)
-                sendMessageToProxyman(wsPackage)
+                startSendingWebsocketMessage(wsPackage)
             } else {
                 assertionFailure("Something went wrong! Should find a previous WS Package! Please contact the author!")
             }
@@ -379,17 +378,17 @@ extension Atlantis {
             }
         }
 
-        // Sending
-        sendMessageToProxyman(package)
-    }
-
-    private func sendMessageToProxyman(_ message: Serializable) {
         // Send to Proxyman app
         guard isEnabledTransportLayer else {
             return
         }
 
-        let message = Message.buildTrafficMessage(id: configuration.id, item: message)
+        let message = Message.buildTrafficMessage(id: configuration.id, item: package)
+        transporter.send(package: message)
+    }
+
+    private func startSendingWebsocketMessage(_ message: Serializable) {
+        let message = Message.buildWebSocketMessage(id: configuration.id, item: message)
         transporter.send(package: message)
     }
 }

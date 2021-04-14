@@ -65,6 +65,7 @@ extension NetworkInjector {
         // iOS 9, 10, 11, 12, 13, 14: __NSCFURLLocalSessionConnection
         // This approach works with delegate or complete block from URLSession
         let sessionClass: AnyClass? = NSClassFromString("__NSCFURLLocalSessionConnection") ?? NSClassFromString("__NSCFURLSessionConnection")
+
         if let anySessionClass = sessionClass {
             injectIntoURLSessionDelegate(anyClass: anySessionClass)
         }
