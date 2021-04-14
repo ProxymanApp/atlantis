@@ -309,9 +309,12 @@ extension Atlantis {
             // Get the package from the cache
             let id = PackageIdentifier.getID(taskOrConnection: task)
             if let package = packages[id] {
-                if let wsPackage = WebsocketMessagePackage(package: package, message: message, messageType: messageType) {
-                    startSendingWebsocketMessage(wsPackage)
+                guard let atlantisMessage = WebsocketMessagePackage.Message(message: message) else {
+                    return
                 }
+                let wsPackage = WebsocketMessagePackage(id: id, message: atlantisMessage, messageType: messageType)
+                package.setWebsocketMessagePackage(package: wsPackage)
+                startSendingWebsocketMessage(package)
             } else {
                 assertionFailure("Something went wrong! Should find a previous WS Package! Please contact the author!")
             }
@@ -328,8 +331,9 @@ extension Atlantis {
             // Get the package from the cache
             let id = PackageIdentifier.getID(taskOrConnection: task)
             if let package = packages[id] {
-                let wsPackage = WebsocketMessagePackage(package: package, closeCode: closeCode, reason: reason)
-                startSendingWebsocketMessage(wsPackage)
+                let wsPackage = WebsocketMessagePackage(id: id, closeCode: closeCode.rawValue, reason: reason)
+                package.setWebsocketMessagePackage(package: wsPackage)
+                startSendingWebsocketMessage(package)
             } else {
                 assertionFailure("Something went wrong! Should find a previous WS Package! Please contact the author!")
             }

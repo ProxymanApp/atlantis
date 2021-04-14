@@ -42,8 +42,6 @@ struct ConnectionPackage: Codable, Serializable {
     }
 }
 
-
-
 public final class TrafficPackage: Codable, CustomDebugStringConvertible, Serializable {
 
     public enum PackageType: String, Codable {
@@ -63,6 +61,7 @@ public final class TrafficPackage: Codable, CustomDebugStringConvertible, Serial
     public private(set) var endAt: TimeInterval?
     public private(set) var lastData: Data?
     public let packageType: PackageType
+    private(set) var websocketMessagePackage: WebsocketMessagePackage?
 
     // MARK: - Variables
 
@@ -197,6 +196,11 @@ public final class TrafficPackage: Codable, CustomDebugStringConvertible, Serial
     public var debugDescription: String {
         return "Package: id=\(id), request=\(String(describing: request)), response=\(String(describing: response))"
     }
+
+    @available(iOS 13.0, *)
+    func setWebsocketMessagePackage(package: WebsocketMessagePackage) {
+        self.websocketMessagePackage = package
+    }
 }
 
 struct Device: Codable {
@@ -324,7 +328,6 @@ public struct CustomError: Codable {
     }
 }
 
-@available(iOS 13.0, *)
 struct WebsocketMessagePackage: Codable, Serializable {
 
     enum MessageType: String, Codable {
@@ -334,15 +337,32 @@ struct WebsocketMessagePackage: Codable, Serializable {
         case sendCloseMessage
     }
 
+    enum Message {
+        case data(Data)
+        case string(String)
+
+        @available(iOS 13.0, *)
+        init?(message: URLSessionWebSocketTask.Message) {
+            switch message {
+            case .data(let data):
+                self = .data(data)
+            case .string(let str):
+                self = .string(str)
+            @unknown default:
+                return nil
+            }
+        }
+    }
+
     private let id: String
     private let createdAt: TimeInterval
     private let messageType: MessageType
     private let stringValue: String?
     private let dataValue: Data?
 
-    init?(package: TrafficPackage, message: URLSessionWebSocketTask.Message, messageType: MessageType) {
+    init(id: String, message: Message, messageType: MessageType) {
         self.messageType = messageType
-        self.id = package.id
+        self.id = id
         self.createdAt = Date().timeIntervalSince1970
         switch message {
         case .data(let data):
@@ -351,17 +371,14 @@ struct WebsocketMessagePackage: Codable, Serializable {
         case .string(let strValue):
             self.stringValue = strValue
             self.dataValue = nil
-        @unknown default:
-            assertionFailure("There is new value of URLSessionWebSocketTask.Message. Please contact the author!")
-            return nil
         }
     }
 
-    init(package: TrafficPackage, closeCode: URLSessionWebSocketTask.CloseCode, reason: Data?) {
+    init(id: String, closeCode: Int, reason: Data?) {
         self.messageType = .sendCloseMessage
-        self.id = package.id
+        self.id = id
         self.createdAt = Date().timeIntervalSince1970
-        self.stringValue = "\(closeCode.rawValue)" // Temporarily store the closeCode by String
+        self.stringValue = "\(closeCode)" // Temporarily store the closeCode by String
         self.dataValue = reason
     }
 
