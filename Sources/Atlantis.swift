@@ -28,6 +28,7 @@ public final class Atlantis: NSObject {
     private var injector: Injector = NetworkInjector()
     private(set) var configuration: Configuration = Configuration.default()
     private var packages: [String: TrafficPackage] = [:]
+    private lazy var waitingWebsocketPackages: [String: [TrafficPackage]] = [:]
     private let queue = DispatchQueue(label: "com.proxyman.atlantis")
 
     // MARK: - Variables
@@ -381,6 +382,9 @@ extension Atlantis {
                 // Don't remove the WS traffic
                 // Keep it in the packages, so we can send the WS Message
                 // Only remove the we receive the Close message
+
+                // Sending all waiting WS
+                attemptSendingAllWaitingWSPackages(id: package.id)
                 break
             }
         }
@@ -408,8 +412,42 @@ extension Atlantis {
 
     private func startSendingWebsocketMessage(_ package: TrafficPackage) {
         print("--- send Websocket, response=\(String(describing: package.response))")
+        let id = package.id
+
+        // If the response of WS is nil
+        // It means that the WS is not finished yet,
+        // We don't send it, we put it in the waiting queue
+        if package.response == nil {
+            var waitingList = waitingWebsocketPackages[id] ?? []
+            waitingList.append(package)
+            waitingWebsocketPackages[id] = waitingList
+            return
+        }
+
+        // Sending all waiting WS if need
+        attemptSendingAllWaitingWSPackages(id: id)
+
+        // Send the current one
         let message = Message.buildWebSocketMessage(id: configuration.id, item: package)
         transporter.send(package: message)
+    }
+
+    private func attemptSendingAllWaitingWSPackages(id: String) {
+        guard !waitingWebsocketPackages.isEmpty else {
+            return
+        }
+        guard let waitingList = waitingWebsocketPackages[id] else {
+            return
+        }
+
+        // Send all waiting WS Message
+        waitingList.forEach { item in
+            let message = Message.buildWebSocketMessage(id: configuration.id, item: item)
+            transporter.send(package: message)
+        }
+
+        // Release the list
+        waitingWebsocketPackages[id] = nil
     }
 }
 
