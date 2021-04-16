@@ -405,13 +405,11 @@ extension Atlantis {
             return
         }
 
-        print("--- send Traffic Message, response=\(String(describing: package.response))")
         let message = Message.buildTrafficMessage(id: configuration.id, item: package)
         transporter.send(package: message)
     }
 
     private func startSendingWebsocketMessage(_ package: TrafficPackage) {
-        print("--- send Websocket, response=\(String(describing: package.response))")
         let id = package.id
 
         // If the response of WS is nil
