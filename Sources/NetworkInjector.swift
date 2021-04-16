@@ -24,13 +24,13 @@ protocol InjectorDelegate: class {
     func injectorSessionDidUpload(task: URLSessionTask, request: NSURLRequest, data: Data?)
 
     // Websocket
-    @available(iOS 13.0, *)
+    @available(iOS 13.0, macOS 10.15, *)
     func injectorSessionWebSocketDidSendMessage(task: URLSessionTask, message: URLSessionWebSocketTask.Message)
-    @available(iOS 13.0, *)
+    @available(iOS 13.0, macOS 10.15, *)
     func injectorSessionWebSocketDidReceive(task: URLSessionTask, message: URLSessionWebSocketTask.Message)
-    @available(iOS 13.0, *)
+    @available(iOS 13.0, macOS 10.15, *)
     func injectorSessionWebSocketDidSendPingPong(task: URLSessionTask)
-    @available(iOS 13.0, *)
+    @available(iOS 13.0, macOS 10.15, *)
     func injectorSessionWebSocketDidSendCancelWithReason(task: URLSessionTask, closeCode: URLSessionWebSocketTask.CloseCode, reason: Data?)
 
     // For URLConnection
@@ -77,7 +77,7 @@ extension NetworkInjector {
         injectURLSessionUploadTasks()
 
         // Websocket
-        if #available(iOS 13.0, *) {
+        if #available(iOS 13.0, macOS 10.15, *) {
             injectURLSessionWebsocketTasks()
         }
     }
@@ -138,7 +138,7 @@ extension NetworkInjector {
         _swizzleURLSessionUploadSelector(baseClass: URLSession.self)
     }
 
-    @available(iOS 13.0, *)
+    @available(iOS 13.0, macOS 10.15, *)
     private func injectURLSessionWebsocketTasks() {
         _swizzleURLSessionWebsocketSelector()
     }

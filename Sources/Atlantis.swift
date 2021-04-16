@@ -284,23 +284,23 @@ extension Atlantis: InjectorDelegate {
 
 extension Atlantis {
 
-    @available(iOS 13.0, *)
+    @available(iOS 13.0, macOS 10.15, *)
     func injectorSessionWebSocketDidSendPingPong(task: URLSessionTask) {
         let message = URLSessionWebSocketTask.Message.string("ping")
         sendWebSocketMessage(task: task, messageType: .pingPong, message: message)
     }
 
-    @available(iOS 13.0, *)
+    @available(iOS 13.0, macOS 10.15, *)
     func injectorSessionWebSocketDidReceive(task: URLSessionTask, message: URLSessionWebSocketTask.Message) {
         sendWebSocketMessage(task: task, messageType: .receive, message: message)
     }
 
-    @available(iOS 13.0, *)
+    @available(iOS 13.0, macOS 10.15, *)
     func injectorSessionWebSocketDidSendMessage(task: URLSessionTask, message: URLSessionWebSocketTask.Message) {
         sendWebSocketMessage(task: task, messageType: .send, message: message)
     }
 
-    @available(iOS 13.0, *)
+    @available(iOS 13.0, macOS 10.15, *)
     private func sendWebSocketMessage(task: URLSessionTask, messageType: WebsocketMessagePackage.MessageType, message: URLSessionWebSocketTask.Message) {
         queue.sync {
             // Since it's not possible to revert the Method Swizzling change
@@ -315,7 +315,7 @@ extension Atlantis {
         }
     }
 
-    @available(iOS 13.0, *)
+    @available(iOS 13.0, macOS 10.15, *)
     func injectorSessionWebSocketDidSendCancelWithReason(task: URLSessionTask, closeCode: URLSessionWebSocketTask.CloseCode, reason: Data?) {
         queue.sync {
             // Since it's not possible to revert the Method Swizzling change
@@ -331,7 +331,7 @@ extension Atlantis {
         }
     }
 
-    @available(iOS 13.0, *)
+    @available(iOS 13.0, macOS 10.15, *)
     private func prepareAndSendWSMessage(task: URLSessionTask, wsPackageBuilder: (String) -> WebsocketMessagePackage?) {
         // Get the ID
         let id = PackageIdentifier.getID(taskOrConnection: task)

@@ -341,7 +341,7 @@ struct WebsocketMessagePackage: Codable, Serializable {
         case data(Data)
         case string(String)
 
-        @available(iOS 13.0, *)
+        @available(iOS 13.0, macOS 10.15, *)
         init?(message: URLSessionWebSocketTask.Message) {
             switch message {
             case .data(let data):
