@@ -62,7 +62,7 @@ extension NetServiceTransport: Transporter {
         if let hostName = config.hostName {
             print("[Atlantis] Try Connecting to Proxyman with HostName = \(hostName)")
         } else {
-            print("[Atlantis] Looking for Proxman app in the network...")
+            print("[Atlantis] Looking for Proxyman app in the network...")
         }
 
         self.config = config
