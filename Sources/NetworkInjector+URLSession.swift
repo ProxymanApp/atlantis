@@ -8,6 +8,10 @@
 
 import Foundation
 
+#if canImport(Atlantis_Objc)
+import Atlantis_Objc
+#endif
+
 extension NetworkInjector {
 
     func _swizzleURLSessionResumeSelector(baseClass: AnyClass) {
@@ -175,6 +179,11 @@ extension NetworkInjector {
 
         method_setImplementation(method, imp_implementationWithBlock(block))
     }
+}
+
+// MARK: - Upload
+
+extension NetworkInjector {
 
     func _swizzleURLSessionUploadSelector(baseClass: AnyClass) {
         _swizzleURLSessionUploadFromFileSelector(baseClass)
@@ -182,11 +191,6 @@ extension NetworkInjector {
         _swizzleURLSessionUploadFromDataSelector(baseClass)
         _swizzleURLSessionUploadFromDataWithCompleteHandlerSelector(baseClass)
     }
-}
-
-// MARK: - Upload
-
-extension NetworkInjector {
 
     private func _swizzleURLSessionUploadFromFileSelector(_ baseClass: AnyClass) {
         // Prepare
@@ -319,5 +323,183 @@ extension NetworkInjector {
         }
 
         method_setImplementation(method, imp_implementationWithBlock(block))
+    }
+}
+
+// MARK: - WebSocket
+
+extension NetworkInjector {
+
+    @available(iOS 13.0, macOS 10.15, *)
+    func _swizzleURLSessionWebsocketSelector() {
+        guard let websocketClass = NSClassFromString("__NSURLSessionWebSocketTask") else {
+            print("[Atlantis][ERROR] Could not inject __NSURLSessionWebSocketTask!!")
+            return
+        }
+
+        //
+        _swizzleURLSessionWebSocketSendMessageSelector(websocketClass)
+        _swizzleURLSessionWebSocketReceiveMessageSelector(websocketClass)
+        _swizzleURLSessionWebSocketSendPingPongSelector(websocketClass)
+        _swizzleURLSessionWebSocketCancelWithCloseCodeReasonSelector(websocketClass)
+    }
+
+    @available(iOS 13.0, macOS 10.15, *)
+    private func _swizzleURLSessionWebSocketSendMessageSelector(_ baseClass: AnyClass) {
+
+        // Prepare
+        let selector = NSSelectorFromString("sendMessage:completionHandler:")
+        guard let method = class_getInstanceMethod(baseClass, selector),
+            baseClass.instancesRespond(to: selector) else {
+            return
+        }
+
+        // For safety, we should cast to AnyObject
+        // To prevent app crashes in the future if the object type is changed
+        typealias NewClosureType =  @convention(c) (AnyObject, Selector, AnyObject, AnyObject) -> Void
+        let originalImp: IMP = method_getImplementation(method)
+        let block: @convention(block) (AnyObject, AnyObject, AnyObject) -> Void = {[weak self] (me, message, block) in
+
+            // call the original
+            let original: NewClosureType = unsafeBitCast(originalImp, to: NewClosureType.self)
+            original(me, selector, message, block)
+
+            // Safe-check
+            if let task = me as? URLSessionTask {
+                // As message is `NSURLSessionWebSocketMessage` and Xcode doesn't allow to cast it.
+                // We use value(forKey:) to get the value
+                if let newMessage = self?.wrapWebSocketMessage(object: message) {
+                    self?.delegate?.injectorSessionWebSocketDidSendMessage(task: task, message: newMessage)
+                }
+            } else {
+                assertionFailure("Could not get data from _swizzleURLSessionWebSocketSendMessageSelector. It might causes due to the latest iOS changes. Please contact the author!")
+            }
+        }
+
+        method_setImplementation(method, imp_implementationWithBlock(block))
+    }
+
+    @available(iOS 13.0, macOS 10.15, *)
+    private func _swizzleURLSessionWebSocketReceiveMessageSelector(_ baseClass: AnyClass) {
+
+        // Prepare
+        let selector = NSSelectorFromString("receiveMessageWithCompletionHandler:")
+        guard let method = class_getInstanceMethod(baseClass, selector),
+            baseClass.instancesRespond(to: selector) else {
+            return
+        }
+
+        // For safety, we should cast to AnyObject
+        // To prevent app crashes in the future if the object type is changed
+        typealias NewClosureType =  @convention(c) (AnyObject, Selector, AnyObject) -> Void
+        let originalImp: IMP = method_getImplementation(method)
+        let block: @convention(block) (AnyObject, AnyObject) -> Void = {[weak self](me, handler) in
+
+            // Pass the handler (AnyObject) to AtlantisHelper
+            // We intentionally do this way because it's possible to use the class `NSURLSessionWebSocketMessage`
+            // Xcode prohibits use this class `NSURLSessionWebSocketMessage` in Swift, so there is no way to cast it
+            //
+            // Pass it to Objective-C world would help it
+            //
+            let wrapperHandler = AtlantisHelper.swizzleWebSocketReceiveMessage(withCompleteHandler: handler, responseHandler: {[weak self] (str, data, error) in
+                if let task = me as? URLSessionTask {
+                    if let message = self?.wrapWebSocketMessage(strValue: str, dataValue: data) {
+                        self?.delegate?.injectorSessionWebSocketDidReceive(task: task, message: message)
+                    }
+                } else {
+                    assertionFailure("Could not get data from _swizzleURLSessionWebSocketReceiveMessageSelector. It might causes due to the latest iOS changes. Please contact the author!")
+                }
+            }) ?? handler
+
+            // call the original
+            let original: NewClosureType = unsafeBitCast(originalImp, to: NewClosureType.self)
+            original(me, selector, wrapperHandler as AnyObject)
+        }
+
+        method_setImplementation(method, imp_implementationWithBlock(block))
+    }
+
+    @available(iOS 13.0, macOS 10.15, *)
+    private func _swizzleURLSessionWebSocketSendPingPongSelector(_ baseClass: AnyClass) {
+
+        // Prepare
+        let selector = NSSelectorFromString("sendPingWithPongReceiveHandler:")
+        guard let method = class_getInstanceMethod(baseClass, selector),
+            baseClass.instancesRespond(to: selector) else {
+            return
+        }
+
+        // For safety, we should cast to AnyObject
+        // To prevent app crashes in the future if the object type is changed
+        typealias NewClosureType =  @convention(c) (AnyObject, Selector, AnyObject) -> Void
+        let originalImp: IMP = method_getImplementation(method)
+        let block: @convention(block) (AnyObject, AnyObject) -> Void = {[weak self](me, handler) in
+
+            // call the original
+            let original: NewClosureType = unsafeBitCast(originalImp, to: NewClosureType.self)
+            original(me, selector, handler)
+
+            // Safe-check
+            if let task = me as? URLSessionTask {
+                self?.delegate?.injectorSessionWebSocketDidSendPingPong(task: task)
+            } else {
+                assertionFailure("Could not get data from _swizzleURLSessionWebSocketSendPingPongSelector. It might causes due to the latest iOS changes. Please contact the author!")
+            }
+        }
+
+        method_setImplementation(method, imp_implementationWithBlock(block))
+    }
+
+    @available(iOS 13.0, macOS 10.15, *)
+    private func _swizzleURLSessionWebSocketCancelWithCloseCodeReasonSelector(_ baseClass: AnyClass) {
+
+        // Prepare
+        let selector = NSSelectorFromString("cancelWithCloseCode:reason:")
+        guard let method = class_getInstanceMethod(baseClass, selector),
+            baseClass.instancesRespond(to: selector) else {
+            return
+        }
+
+        // For safety, we should cast to AnyObject
+        // To prevent app crashes in the future if the object type is changed
+        typealias NewClosureType =  @convention(c) (AnyObject, Selector, NSInteger, AnyObject?) -> Void
+        let originalImp: IMP = method_getImplementation(method)
+        let block: @convention(block) (AnyObject, NSInteger, AnyObject?) -> Void = {[weak self](me, closeCode, reason) in
+
+            // call the original
+            let original: NewClosureType = unsafeBitCast(originalImp, to: NewClosureType.self)
+            original(me, selector, closeCode, reason)
+
+            // Safe-check
+            if let task = me as? URLSessionTask {
+                let newCloseCode = URLSessionWebSocketTask.CloseCode(rawValue: closeCode) ?? .invalid
+                let data = reason as? Data // optional data
+                self?.delegate?.injectorSessionWebSocketDidSendCancelWithReason(task: task, closeCode: newCloseCode, reason: data)
+            } else {
+                assertionFailure("Could not get data from _swizzleURLSessionWebSocketCancelWithCloseCodeReasonSelector. It might causes due to the latest iOS changes. Please contact the author!")
+            }
+        }
+
+        method_setImplementation(method, imp_implementationWithBlock(block))
+    }
+
+    @available(iOS 13.0, macOS 10.15, *)
+    private func wrapWebSocketMessage(object: AnyObject) -> URLSessionWebSocketTask.Message? {
+        if let strValue = object.value(forKey: "string") as? String {
+            return URLSessionWebSocketTask.Message.string(strValue)
+        } else if let dataValue = object.value(forKey: "data") as? Data {
+            return URLSessionWebSocketTask.Message.data(dataValue)
+        }
+        return nil
+    }
+
+    @available(iOS 13.0, macOS 10.15, *)
+    private func wrapWebSocketMessage(strValue: String?, dataValue: Data?) -> URLSessionWebSocketTask.Message? {
+        if let strValue = strValue {
+            return URLSessionWebSocketTask.Message.string(strValue)
+        } else if let dataValue = dataValue {
+            return URLSessionWebSocketTask.Message.data(dataValue)
+        }
+        return nil
     }
 }

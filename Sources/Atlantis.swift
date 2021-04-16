@@ -28,6 +28,7 @@ public final class Atlantis: NSObject {
     private var injector: Injector = NetworkInjector()
     private(set) var configuration: Configuration = Configuration.default()
     private var packages: [String: TrafficPackage] = [:]
+    private lazy var waitingWebsocketPackages: [String: [TrafficPackage]] = [:]
     private let queue = DispatchQueue(label: "com.proxyman.atlantis")
 
     // MARK: - Variables
@@ -279,6 +280,82 @@ extension Atlantis: InjectorDelegate {
     }
 }
 
+// MARK: - Websocket
+
+extension Atlantis {
+
+    @available(iOS 13.0, macOS 10.15, *)
+    func injectorSessionWebSocketDidSendPingPong(task: URLSessionTask) {
+        let message = URLSessionWebSocketTask.Message.string("ping")
+        sendWebSocketMessage(task: task, messageType: .pingPong, message: message)
+    }
+
+    @available(iOS 13.0, macOS 10.15, *)
+    func injectorSessionWebSocketDidReceive(task: URLSessionTask, message: URLSessionWebSocketTask.Message) {
+        sendWebSocketMessage(task: task, messageType: .receive, message: message)
+    }
+
+    @available(iOS 13.0, macOS 10.15, *)
+    func injectorSessionWebSocketDidSendMessage(task: URLSessionTask, message: URLSessionWebSocketTask.Message) {
+        sendWebSocketMessage(task: task, messageType: .send, message: message)
+    }
+
+    @available(iOS 13.0, macOS 10.15, *)
+    private func sendWebSocketMessage(task: URLSessionTask, messageType: WebsocketMessagePackage.MessageType, message: URLSessionWebSocketTask.Message) {
+        queue.sync {
+            // Since it's not possible to revert the Method Swizzling change
+            // We use isEnable instead
+            guard Atlantis.isEnabled.value else { return }
+            prepareAndSendWSMessage(task: task) { (id) -> WebsocketMessagePackage? in
+                guard let atlantisMessage = WebsocketMessagePackage.Message(message: message) else {
+                    return nil
+                }
+                return WebsocketMessagePackage(id: id, message: atlantisMessage, messageType: messageType)
+            }
+        }
+    }
+
+    @available(iOS 13.0, macOS 10.15, *)
+    func injectorSessionWebSocketDidSendCancelWithReason(task: URLSessionTask, closeCode: URLSessionWebSocketTask.CloseCode, reason: Data?) {
+        queue.sync {
+            // Since it's not possible to revert the Method Swizzling change
+            // We use isEnable instead
+            guard Atlantis.isEnabled.value else { return }
+            prepareAndSendWSMessage(task: task) { (id) -> WebsocketMessagePackage? in
+                return WebsocketMessagePackage(id: id, closeCode: closeCode.rawValue, reason: reason)
+            }
+
+            // Remove after the WS connection is closed
+            let id = PackageIdentifier.getID(taskOrConnection: task)
+            packages.removeValue(forKey: id)
+        }
+    }
+
+    @available(iOS 13.0, macOS 10.15, *)
+    private func prepareAndSendWSMessage(task: URLSessionTask, wsPackageBuilder: (String) -> WebsocketMessagePackage?) {
+        // Get the ID
+        let id = PackageIdentifier.getID(taskOrConnection: task)
+
+        // The value should be available
+        if let package = packages[id] {
+
+            // Build a package
+            guard let wsPackage = wsPackageBuilder(id) else {
+                print("[Atlantis][Error] Skipping sending WS Packages!! Please contact Proxyman Team.")
+                return
+            }
+
+            // It's important to set a message with a WS package
+            package.setWebsocketMessagePackage(package: wsPackage)
+
+            // Sending via Bonjour service
+            startSendingWebsocketMessage(package)
+        } else {
+            assertionFailure("Something went wrong! Should find a previous WS Package! Please contact the author!")
+        }
+    }
+}
+
 // MARK: - Private
 
 extension Atlantis {
@@ -298,7 +375,18 @@ extension Atlantis {
             startSendingMessage(package: package)
 
             // Then remove it from our cache
-            packages.removeValue(forKey: package.id)
+            switch package.packageType {
+            case .http:
+                packages.removeValue(forKey: package.id)
+            case .websocket:
+                // Don't remove the WS traffic
+                // Keep it in the packages, so we can send the WS Message
+                // Only remove the we receive the Close message
+
+                // Sending all waiting WS
+                attemptSendingAllWaitingWSPackages(id: package.id)
+                break
+            }
         }
     }
 
@@ -312,11 +400,52 @@ extension Atlantis {
             }
         }
 
-        // Send via Proxyman app
-        if isEnabledTransportLayer {
-            let message = Message.buildTrafficMessage(id: configuration.id, item: package)
+        // Send to Proxyman app
+        guard isEnabledTransportLayer else {
+            return
+        }
+
+        let message = Message.buildTrafficMessage(id: configuration.id, item: package)
+        transporter.send(package: message)
+    }
+
+    private func startSendingWebsocketMessage(_ package: TrafficPackage) {
+        let id = package.id
+
+        // If the response of WS is nil
+        // It means that the WS is not finished yet,
+        // We don't send it, we put it in the waiting queue
+        if package.response == nil {
+            var waitingList = waitingWebsocketPackages[id] ?? []
+            waitingList.append(package)
+            waitingWebsocketPackages[id] = waitingList
+            return
+        }
+
+        // Sending all waiting WS if need
+        attemptSendingAllWaitingWSPackages(id: id)
+
+        // Send the current one
+        let message = Message.buildWebSocketMessage(id: configuration.id, item: package)
+        transporter.send(package: message)
+    }
+
+    private func attemptSendingAllWaitingWSPackages(id: String) {
+        guard !waitingWebsocketPackages.isEmpty else {
+            return
+        }
+        guard let waitingList = waitingWebsocketPackages[id] else {
+            return
+        }
+
+        // Send all waiting WS Message
+        waitingList.forEach { item in
+            let message = Message.buildWebSocketMessage(id: configuration.id, item: item)
             transporter.send(package: message)
         }
+
+        // Release the list
+        waitingWebsocketPackages[id] = nil
     }
 }
 

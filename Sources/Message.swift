@@ -13,6 +13,7 @@ struct Message: Codable {
     enum MessageType: String, Codable {
         case connection // First message, contains: Project, Device metadata
         case traffic // Request/Response log
+        case websocket // for websocket send/receive/close
     }
 
     // MARK: - Variables
@@ -39,6 +40,10 @@ struct Message: Codable {
 
     static func buildTrafficMessage(id: String, item: Serializable) -> Message {
         return Message(id: id, messageType: MessageType.traffic, content: item.toData())
+    }
+
+    static func buildWebSocketMessage(id: String, item: Serializable) -> Message {
+        return Message(id: id, messageType: MessageType.websocket, content: item.toData())
     }
 }
 

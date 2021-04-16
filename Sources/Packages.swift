@@ -42,9 +42,12 @@ struct ConnectionPackage: Codable, Serializable {
     }
 }
 
-
-
 public final class TrafficPackage: Codable, CustomDebugStringConvertible, Serializable {
+
+    public enum PackageType: String, Codable {
+        case http
+        case websocket
+    }
 
     // Should not change the variable names
     // since we're using Codable in the main app and Atlantis
@@ -57,6 +60,8 @@ public final class TrafficPackage: Codable, CustomDebugStringConvertible, Serial
     public private(set) var responseBodyData: Data
     public private(set) var endAt: TimeInterval?
     public private(set) var lastData: Data?
+    public let packageType: PackageType
+    private(set) var websocketMessagePackage: WebsocketMessagePackage?
 
     // MARK: - Variables
 
@@ -76,13 +81,14 @@ public final class TrafficPackage: Codable, CustomDebugStringConvertible, Serial
 
     // MARK: - Init
 
-    init(id: String, request: Request, response: Response? = nil, responseBodyData: Data? = nil) {
+    init(id: String, request: Request, response: Response? = nil, responseBodyData: Data? = nil, packageType: PackageType = .http) {
         self.id = id
         self.request = request
         self.response = nil
         self.startAt = Date().timeIntervalSince1970
         self.response = response
         self.responseBodyData = responseBodyData ?? Data()
+        self.packageType = packageType
     }
 
     // MARK: - Builder
@@ -90,6 +96,16 @@ public final class TrafficPackage: Codable, CustomDebugStringConvertible, Serial
     static func buildRequest(sessionTask: URLSessionTask, id: String) -> TrafficPackage? {
         guard let currentRequest = sessionTask.currentRequest,
             let request = Request(currentRequest) else { return nil }
+
+        // Check if it's a websocket
+        if #available(iOS 13.0, *) {
+            if let websocketClass = NSClassFromString("__NSURLSessionWebSocketTask"),
+               sessionTask.isKind(of: websocketClass) {
+                return TrafficPackage(id: id, request: request, packageType: .websocket)
+            }
+        }
+
+        // Or normal websocket
         return TrafficPackage(id: id, request: request)
     }
 
@@ -179,6 +195,11 @@ public final class TrafficPackage: Codable, CustomDebugStringConvertible, Serial
 
     public var debugDescription: String {
         return "Package: id=\(id), request=\(String(describing: request)), response=\(String(describing: response))"
+    }
+
+    @available(iOS 13.0, *)
+    func setWebsocketMessagePackage(package: WebsocketMessagePackage) {
+        self.websocketMessagePackage = package
     }
 }
 
@@ -304,6 +325,71 @@ public struct CustomError: Codable {
     init(_ error: NSError) {
         self.code = error.code
         self.message = error.localizedDescription
+    }
+}
+
+struct WebsocketMessagePackage: Codable, Serializable {
+
+    enum MessageType: String, Codable {
+        case pingPong
+        case send
+        case receive
+        case sendCloseMessage
+    }
+
+    enum Message {
+        case data(Data)
+        case string(String)
+
+        @available(iOS 13.0, macOS 10.15, *)
+        init?(message: URLSessionWebSocketTask.Message) {
+            switch message {
+            case .data(let data):
+                self = .data(data)
+            case .string(let str):
+                self = .string(str)
+            @unknown default:
+                return nil
+            }
+        }
+    }
+
+    private let id: String
+    private let createdAt: TimeInterval
+    private let messageType: MessageType
+    private let stringValue: String?
+    private let dataValue: Data?
+
+    init(id: String, message: Message, messageType: MessageType) {
+        self.messageType = messageType
+        self.id = id
+        self.createdAt = Date().timeIntervalSince1970
+        switch message {
+        case .data(let data):
+            self.dataValue = data
+            self.stringValue = nil
+        case .string(let strValue):
+            self.stringValue = strValue
+            self.dataValue = nil
+        }
+    }
+
+    init(id: String, closeCode: Int, reason: Data?) {
+        self.messageType = .sendCloseMessage
+        self.id = id
+        self.createdAt = Date().timeIntervalSince1970
+        self.stringValue = "\(closeCode)" // Temporarily store the closeCode by String
+        self.dataValue = reason
+    }
+
+    func toData() -> Data? {
+        // Encode to JSON
+        do {
+            return try JSONEncoder().encode(self)
+        } catch let error {
+            print(error)
+        }
+        return nil
     }
 }
 

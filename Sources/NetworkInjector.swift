@@ -23,6 +23,16 @@ protocol InjectorDelegate: class {
     func injectorSessionDidComplete(task: URLSessionTask, error: Error?)
     func injectorSessionDidUpload(task: URLSessionTask, request: NSURLRequest, data: Data?)
 
+    // Websocket
+    @available(iOS 13.0, macOS 10.15, *)
+    func injectorSessionWebSocketDidSendMessage(task: URLSessionTask, message: URLSessionWebSocketTask.Message)
+    @available(iOS 13.0, macOS 10.15, *)
+    func injectorSessionWebSocketDidReceive(task: URLSessionTask, message: URLSessionWebSocketTask.Message)
+    @available(iOS 13.0, macOS 10.15, *)
+    func injectorSessionWebSocketDidSendPingPong(task: URLSessionTask)
+    @available(iOS 13.0, macOS 10.15, *)
+    func injectorSessionWebSocketDidSendCancelWithReason(task: URLSessionTask, closeCode: URLSessionWebSocketTask.CloseCode, reason: Data?)
+
     // For URLConnection
     func injectorConnectionDidReceive(connection: NSURLConnection, response: URLResponse)
     func injectorConnectionDidReceive(connection: NSURLConnection, data: Data)
@@ -55,6 +65,7 @@ extension NetworkInjector {
         // iOS 9, 10, 11, 12, 13, 14: __NSCFURLLocalSessionConnection
         // This approach works with delegate or complete block from URLSession
         let sessionClass: AnyClass? = NSClassFromString("__NSCFURLLocalSessionConnection") ?? NSClassFromString("__NSCFURLSessionConnection")
+
         if let anySessionClass = sessionClass {
             injectIntoURLSessionDelegate(anyClass: anySessionClass)
         }
@@ -64,6 +75,11 @@ extension NetworkInjector {
 
         // Upload
         injectURLSessionUploadTasks()
+
+        // Websocket
+        if #available(iOS 13.0, macOS 10.15, *) {
+            injectURLSessionWebsocketTasks()
+        }
     }
 
     private func injectAllURLConnection() {
@@ -120,5 +136,10 @@ extension NetworkInjector {
 
     private func injectURLSessionUploadTasks() {
         _swizzleURLSessionUploadSelector(baseClass: URLSession.self)
+    }
+
+    @available(iOS 13.0, macOS 10.15, *)
+    private func injectURLSessionWebsocketTasks() {
+        _swizzleURLSessionWebsocketSelector()
     }
 }
