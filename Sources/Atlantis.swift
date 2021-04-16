@@ -305,18 +305,11 @@ extension Atlantis {
             // Since it's not possible to revert the Method Swizzling change
             // We use isEnable instead
             guard Atlantis.isEnabled.value else { return }
-
-            // Get the package from the cache
-            let id = PackageIdentifier.getID(taskOrConnection: task)
-            if let package = packages[id] {
+            prepareAndSendWSMessage(task: task) { (id) -> WebsocketMessagePackage? in
                 guard let atlantisMessage = WebsocketMessagePackage.Message(message: message) else {
-                    return
+                    return nil
                 }
-                let wsPackage = WebsocketMessagePackage(id: id, message: atlantisMessage, messageType: messageType)
-                package.setWebsocketMessagePackage(package: wsPackage)
-                startSendingWebsocketMessage(package)
-            } else {
-                assertionFailure("Something went wrong! Should find a previous WS Package! Please contact the author!")
+                return WebsocketMessagePackage(id: id, message: atlantisMessage, messageType: messageType)
             }
         }
     }
@@ -327,16 +320,37 @@ extension Atlantis {
             // Since it's not possible to revert the Method Swizzling change
             // We use isEnable instead
             guard Atlantis.isEnabled.value else { return }
-
-            // Get the package from the cache
-            let id = PackageIdentifier.getID(taskOrConnection: task)
-            if let package = packages[id] {
-                let wsPackage = WebsocketMessagePackage(id: id, closeCode: closeCode.rawValue, reason: reason)
-                package.setWebsocketMessagePackage(package: wsPackage)
-                startSendingWebsocketMessage(package)
-            } else {
-                assertionFailure("Something went wrong! Should find a previous WS Package! Please contact the author!")
+            prepareAndSendWSMessage(task: task) { (id) -> WebsocketMessagePackage? in
+                return WebsocketMessagePackage(id: id, closeCode: closeCode.rawValue, reason: reason)
             }
+
+            // Remove after the WS connection is closed
+            let id = PackageIdentifier.getID(taskOrConnection: task)
+            packages.removeValue(forKey: id)
+        }
+    }
+
+    @available(iOS 13.0, *)
+    private func prepareAndSendWSMessage(task: URLSessionTask, wsPackageBuilder: (String) -> WebsocketMessagePackage?) {
+        // Get the ID
+        let id = PackageIdentifier.getID(taskOrConnection: task)
+
+        // The value should be available
+        if let package = packages[id] {
+
+            // Build a package
+            guard let wsPackage = wsPackageBuilder(id) else {
+                print("[Atlantis][Error] Skipping sending WS Packages!! Please contact Proxyman Team.")
+                return
+            }
+
+            // It's important to set a message with a WS package
+            package.setWebsocketMessagePackage(package: wsPackage)
+
+            // Sending via Bonjour service
+            startSendingWebsocketMessage(package)
+        } else {
+            assertionFailure("Something went wrong! Should find a previous WS Package! Please contact the author!")
         }
     }
 }
@@ -387,12 +401,14 @@ extension Atlantis {
             return
         }
 
+        print("--- send Traffic Message, response=\(String(describing: package.response))")
         let message = Message.buildTrafficMessage(id: configuration.id, item: package)
         transporter.send(package: message)
     }
 
-    private func startSendingWebsocketMessage(_ message: Serializable) {
-        let message = Message.buildWebSocketMessage(id: configuration.id, item: message)
+    private func startSendingWebsocketMessage(_ package: TrafficPackage) {
+        print("--- send Websocket, response=\(String(describing: package.response))")
+        let message = Message.buildWebSocketMessage(id: configuration.id, item: package)
         transporter.send(package: message)
     }
 }
