@@ -336,7 +336,6 @@ extension NetworkInjector {
             print("[Atlantis][ERROR] Could not inject __NSURLSessionWebSocketTask!!")
             return
         }
-        print(Runtime.getAllMethod(anyClass: websocketClass))
 
         //
         _swizzleURLSessionWebSocketSendMessageSelector(websocketClass)
