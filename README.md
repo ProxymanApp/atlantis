@@ -11,6 +11,7 @@ A little and powerful iOS framework for intercepting HTTP/HTTPS Traffic from you
 
 ## Features
 - [x] **Automatically** intercept all HTTP/HTTPS Traffic with ease
+- [x] Capture WS/WSS Traffic from URLSessionWebSocketTask
 - [x] ✅ **No need to config HTTP Proxy, Install or Trust any Certificate**
 - [x] Support iOS Physical Devices and Simulators
 - [x] Review traffic log from macOS [Proxyman](https://proxyman.io) app ([Github](https://github.com/ProxymanApp/Proxyman))
@@ -100,6 +101,10 @@ github "ProxymanApp/atlantis"
 3. Create a Carthage Script as the [Carthage guideline](https://github.com/Carthage/Carthage#quick-start)  
 
 For Carthage with Xcode 12, please check out the workaround: https://github.com/Carthage/Carthage/blob/master/Documentation/Xcode12Workaround.md
+
+## WS/WSS Traffic
+From Atlantis 1.9.0+, Atlantis is capable of capturing all [WS/WSS Traffic](https://github.com/ProxymanApp/atlantis/releases/tag/1.9.0), which is made by URLSessionWebSocketTask, and send to Proxyman app.
+You don't need to config anything, it works out of the box.
 
 ## Advanced Usage
 By default, if your iOS app uses Apple's Networking classes (e.g URLSession or NSURLConnection) or using popular Networking libraries (e.g Alamofire and AFNetworking) to make an HTTP Request, Atlantis will work **OUT OF THE BOX**.
