@@ -14,7 +14,7 @@ protocol Injector {
     func injectAllNetworkClasses()
 }
 
-protocol InjectorDelegate: class {
+protocol InjectorDelegate: AnyObject {
 
     // For URLSession
     func injectorSessionDidCallResume(task: URLSessionTask)
