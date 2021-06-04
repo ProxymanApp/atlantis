@@ -8,6 +8,10 @@
 
 import Foundation
 
+#if os(iOS)
+import UIKit
+#endif
+
 protocol Transporter {
 
     func start(_ config: Configuration)
@@ -56,6 +60,11 @@ final class NetServiceTransport: NSObject {
         session = URLSession(configuration: config)
         super.init()
         serviceBrowser.delegate = self
+        initNotification()
+    }
+
+    deinit {
+        NotificationCenter.default.removeObserver(self)
     }
 }
 
@@ -273,5 +282,23 @@ extension NetServiceTransport: NetServiceDelegate {
 
     func netService(_ sender: NetService, didNotResolve errorDict: [String : NSNumber]) {
         print("[Atlantis][ERROR] didNotResolve \(errorDict)")
+    }
+}
+
+// MARK: - Private
+
+extension NetServiceTransport {
+
+    private func initNotification() {
+        #if os(iOS)
+        // Memory Warning notification is only available on iOS
+        NotificationCenter.default.addObserver(self, selector: #selector(self.didReceiveMemoryNotification), name: UIApplication.didReceiveMemoryWarningNotification, object: nil)
+        #endif
+    }
+
+    @objc private func didReceiveMemoryNotification() {
+        queue.async {[weak self] in
+            self?.pendingPackages.removeAll()
+        }
     }
 }
