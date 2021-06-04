@@ -32,6 +32,7 @@ final class NetServiceTransport: NSObject {
     // For some reason, Stream Task could send a big file
     // https://github.com/ProxymanApp/atlantis/issues/57
     static let MaximumSizePackage = 52428800 // 50Mb
+
     private let serviceBrowser: NetServiceBrowser
     private var services: [NetService] = []
     private let queue = DispatchQueue(label: "com.proxyman.atlantis.netservices") // Serial on purpose
@@ -39,6 +40,10 @@ final class NetServiceTransport: NSObject {
     private var task: URLSessionStreamTask?
     private var pendingPackages: [Serializable] = []
     private var config: Configuration?
+
+    // The maximum number of pending item to prevent Atlantis consumes too much RAM
+    // https://github.com/ProxymanApp/atlantis/issues/74
+    private let maxPendingItem = 30
 
     // MARK: - Init
 
@@ -135,6 +140,11 @@ extension NetServiceTransport: Transporter {
     }
 
     private func appendToPendingList(_ package: Serializable) {
+        // For the sake of simplicity, we remove all items if it exceeds the limit
+        // In the future, we can implement a deque
+        if pendingPackages.count >= maxPendingItem {
+            pendingPackages.removeAll()
+        }
         pendingPackages.append(package)
     }
 
