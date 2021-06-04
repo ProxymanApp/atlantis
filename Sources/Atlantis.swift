@@ -9,7 +9,7 @@
 import Foundation
 import ObjectiveC
 
-public protocol AtlantisDelegate: class {
+public protocol AtlantisDelegate: AnyObject {
 
     func atlantisDidHaveNewPackage(_ package: TrafficPackage)
 }
