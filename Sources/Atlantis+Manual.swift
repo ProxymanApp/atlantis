@@ -65,35 +65,30 @@ extension Atlantis {
     /// Helper func to convert GRPC message to Atlantis format that could show on Proxyman app as a HTTP Message
     /// - Parameters:
     ///   - url: The url of the grpc message to distinguish each message
-    ///   - requestObject: Request object for the Request (Encodable)
-    ///   - responseObject: Response object for the Response (Encodable)
+    ///   - requestObject: Request Data for the Request, use `try? request.jsonUTF8Data()` for this.
+    ///   - responseObject: Response object for the Response, use `try? response.jsonUTF8Data()` for this.
     ///   - success: success state. Get from `CallResult.success`
     ///   - statusCode: statusCode state. Get from `CallResult.statusCode`
     ///   - statusMessage: statusMessage state. Get from `CallResult.statusMessage`
-    public class func addGRPC<T, U>(url: String,
-                                 requestObject: T?,
-                                 responseObject: U?,
+    ///   - HPACKHeadersRequest: Transformed request headers from gRPC. Get it from `callOptions?.customMetadata`
+    ///   - HPACKHeadersResponse: Transformed response headers from gRPC. Get it from `CallResult.trailingMetadata` or `CallResult.initialMetadata`
+    public class func addGRPC(url: String,
+                                 requestObject: Data?,
+                                 responseObject: Data?,
                                  success: Bool,
                                  statusCode: Int,
-                                 statusMessage: String?) where T: Encodable, U: Encodable {
-        // Attempt to convert GRPC objc to JSON format
-        // It's crucial to send and show on Proxyman app
-        var requestBody: Data?
-        if let requestObject = requestObject {
-            requestBody = try? JSONEncoder().encode(requestObject)
-        }
-        var responseBody: Data?
-        if let responseObject = responseObject {
-            responseBody = try? JSONEncoder().encode(responseObject)
-        }
+                                 statusMessage: String?,
+                                 HPACKHeadersRequest: [Header]? = nil,
+                                 HPACKHeadersResponse: [Header]? = nil){
 
-        let request = Request(url: url, method: "GRPC", headers: [], body: requestBody)
+        let request = Request(url: url, method: "GRPC", headers: HPACKHeadersRequest ?? [], body: requestObject)
 
         // Wrap the CallResult to Response Headers
-        let headers =  [Header(key: "success", value: "\(success ? "true" : "false")"),
+        var headers =  [Header(key: "success", value: "\(success ? "true" : "false")"),
                         Header(key: "statusCode", value: GRPCStatusCode(rawValue: statusCode)?.description ?? "Unknown status Code \(statusCode)"),
         				Header(key: "statusMessage", value: statusMessage ?? "nil")]
+        headers.append(contentsOf: HPACKHeadersResponse ?? [])
         let response = Response(statusCode: success ? 200 : 503, headers: headers)
-        self.add(request: request, response: response, responseBody: responseBody)
+        self.add(request: request, response: response, responseBody: responseObject)
     }
 }

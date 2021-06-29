@@ -150,17 +150,19 @@ You can construct the Request and Response from GRPC models:
     /// Helper func to convert GRPC message to Atlantis format that could show on Proxyman app as a HTTP Message
     /// - Parameters:
     ///   - url: The url of the grpc message to distinguish each message
-    ///   - requestObject: Request object for the Request (Encodable)
-    ///   - responseObject: Response object for the Response (Encodable)
+    ///   - requestObject: Request Data for the Request, use `try? request.jsonUTF8Data()` for this.
+    ///   - responseObject: Response object for the Response, use `try? response.jsonUTF8Data()` for this.
     ///   - success: success state. Get from `CallResult.success`
     ///   - statusCode: statusCode state. Get from `CallResult.statusCode`
     ///   - statusMessage: statusMessage state. Get from `CallResult.statusMessage`
-    public class func addGRPC<T, U>(url: String,
-                                 requestObject: T?,
-                                 responseObject: U?,
+    public class func addGRPC(url: String,
+                                 requestObject: Data?,
+                                 responseObject: Data?,
                                  success: Bool,
                                  statusCode: Int,
-                                 statusMessage: String?) where T: Encodable, U: Encodable {}
+                                 statusMessage: String?,
+                                 HPACKHeadersRequest: [Header]?,
+                                 HPACKHeadersResponse: [Header]?){
 ```
 - Example:
 ```swift
@@ -173,8 +175,8 @@ func insertNote(note: Note, completion: @escaping(Note?, CallResult?) -> Void) {
     
         // Add to atlantis and show it on Proxyman app
         Atlantis.addGRPC(url: "https://my-server.com/grpc",
-                         requestObject: note,
-                         responseObject: createdNote,
+                         requestObject: try? note.jsonUTF8Data(),
+                         responseObject: try? createdNote.jsonUTF8Data(),
                          success: result.success,
                          statusCode: result.statusCode.rawValue,
                          statusMessage: result.statusMessage)
