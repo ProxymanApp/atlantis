@@ -20,13 +20,11 @@ let package = Package(
         .target(
             name: "Atlantis-Objc",
             path: "Objc",
-            exclude: ["Sources"],
             publicHeadersPath: "internal"),
         .target(
             name: "Atlantis",
             dependencies: ["Atlantis-Objc"],
-            path: "Sources",
-            exclude: ["Atlantis-Example", "Configs", "Images", "Tests"])
+            path: "Sources")
     ],
     swiftLanguageVersions: [.v5]
 )
