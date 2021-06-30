@@ -36,9 +36,11 @@ public final class Atlantis: NSObject {
     /// Check whether or not Bonjour Service is available in current devices
     private static var isServiceAvailable: Bool = {
         // Require extra config for iOS 14
+        #if os(iOS)
         if #available(iOS 14, *) {
             return Bundle.main.hasBonjourServices && Bundle.main.hasLocalNetworkUsageDescription
         }
+        #endif
         // Below iOS 14, Bonjour service is always available
         return true
     }()
@@ -135,6 +137,7 @@ extension Atlantis {
         // Check required config for Local Network in the main app's info.plist
         // Ref: https://developer.apple.com/news/?id=0oi77447
         // Only for iOS 14
+        #if os(iOS)
         if #available(iOS 14, *) {
             var instruction: [String] = []
             if !Bundle.main.hasLocalNetworkUsageDescription {
@@ -167,6 +170,7 @@ extension Atlantis {
                 print(message)
             }
         }
+        #endif
     }
 
     private func getPackage(_ taskOrConnection: AnyObject) -> TrafficPackage? {
