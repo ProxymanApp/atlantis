@@ -10,7 +10,7 @@
 @implementation AtlantisHelper
 
 +(id _Nullable) swizzleWebSocketReceiveMessageWithCompleteHandler:(id)handler responseHandler:(void (^_Nullable)(NSString* _Nullable str, NSData* _Nullable data, NSError* _Nullable error)) responseHandler {
-    if (@available(iOS 13.0, macOS 10.15, *)) {
+    if (@available(iOS 13.0, macOS 10.15, tvOS 13.0, *)) {
             typedef void (^WebSocketHandler) (NSURLSessionWebSocketMessage *message, NSError *error);
 
         // We need handle in Objc Helper because Xcode doesn't allow to compile with NSURLSessionWebSocketMessage class
