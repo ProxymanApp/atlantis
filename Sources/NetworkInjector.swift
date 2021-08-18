@@ -52,7 +52,7 @@ final class NetworkInjector: Injector {
         // Make sure we swizzle *ONCE*
         DispatchQueue.once {
             injectAllURLSession()
-            injectAllURLConnection()
+            //injectAllURLConnection()
         }
     }
 }
