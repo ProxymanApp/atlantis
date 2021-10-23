@@ -2,6 +2,12 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+    <key>NSLocalNetworkUsageDescription</key>
+    <string>Atlantis would use Bonjour Service to discover Proxyman app from your local network.</string>
+    <key>NSBonjourServices</key>
+    <array>
+        <string>_Proxyman._tcp</string>
+    </array>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

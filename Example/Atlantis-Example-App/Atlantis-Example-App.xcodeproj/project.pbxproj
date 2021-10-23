@@ -13,6 +13,8 @@
 		BAD1DF3B2723A95500E84C7A /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = BAD1DF392723A95500E84C7A /* Main.storyboard */; };
 		BAD1DF3D2723A95600E84C7A /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = BAD1DF3C2723A95600E84C7A /* Assets.xcassets */; };
 		BAD1DF402723A95600E84C7A /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = BAD1DF3E2723A95600E84C7A /* LaunchScreen.storyboard */; };
+		BAD1DF4C2723B14100E84C7A /* Atlantis in Frameworks */ = {isa = PBXBuildFile; productRef = BAD1DF4B2723B14100E84C7A /* Atlantis */; };
+		BAD1DF4F2723B15900E84C7A /* Alamofire in Frameworks */ = {isa = PBXBuildFile; productRef = BAD1DF4E2723B15900E84C7A /* Alamofire */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -31,6 +33,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				BAD1DF4C2723B14100E84C7A /* Atlantis in Frameworks */,
+				BAD1DF4F2723B15900E84C7A /* Alamofire in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -83,6 +87,10 @@
 			dependencies = (
 			);
 			name = "Atlantis-Example-App";
+			packageProductDependencies = (
+				BAD1DF4B2723B14100E84C7A /* Atlantis */,
+				BAD1DF4E2723B15900E84C7A /* Alamofire */,
+			);
 			productName = "Atlantis-Example-App";
 			productReference = BAD1DF302723A95500E84C7A /* Atlantis-Example-App.app */;
 			productType = "com.apple.product-type.application";
@@ -111,6 +119,10 @@
 				Base,
 			);
 			mainGroup = BAD1DF272723A95500E84C7A;
+			packageReferences = (
+				BAD1DF4A2723B14100E84C7A /* XCRemoteSwiftPackageReference "atlantis" */,
+				BAD1DF4D2723B15900E84C7A /* XCRemoteSwiftPackageReference "Alamofire" */,
+			);
 			productRefGroup = BAD1DF312723A95500E84C7A /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -360,6 +372,38 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		BAD1DF4A2723B14100E84C7A /* XCRemoteSwiftPackageReference "atlantis" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/ProxymanApp/atlantis";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.0.0;
+			};
+		};
+		BAD1DF4D2723B15900E84C7A /* XCRemoteSwiftPackageReference "Alamofire" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/Alamofire/Alamofire";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 5.0.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		BAD1DF4B2723B14100E84C7A /* Atlantis */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = BAD1DF4A2723B14100E84C7A /* XCRemoteSwiftPackageReference "atlantis" */;
+			productName = Atlantis;
+		};
+		BAD1DF4E2723B15900E84C7A /* Alamofire */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = BAD1DF4D2723B15900E84C7A /* XCRemoteSwiftPackageReference "Alamofire" */;
+			productName = Alamofire;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = BAD1DF282723A95500E84C7A /* Project object */;
 }
