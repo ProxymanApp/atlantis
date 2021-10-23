@@ -1,0 +1,25 @@
+{
+  "object": {
+    "pins": [
+      {
+        "package": "Alamofire",
+        "repositoryURL": "https://github.com/Alamofire/Alamofire",
+        "state": {
+          "branch": null,
+          "revision": "d120af1e8638c7da36c8481fd61a66c0c08dc4fc",
+          "version": "5.4.4"
+        }
+      },
+      {
+        "package": "Atlantis",
+        "repositoryURL": "https://github.com/ProxymanApp/atlantis",
+        "state": {
+          "branch": null,
+          "revision": "2ee37f1da01b438d67012cc1405617e158f358a1",
+          "version": "1.11.2"
+        }
+      }
+    ]
+  },
+  "version": 1
+}

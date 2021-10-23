@@ -397,7 +397,16 @@ extension Image {
 
     static var appIcon: Image? {
         #if os(OSX)
-        return NSApplication.shared.applicationIconImage
+        if Thread.isMainThread {
+            return NSApplication.shared.applicationIconImage
+        } else {
+            return DispatchQueue.main.sync {
+                // Must be called on the Main Thread
+                // Otherwise, we get a UI Background Checker warnings
+                return NSApplication.shared.applicationIconImage
+            }
+        }
+
         #elseif targetEnvironment(macCatalyst)
         guard let iconName = Bundle.main.infoDictionary?["CFBundleIconFile"] as? String else {
             return nil

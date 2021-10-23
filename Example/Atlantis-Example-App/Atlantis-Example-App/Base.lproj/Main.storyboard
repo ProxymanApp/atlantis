@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="19162" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES" initialViewController="F80-zt-Rqb">
+    <device id="retina6_1" orientation="portrait" appearance="light"/>
+    <dependencies>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="19144"/>
+        <capability name="Safe area layout guides" minToolsVersion="9.0"/>
+        <capability name="System colors in document resources" minToolsVersion="11.0"/>
+        <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
+    </dependencies>
+    <scenes>
+        <!--Atlantis-->
+        <scene sceneID="tne-QT-ifu">
+            <objects>
+                <viewController id="BYZ-38-t0r" customClass="ViewController" customModule="Atlantis_Example_App" customModuleProvider="target" sceneMemberID="viewController">
+                    <view key="view" contentMode="scaleToFill" id="8bC-Xf-vdC">
+                        <rect key="frame" x="0.0" y="0.0" width="414" height="896"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <subviews>
+                            <stackView opaque="NO" contentMode="scaleToFill" axis="vertical" alignment="center" spacing="18" translatesAutoresizingMaskIntoConstraints="NO" id="7D0-zJ-8eK">
+                                <rect key="frame" x="124" y="249" width="166.5" height="276"/>
+                                <subviews>
+                                    <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="v8I-SR-bhq">
+                                        <rect key="frame" x="57.5" y="0.0" width="51.5" height="31"/>
+                                        <state key="normal" title="Button"/>
+                                        <buttonConfiguration key="configuration" style="filled" title="GET"/>
+                                        <connections>
+                                            <action selector="getBtnOnTap:" destination="BYZ-38-t0r" eventType="touchUpInside" id="mHW-Jx-iLE"/>
+                                        </connections>
+                                    </button>
+                                    <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="04t-U6-7Dw">
+                                        <rect key="frame" x="32" y="49" width="102" height="31"/>
+                                        <state key="normal" title="Button"/>
+                                        <buttonConfiguration key="configuration" style="filled" title="POST JSON"/>
+                                        <connections>
+                                            <action selector="postJsonBtnOnTap:" destination="BYZ-38-t0r" eventType="touchUpInside" id="Sd2-Vg-njJ"/>
+                                        </connections>
+                                    </button>
+                                    <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="zEc-yg-v4o">
+                                        <rect key="frame" x="6" y="98" width="154" height="31"/>
+                                        <state key="normal" title="Button"/>
+                                        <buttonConfiguration key="configuration" style="filled" title="POST URL-Encoded"/>
+                                        <connections>
+                                            <action selector="postUrlEncodedBtnOnTap:" destination="BYZ-38-t0r" eventType="touchUpInside" id="Qyk-TE-X8S"/>
+                                        </connections>
+                                    </button>
+                                    <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="9nl-iK-A4q">
+                                        <rect key="frame" x="0.0" y="147" width="166.5" height="31"/>
+                                        <state key="normal" title="Button"/>
+                                        <buttonConfiguration key="configuration" style="filled" title="Upload multipart/form"/>
+                                        <connections>
+                                            <action selector="uploadMultipartFormBtnOnClick:" destination="BYZ-38-t0r" eventType="touchUpInside" id="N1J-A5-IET"/>
+                                        </connections>
+                                    </button>
+                                    <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="Lts-kr-KlY">
+                                        <rect key="frame" x="8" y="196" width="150" height="31"/>
+                                        <state key="normal" title="Button"/>
+                                        <buttonConfiguration key="configuration" style="filled" title="SessionUploadTask"/>
+                                        <connections>
+                                            <action selector="uploadTaskBtnOnTap:" destination="BYZ-38-t0r" eventType="touchUpInside" id="2mU-9G-gsK"/>
+                                        </connections>
+                                    </button>
+                                    <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="LIh-A2-yJr">
+                                        <rect key="frame" x="45.5" y="245" width="75.5" height="31"/>
+                                        <state key="normal" title="Button"/>
+                                        <buttonConfiguration key="configuration" style="filled" title="DELETE"/>
+                                        <connections>
+                                            <action selector="deleteBtnOnTap:" destination="BYZ-38-t0r" eventType="touchUpInside" id="RwH-33-xly"/>
+                                        </connections>
+                                    </button>
+                                </subviews>
+                            </stackView>
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="2. Make HTTPS Requests by Alamofire" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="05x-wV-Tc3">
+                                <rect key="frame" x="61" y="188.5" width="292.5" height="20.5"/>
+                                <fontDescription key="fontDescription" type="system" pointSize="17"/>
+                                <nil key="textColor"/>
+                                <nil key="highlightedColor"/>
+                            </label>
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="1. Open Proxyman for macOS" textAlignment="center" lineBreakMode="wordWrap" numberOfLines="3" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="ctR-44-rkp">
+                                <rect key="frame" x="20" y="128" width="374" height="20.5"/>
+                                <fontDescription key="fontDescription" type="system" pointSize="17"/>
+                                <nil key="textColor"/>
+                                <nil key="highlightedColor"/>
+                            </label>
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="3. Inspect your HTPS Log on Proxyman app" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="Rfz-Me-zWS">
+                                <rect key="frame" x="42" y="565" width="330" height="20.5"/>
+                                <fontDescription key="fontDescription" type="system" pointSize="17"/>
+                                <nil key="textColor"/>
+                                <nil key="highlightedColor"/>
+                            </label>
+                        </subviews>
+                        <viewLayoutGuide key="safeArea" id="6Tk-OE-BBY"/>
+                        <color key="backgroundColor" systemColor="systemBackgroundColor"/>
+                        <constraints>
+                            <constraint firstItem="ctR-44-rkp" firstAttribute="centerX" secondItem="8bC-Xf-vdC" secondAttribute="centerX" id="0tU-Gd-RfL"/>
+                            <constraint firstItem="Rfz-Me-zWS" firstAttribute="centerX" secondItem="8bC-Xf-vdC" secondAttribute="centerX" id="43y-LE-2Pc"/>
+                            <constraint firstItem="ctR-44-rkp" firstAttribute="leading" secondItem="8bC-Xf-vdC" secondAttribute="leading" constant="20" id="5zc-wf-l7P"/>
+                            <constraint firstItem="7D0-zJ-8eK" firstAttribute="centerX" secondItem="8bC-Xf-vdC" secondAttribute="centerX" id="DFX-k3-8bg"/>
+                            <constraint firstItem="05x-wV-Tc3" firstAttribute="top" secondItem="ctR-44-rkp" secondAttribute="bottom" constant="40" id="G6g-3b-HCs"/>
+                            <constraint firstAttribute="trailing" secondItem="ctR-44-rkp" secondAttribute="trailing" constant="20" id="Kis-kt-V6k"/>
+                            <constraint firstItem="ctR-44-rkp" firstAttribute="top" secondItem="6Tk-OE-BBY" secondAttribute="top" constant="40" id="RHL-im-ZAA"/>
+                            <constraint firstItem="7D0-zJ-8eK" firstAttribute="top" secondItem="05x-wV-Tc3" secondAttribute="bottom" constant="40" id="iJm-Qi-BHC"/>
+                            <constraint firstItem="Rfz-Me-zWS" firstAttribute="top" secondItem="7D0-zJ-8eK" secondAttribute="bottom" constant="40" id="nWT-UN-XTm"/>
+                            <constraint firstItem="05x-wV-Tc3" firstAttribute="centerX" secondItem="8bC-Xf-vdC" secondAttribute="centerX" id="wmt-CC-5nZ"/>
+                        </constraints>
+                    </view>
+                    <navigationItem key="navigationItem" title="Atlantis" id="fwr-Ol-jqS">
+                        <barButtonItem key="rightBarButtonItem" style="plain" systemItem="camera" id="uTS-Ls-nO0">
+                            <connections>
+                                <action selector="cameraBtnOnTap:" destination="BYZ-38-t0r" id="lJu-27-YQK"/>
+                            </connections>
+                        </barButtonItem>
+                    </navigationItem>
+                </viewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="dkx-z0-nzr" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="1047.8260869565217" y="137.94642857142856"/>
+        </scene>
+        <!--Navigation Controller-->
+        <scene sceneID="dxt-ZE-eUv">
+            <objects>
+                <navigationController automaticallyAdjustsScrollViewInsets="NO" id="F80-zt-Rqb" sceneMemberID="viewController">
+                    <toolbarItems/>
+                    <navigationBar key="navigationBar" contentMode="scaleToFill" id="Da3-ZR-g1S">
+                        <rect key="frame" x="0.0" y="44" width="414" height="44"/>
+                        <autoresizingMask key="autoresizingMask"/>
+                    </navigationBar>
+                    <nil name="viewControllers"/>
+                    <connections>
+                        <segue destination="BYZ-38-t0r" kind="relationship" relationship="rootViewController" id="Bui-bx-vFy"/>
+                    </connections>
+                </navigationController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="7vN-Rh-1Fr" userLabel="First Responder" customClass="UIResponder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="137.68115942028987" y="137.94642857142856"/>
+        </scene>
+    </scenes>
+    <resources>
+        <systemColor name="systemBackgroundColor">
+            <color white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+        </systemColor>
+    </resources>
+</document>
