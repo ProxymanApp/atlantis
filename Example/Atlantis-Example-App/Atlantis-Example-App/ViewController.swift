@@ -71,4 +71,23 @@ final class ViewController: UIViewController {
             print(response)
         }
     }
+
+    @IBAction func uploadTaskBtnOnTap(_ sender: Any) {
+        let imageURL = Bundle.main.url(forResource: "image", withExtension: "jpg")!
+        let imageData = try! Data(contentsOf: imageURL)
+        let url = URL(string: "https://httpbin.org/post")!
+        var request = URLRequest(url: url)
+        request.method = .post
+
+        let task = URLSession.shared.uploadTask(with: request, from: imageData) { _, response, _ in
+            print(response)
+        }
+        task.resume()
+    }
+
+    @IBAction func cameraBtnOnTap(_ sender: Any) {
+        let controller = UIImagePickerController()
+        controller.sourceType = UIImagePickerController.SourceType.camera
+        show(controller, sender: self)
+    }
 }
