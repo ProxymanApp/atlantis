@@ -18,9 +18,9 @@ Pod::Spec.new do |spec|
   spec.author             = { "Nghia Tran" => "nghia@proxyman.io" }
   spec.social_media_url   = "https://twitter.com/proxyman_app"
 
-  spec.ios.deployment_target = "11.0"
-  spec.osx.deployment_target = "10.12"
-  spec.tvos.deployment_target = '11.0'
+  spec.ios.deployment_target = "13.0"
+  spec.osx.deployment_target = "10.15"
+  spec.tvos.deployment_target = '13.0'
   spec.module_name = "Atlantis"
   spec.public_header_files = 'Objc/*.h'
 

@@ -25,6 +25,17 @@ protocol Serializable {
     func toData() -> Data?
 }
 
+extension Serializable {
+
+    func toCompressedData() -> Data? {
+        guard let rawData = self.toData() else { return nil }
+
+        // Compress data by gzip
+        // Fallback to raw data if it's unsuccess
+        return rawData.gzip() ?? rawData
+    }
+}
+
 final class NetServiceTransport: NSObject {
 
     struct Constants {
@@ -118,45 +129,49 @@ extension NetServiceTransport: Transporter {
                 return
             }
 
-            // Send the main one
-            strongSelf.stream(package: package)
+            // Send to all connections
+            strongSelf.streamToAllConnections(package: package)
         }
     }
 
-    private func stream(package: Serializable) {
-        guard let rawData = package.toData() else { return }
-
+    private func streamToAllConnections(package: Serializable) {
         // Compress data by gzip
-        // Fallback to raw data if it's unsuccess
-        let data = rawData.gzip() ?? rawData
+        guard let compressedData = package.toCompressedData() else { return }
+
+        // Send to all available connection
+        for connection in connections {
+            send(connection: connection, data: compressedData)
+        }
+    }
+
+    private func send(connection: NWConnection, data: Data) {
+        guard connection.state == .ready else {
+            print("⚠️ The connection is not ready. It might be a bug!")
+            return
+        }
 
         // Compose a message
         // [1]: the length of the second message. We reserver 8 bytes to store this data
         // [2]: The actual message
 
-        // Send to all available connection
-        for connection in connections {
-            if connection.state == .ready {
-                // 1. Send length of the message first
-                let headerData = NSMutableData()
-                var lengthPackage = data.count
-                headerData.append(&lengthPackage, length: Int(MemoryLayout<UInt64>.stride))
+        // 1. Send length of the message first
+        let headerData = NSMutableData()
+        var lengthPackage = data.count
+        headerData.append(&lengthPackage, length: Int(MemoryLayout<UInt64>.stride))
 
-                // Send the message, must isComplete = false
-                connection.send(content: headerData, isComplete: false, completion: .contentProcessed({ error in
-                    if let error = error {
-                        print("[Atlantis][Error] Error sending frame header: \(error)")
-                    }
-                }))
-
-                // 2. send the actual message
-                connection.send(content: data, completion: .contentProcessed({ error in
-                    if let error = error {
-                        print("[Atlantis][Error] Error sending frame content: \(error)")
-                    }
-                }))
+        // Send the message, must use isComplete = false
+        connection.send(content: headerData, isComplete: false, completion: .contentProcessed({ error in
+            if let error = error {
+                print("[Atlantis][Error] Error sending frame header: \(error)")
             }
-        }
+        }))
+
+        // 2. send the actual message
+        connection.send(content: data, completion: .contentProcessed({ error in
+            if let error = error {
+                print("[Atlantis][Error] Error sending frame content: \(error)")
+            }
+        }))
     }
 
     private func appendToPendingList(_ package: Serializable) {
@@ -168,11 +183,11 @@ extension NetServiceTransport: Transporter {
         pendingPackages.append(package)
     }
 
-    private func flushAllPendingIfNeed() {
+    private func flushAllPendingPackagesIfNeed() {
         guard !pendingPackages.isEmpty else { return }
         print("[Atlantis] Flush \(pendingPackages.count) items")
         for package in pendingPackages {
-            stream(package: package)
+            streamToAllConnections(package: package)
         }
         pendingPackages.removeAll()
     }
@@ -223,23 +238,6 @@ extension NetServiceTransport {
 
         // Start
         connection.start(queue: queue)
-
-        // All pending
-        queue.async {[weak self] in
-            guard let strongSelf = self else { return }
-
-            //
-            if let config = strongSelf.config {
-                // Create a first connection message
-                // which contains the project, device metadata
-                let connectionMessage = Message.buildConnectionMessage(id: config.id, item: ConnectionPackage(config: config))
-
-                // Add to top of the pending list, when the connection is available, it will send firstly
-                strongSelf.pendingPackages.insert(connectionMessage, at: 0)
-            }
-
-            self?.flushAllPendingIfNeed()
-        }
     }
 
     private func setupConnectionStateHandler(_ connection: NWConnection) {
@@ -253,25 +251,44 @@ extension NetServiceTransport {
             case .ready:
                 print("Connection established")
 
-                // Tell Proxyman app, who we are
-                if let config = strongSelf.config {
-                    // Create a first connection message
-                    // which contains the project, device metadata
-                    let connectionMessage = Message.buildConnectionMessage(id: config.id, item: ConnectionPackage(config: config))
-
-                    // Add to top of the pending list, when the connection is available, it will send firstly
-                    strongSelf.pendingPackages.insert(connectionMessage, at: 0)
+                // After the connection is established, Tell Proxyman app that who we are
+                strongSelf.queue.async {
+                    strongSelf.sendConnectionPackage(connection: connection)
                 }
+
             case .waiting(let error):
                 print("Connection to server waiting to establish, error=\(error)")
             case .failed(let error):
                 print("Connection to server failed, error=\(error)")
+                strongSelf.connections.removeAll { item in
+                    return item === connection
+                }
             case .cancelled:
                 print("Connection was cancelled, not retrying")
+                strongSelf.connections.removeAll { item in
+                    return item === connection
+                }
             @unknown default:
                 break
             }
         }
+    }
+
+    private func sendConnectionPackage(connection: NWConnection) {
+        guard let config = config else {
+            return
+        }
+
+        // Create a first connection message
+        // which contains the project, device metadata
+        let connectionMessage = Message.buildConnectionMessage(id: config.id, item: ConnectionPackage(config: config))
+        guard let data = connectionMessage.toCompressedData() else {
+            return
+        }
+        send(connection: connection, data: data)
+
+        // Flush all waiting data
+        flushAllPendingPackagesIfNeed()
     }
 }
 
