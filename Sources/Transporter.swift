@@ -234,7 +234,12 @@ extension NetServiceTransport {
         //
         let connection = NWConnection(to: .service(name: service.name, type: service.type, domain: service.domain, interface: nil), using: .tcp)
         setupConnectionStateHandler(connection)
-        self.connections.append(connection)
+
+        // Safe-thread
+        queue.async {[weak self] in
+            self?.connections.append(connection)
+        }
+
 
         // Start
         connection.start(queue: queue)
@@ -260,14 +265,10 @@ extension NetServiceTransport {
                 print("Connection to server waiting to establish, error=\(error)")
             case .failed(let error):
                 print("Connection to server failed, error=\(error)")
-                strongSelf.connections.removeAll { item in
-                    return item === connection
-                }
+                strongSelf.connections.removeAll { $0 === connection }
             case .cancelled:
                 print("Connection was cancelled, not retrying")
-                strongSelf.connections.removeAll { item in
-                    return item === connection
-                }
+                strongSelf.connections.removeAll { $0 === connection }
             @unknown default:
                 break
             }
