@@ -240,7 +240,6 @@ extension NetServiceTransport {
             self?.connections.append(connection)
         }
 
-
         // Start
         connection.start(queue: queue)
     }
