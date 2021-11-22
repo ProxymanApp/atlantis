@@ -98,11 +98,9 @@ public final class TrafficPackage: Codable, CustomDebugStringConvertible, Serial
             let request = Request(currentRequest) else { return nil }
 
         // Check if it's a websocket
-        if #available(iOS 13.0, *) {
-            if let websocketClass = NSClassFromString("__NSURLSessionWebSocketTask"),
-               sessionTask.isKind(of: websocketClass) {
-                return TrafficPackage(id: id, request: request, packageType: .websocket)
-            }
+        if let websocketClass = NSClassFromString("__NSURLSessionWebSocketTask"),
+           sessionTask.isKind(of: websocketClass) {
+            return TrafficPackage(id: id, request: request, packageType: .websocket)
         }
 
         // Or normal websocket
@@ -197,7 +195,6 @@ public final class TrafficPackage: Codable, CustomDebugStringConvertible, Serial
         return "Package: id=\(id), request=\(String(describing: request)), response=\(String(describing: response))"
     }
 
-    @available(iOS 13.0, *)
     func setWebsocketMessagePackage(package: WebsocketMessagePackage) {
         self.websocketMessagePackage = package
     }
@@ -341,7 +338,6 @@ struct WebsocketMessagePackage: Codable, Serializable {
         case data(Data)
         case string(String)
 
-        @available(iOS 13.0, macOS 10.15, tvOS 13.0, *)
         init?(message: URLSessionWebSocketTask.Message) {
             switch message {
             case .data(let data):

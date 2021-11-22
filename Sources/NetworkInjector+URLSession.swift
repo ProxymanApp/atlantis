@@ -330,7 +330,6 @@ extension NetworkInjector {
 
 extension NetworkInjector {
 
-    @available(iOS 13.0, macOS 10.15, tvOS 13.0, *)
     func _swizzleURLSessionWebsocketSelector() {
         guard let websocketClass = NSClassFromString("__NSURLSessionWebSocketTask") else {
             print("[Atlantis][ERROR] Could not inject __NSURLSessionWebSocketTask!!")
@@ -344,7 +343,6 @@ extension NetworkInjector {
         _swizzleURLSessionWebSocketCancelWithCloseCodeReasonSelector(websocketClass)
     }
 
-    @available(iOS 13.0, macOS 10.15, tvOS 13.0, *)
     private func _swizzleURLSessionWebSocketSendMessageSelector(_ baseClass: AnyClass) {
 
         // Prepare
@@ -379,7 +377,6 @@ extension NetworkInjector {
         method_setImplementation(method, imp_implementationWithBlock(block))
     }
 
-    @available(iOS 13.0, macOS 10.15, tvOS 13.0, *)
     private func _swizzleURLSessionWebSocketReceiveMessageSelector(_ baseClass: AnyClass) {
 
         // Prepare
@@ -419,7 +416,6 @@ extension NetworkInjector {
         method_setImplementation(method, imp_implementationWithBlock(block))
     }
 
-    @available(iOS 13.0, macOS 10.15, tvOS 13.0, *)
     private func _swizzleURLSessionWebSocketSendPingPongSelector(_ baseClass: AnyClass) {
 
         // Prepare
@@ -450,7 +446,6 @@ extension NetworkInjector {
         method_setImplementation(method, imp_implementationWithBlock(block))
     }
 
-    @available(iOS 13.0, macOS 10.15, tvOS 13.0, *)
     private func _swizzleURLSessionWebSocketCancelWithCloseCodeReasonSelector(_ baseClass: AnyClass) {
 
         // Prepare
@@ -483,7 +478,6 @@ extension NetworkInjector {
         method_setImplementation(method, imp_implementationWithBlock(block))
     }
 
-    @available(iOS 13.0, macOS 10.15, tvOS 13.0, *)
     private func wrapWebSocketMessage(object: AnyObject) -> URLSessionWebSocketTask.Message? {
         if let strValue = object.value(forKey: "string") as? String {
             return URLSessionWebSocketTask.Message.string(strValue)
@@ -493,7 +487,6 @@ extension NetworkInjector {
         return nil
     }
 
-    @available(iOS 13.0, macOS 10.15, tvOS 13.0, *)
     private func wrapWebSocketMessage(strValue: String?, dataValue: Data?) -> URLSessionWebSocketTask.Message? {
         if let strValue = strValue {
             return URLSessionWebSocketTask.Message.string(strValue)
