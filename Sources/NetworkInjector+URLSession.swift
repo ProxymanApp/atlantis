@@ -8,10 +8,6 @@
 
 import Foundation
 
-#if canImport(Atlantis_Objc)
-import Atlantis_Objc
-#endif
-
 extension NetworkInjector {
 
     func _swizzleURLSessionResumeSelector(baseClass: AnyClass) {
@@ -392,12 +388,7 @@ extension NetworkInjector {
         let originalImp: IMP = method_getImplementation(method)
         let block: @convention(block) (AnyObject, AnyObject) -> Void = {[weak self](me, handler) in
 
-            // Pass the handler (AnyObject) to AtlantisHelper
-            // We intentionally do this way because it's possible to use the class `NSURLSessionWebSocketMessage`
-            // Xcode prohibits use this class `NSURLSessionWebSocketMessage` in Swift, so there is no way to cast it
-            //
-            // Pass it to Objective-C world would help it
-            //
+            // Originally implemented in Obj-C.
             let wrapperHandler = AtlantisHelper.swizzleWebSocketReceiveMessage(withCompleteHandler: handler, responseHandler: {[weak self] (str, data, error) in
                 if let task = me as? URLSessionTask {
                     if let message = self?.wrapWebSocketMessage(strValue: str, dataValue: data) {
