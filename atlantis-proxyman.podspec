@@ -22,9 +22,8 @@ Pod::Spec.new do |spec|
   spec.osx.deployment_target = "10.15"
   spec.tvos.deployment_target = '13.0'
   spec.module_name = "Atlantis"
-  spec.public_header_files = 'Objc/*.h'
 
   spec.source       = { :git => "https://github.com/ProxymanApp/atlantis.git", :tag => "#{spec.version}" }
-  spec.source_files  = 'Sources/*.swift', 'Objc/*.{h,m}'
+  spec.source_files  = 'Sources/*.swift'
   spec.swift_versions = ['5.0', '5.1', '5.2', '5.3']
 end
