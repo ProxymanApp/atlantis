@@ -150,15 +150,15 @@ extension Atlantis {
             print("---------------------------------------------------------------------------------")
         }
 
-        // For iOS
-        #if os(iOS)
-
         // Don't need to check configs on Info.plist
         if Atlantis.shared.isRunningOniOSPlayground {
-            print("---------- Running on iOS Swift Playground Mode")
+            print("---------- Running on Swift Playground Mode")
             print("If you get the SSL Error, please follow this code: https://gist.github.com/NghiaTranUIT/275c8da5068d506869a21bd16da27094")
             return
         }
+
+        // For iOS
+        #if os(iOS)
 
         // Check required config for Local Network in the main app's info.plist
         // Ref: https://developer.apple.com/news/?id=0oi77447
