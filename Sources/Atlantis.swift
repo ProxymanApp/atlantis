@@ -35,10 +35,15 @@ public final class Atlantis: NSObject {
 
     /// Check whether or not Bonjour Service is available in current devices
     private static var isServiceAvailable: Bool = {
-        return true
-        
-        // Require extra config for iOS 14
+
         #if os(iOS)
+
+        // on iOS Swift Playgroud, no need to add configs to Info.plist
+        if Atlantis.shared.isRunningOniOSPlayground {
+            return true
+        }
+
+        // Require extra config for iOS 14
         if #available(iOS 14, *) {
             return Bundle.main.hasBonjourServices && Bundle.main.hasLocalNetworkUsageDescription
         }
@@ -54,6 +59,10 @@ public final class Atlantis: NSObject {
     /// Determine whether or not the transport layer (e.g. Bonjour service) is enabled
     /// If it's enabled, it will send the traffic to Proxyman macOS app
     private var isEnabledTransportLayer = true
+
+    /// Determine if Atlantis is running on Swift Playground
+    /// If it's enabled, Atlantis will bypass some safety checks
+    private var isRunningOniOSPlayground = false
 
     // MARK: - Init
 
@@ -118,6 +127,11 @@ public final class Atlantis: NSObject {
         Atlantis.shared.isEnabledTransportLayer = isEnabled
     }
 
+    /// Enable Swift Playground mode
+    public class func setIsRunningOniOSPlayground(_ isEnabled: Bool) {
+        Atlantis.shared.isRunningOniOSPlayground = isEnabled
+    }
+
     /// Set delegate to observe the traffic
     public class func setDelegate(_ delegate: AtlantisDelegate) {
         Atlantis.shared.delegate = delegate
@@ -136,10 +150,19 @@ extension Atlantis {
             print("---------------------------------------------------------------------------------")
         }
 
+        // For iOS
+        #if os(iOS)
+
+        // Don't need to check configs on Info.plist
+        if Atlantis.shared.isRunningOniOSPlayground {
+            print("---------- Running on iOS Swift Playground Mode")
+            print("If you get the SSL Error, please follow this code: https://gist.github.com/NghiaTranUIT/275c8da5068d506869a21bd16da27094")
+            return
+        }
+
         // Check required config for Local Network in the main app's info.plist
         // Ref: https://developer.apple.com/news/?id=0oi77447
         // Only for iOS 14
-        #if os(iOS)
         if #available(iOS 14, *) {
             var instruction: [String] = []
             if !Bundle.main.hasLocalNetworkUsageDescription {
