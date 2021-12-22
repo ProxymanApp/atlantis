@@ -35,6 +35,8 @@ public final class Atlantis: NSObject {
 
     /// Check whether or not Bonjour Service is available in current devices
     private static var isServiceAvailable: Bool = {
+        return true
+        
         // Require extra config for iOS 14
         #if os(iOS)
         if #available(iOS 14, *) {
