@@ -194,6 +194,26 @@ func insertNote(note: Note, completion: @escaping(Note?, CallResult?) -> Void) {
 }
 ```
 
+#### 3. Use Atlantis on Swift Playground
+Atlantis is capable of capturing the HTTP/HTTPS and WS/WSS traffic from your Swift Playground.
+
+1. Use [Arena](https://github.com/finestructure/Arena) to generate a new Swift Playground with Atlantis. If you would like to add Atlantis to your existing Swift Playground, please follow [this tutorial](https://wwdcbysundell.com/2020/importing-swift-packages-into-a-playground-in-xcode12/).
+2. Enable Swift Playground Mode
+```swift
+Atlantis.setIsRunningOniOSPlayground(true)
+Atlantis.start()
+```
+
+3. Trust Proxyman self-signed certificate
+
+- for macOS: You don't need to do anything if you've already installed & trusted Proxyman Certificate in Certificate Menu -> Install on this Mac.
+- for iOS: Since iOS Playground doesn't start any iOS Simulator, it's impossible to inject the Proxyman Certificate. Therefore, we have to manually trust the certificate. Please use [NetworkSSLProxying](https://gist.github.com/NghiaTranUIT/275c8da5068d506869a21bd16da27094) class to do it.
+
+4. Make an HTTP/HTTPS or WS/WSS and inspect it on the Proxyman app.
+
+- Sample Code: https://github.com/ProxymanApp/Atlantis-Swift-Playground-Sample-App
+
+
 ## FAQ
 #### 1. How does Atlantis work?
 
