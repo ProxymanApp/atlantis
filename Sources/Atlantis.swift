@@ -432,7 +432,7 @@ extension Atlantis {
         transporter.send(package: message)
     }
 
-    private func startSendingWebsocketMessage(_ package: TrafficPackage) {
+    func startSendingWebsocketMessage(_ package: TrafficPackage) {
         let id = package.id
 
         // If the response of WS is nil

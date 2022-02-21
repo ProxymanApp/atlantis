@@ -155,43 +155,246 @@ You can construct the Request and Response for Atlantis from the following func
 ```
 
 #### 2. My app use GRPC
-You can construct the Request and Response from GRPC models:
+You can construct the unary Request and Response from GRPC models via the interceptor pattern that is provided by
+grpc-swift and leverage this to get a complete log of your calls. 
+
+
+<details><summary>Here is an example for an AtlantisInterceptor</summary>
+<p>
 ```swift
-    /// Helper func to convert GRPC message to Atlantis format that could show on Proxyman app as a HTTP Message
-    /// - Parameters:
-    ///   - url: The url of the grpc message to distinguish each message
-    ///   - requestObject: Request Data for the Request, use `try? request.jsonUTF8Data()` for this.
-    ///   - responseObject: Response object for the Response, use `try? response.jsonUTF8Data()` for this.
-    ///   - success: success state. Get from `CallResult.success`
-    ///   - statusCode: statusCode state. Get from `CallResult.statusCode`
-    ///   - statusMessage: statusMessage state. Get from `CallResult.statusMessage`
-    public class func addGRPC(url: String,
-                                 requestObject: Data?,
-                                 responseObject: Data?,
-                                 success: Bool,
-                                 statusCode: Int,
-                                 statusMessage: String?,
-                                 HPACKHeadersRequest: [Header]?,
-                                 HPACKHeadersResponse: [Header]?){
+import Atlantis
+import Foundation
+import GRPC
+import NIO
+import NIOHPACK
+import SwiftProtobuf
+
+extension HPACKHeaders {
+    var atlantisHeaders: [Header] { map { Header(key: $0.name, value: $0.value) } }
+}
+
+public class AtlantisInterceptor<Request: Message, Response: Message>: ClientInterceptor<Request, Response> {
+    private struct LogEntry {
+        let id = UUID()
+        var path: String = ""
+        var started: Date?
+        var request: LogRequest = .init()
+        var response: LogResponse = .init()
+    }
+
+    private struct LogRequest {
+        var metadata: [Header] = []
+        var messages: [String] = []
+        var ended = false
+    }
+
+    private struct LogResponse {
+        var metadata: [Header] = []
+        var messages: [String] = []
+        var end: (status: GRPCStatus, metadata: String)?
+    }
+
+    private var logEntry = LogEntry()
+
+    override public func send(_ part: GRPCClientRequestPart<Request>,
+                              promise: EventLoopPromise<Void>?,
+                              context: ClientInterceptorContext<Request, Response>)
+    {
+        logEntry.path = context.path
+        if logEntry.started == nil {
+            logEntry.started = Date()
+        }
+        switch context.type {
+        case .clientStreaming, .serverStreaming, .bidirectionalStreaming:
+            streamingSend(part, type: context.type)
+        case .unary:
+            unarySend(part)
+        }
+        super.send(part, promise: promise, context: context)
+    }
+
+    private func streamingSend(_ part: GRPCClientRequestPart<Request>, type: GRPCCallType) {
+        switch part {
+        case .metadata(let metadata):
+            logEntry.request.metadata = metadata.atlantisHeaders
+        case .message(let messageRequest, _):
+            Atlantis.addGRPCStreaming(id: logEntry.id,
+                                      path: logEntry.path,
+                                      message: .data((try? messageRequest.jsonUTF8Data()) ?? Data()),
+                                      success: true,
+                                      statusCode: 0,
+                                      statusMessage: nil,
+                                      streamingType: type.streamingType,
+                                      type: .send,
+                                      startetAt: logEntry.started,
+                                      endedAt: Date(),
+                                      HPACKHeadersRequest: logEntry.request.metadata,
+                                      HPACKHeadersResponse: logEntry.response.metadata)
+        case .end:
+            logEntry.request.ended = true
+            switch type {
+            case .unary, .serverStreaming, .bidirectionalStreaming:
+                break
+            case .clientStreaming:
+                Atlantis.addGRPCStreaming(id: logEntry.id,
+                                          path: logEntry.path,
+                                          message: .string("end"),
+                                          success: true,
+                                          statusCode: 0,
+                                          statusMessage: nil,
+                                          streamingType: type.streamingType,
+                                          type: .send,
+                                          startetAt: logEntry.started,
+                                          endedAt: Date(),
+                                          HPACKHeadersRequest: logEntry.request.metadata,
+                                          HPACKHeadersResponse: logEntry.response.metadata)
+            }
+        }
+    }
+
+    private func unarySend(_ part: GRPCClientRequestPart<Request>) {
+        switch part {
+        case .metadata(let metadata):
+            logEntry.request.metadata = metadata.atlantisHeaders
+        case .message(let messageRequest, _):
+            logEntry.request.messages.append((try? messageRequest.jsonUTF8Data())?.prettyJson ?? "")
+        case .end:
+            logEntry.request.ended = true
+        }
+    }
+
+    override public func receive(_ part: GRPCClientResponsePart<Response>, context: ClientInterceptorContext<Request, Response>) {
+        logEntry.path = context.path
+        switch context.type {
+        case .unary:
+            unaryReceive(part)
+        case .bidirectionalStreaming, .serverStreaming, .clientStreaming:
+            streamingReceive(part, type: context.type)
+        }
+        super.receive(part, context: context)
+    }
+    
+    private func streamingReceive(_ part: GRPCClientResponsePart<Response>, type: GRPCCallType) {
+        switch part {
+        case .metadata(let metadata):
+            logEntry.response.metadata = metadata.atlantisHeaders
+        case .message(let messageResponse):
+            Atlantis.addGRPCStreaming(id: logEntry.id,
+                                      path: logEntry.path,
+                                      message: .data((try? messageResponse.jsonUTF8Data()) ?? Data()),
+                                      success: true,
+                                      statusCode: 0,
+                                      statusMessage: nil,
+                                      streamingType: type.streamingType,
+                                      type: .receive,
+                                      startetAt: logEntry.started,
+                                      endedAt: Date(),
+                                      HPACKHeadersRequest: logEntry.request.metadata,
+                                      HPACKHeadersResponse: logEntry.response.metadata)
+        case .end(let status, _):
+            Atlantis.addGRPCStreaming(id: logEntry.id,
+                                      path: logEntry.path,
+                                      message: .string("end"),
+                                      success: status.isOk,
+                                      statusCode: status.code.rawValue,
+                                      statusMessage: status.message,
+                                      streamingType: type.streamingType,
+                                      type: .receive,
+                                      startetAt: logEntry.started,
+                                      endedAt: Date(),
+                                      HPACKHeadersRequest: logEntry.request.metadata,
+                                      HPACKHeadersResponse: logEntry.response.metadata)
+        }
+    }
+
+    private func unaryReceive(_ part: GRPCClientResponsePart<Response>) {
+        switch part {
+        case .metadata(let metadata):
+            logEntry.response.metadata = metadata.atlantisHeaders
+        case .message(let messageResponse):
+            logEntry.response.messages.append((try? messageResponse.jsonUTF8Data())?.prettyJson ?? "")
+        case .end(let status, _):
+            Atlantis.addGRPCUnary(path: logEntry.path,
+                                  requestObject: logEntry.request.messages.joined(separator: "\n").data(using: .utf8),
+                                  responseObject: logEntry.response.messages.joined(separator: "\n").data(using: .utf8),
+                                  success: status.isOk,
+                                  statusCode: status.code.rawValue,
+                                  statusMessage: status.message,
+                                  startetAt: logEntry.started,
+                                  endedAt: Date(),
+                                  HPACKHeadersRequest: logEntry.request.metadata,
+                                  HPACKHeadersResponse: logEntry.response.metadata)
+        }
+    }
+
+    override public func errorCaught(_ error: Error, context: ClientInterceptorContext<Request, Response>) {
+        logEntry.path = context.path
+        switch context.type {
+        case .unary, .bidirectionalStreaming, .serverStreaming, .clientStreaming:
+            Atlantis.addGRPCUnary(path: logEntry.path,
+                                  requestObject: logEntry.request.messages.joined(separator: "\n").data(using: .utf8),
+                                  responseObject: logEntry.response.messages.joined(separator: "\n").data(using: .utf8),
+                                  success: false,
+                                  statusCode: GRPCStatus(code: .unknown, message: "").code.rawValue,
+                                  statusMessage: error.localizedDescription,
+                                  startetAt: logEntry.started,
+                                  endedAt: Date(),
+                                  HPACKHeadersRequest: logEntry.request.metadata,
+                                  HPACKHeadersResponse: logEntry.response.metadata)
+        }
+
+        super.errorCaught(error, context: context)
+    }
+
+    override public func cancel(promise: EventLoopPromise<Void>?, context: ClientInterceptorContext<Request, Response>) {
+        logEntry.path = context.path
+        switch context.type {
+        case .unary, .bidirectionalStreaming, .serverStreaming, .clientStreaming:
+            Atlantis.addGRPCUnary(path: logEntry.path,
+                                  requestObject: logEntry.request.messages.joined(separator: "\n").data(using: .utf8),
+                                  responseObject: logEntry.response.messages.joined(separator: "\n").data(using: .utf8),
+                                  success: false,
+                                  statusCode: GRPCStatus(code: .cancelled, message: nil).code.rawValue,
+                                  statusMessage: "canceled",
+                                  startetAt: logEntry.started,
+                                  endedAt: Date(),
+                                  HPACKHeadersRequest: logEntry.request.metadata,
+                                  HPACKHeadersResponse: logEntry.response.metadata)
+        }
+        super.cancel(promise: promise, context: context)
+    }
+}
+
+extension GRPCCallType {
+    var streamingType: Atlantis.GRPCStreamingType {
+        switch self {
+        case .clientStreaming:
+            return .client
+        case .serverStreaming:
+            return .server
+        case .bidirectionalStreaming:
+            return .server
+        case .unary:
+            fatalError("Unary is not a streaming type")
+        }
+    }
+}
+
 ```
+</p>
+</details>
+
+
 - Example:
 ```swift
-// Your GRPC services that is generated from SwiftGRPC
-private let client = NoteServiceServiceClient.init(address: "127.0.0.1:50051", secure: false)
-
-// Note is a struct that is generated from a protobuf file
-func insertNote(note: Note, completion: @escaping(Note?, CallResult?) -> Void) {
-    _ = try? client.insert(note, completion: { (createdNote, result) in
-    
-        // Add to atlantis and show it on Proxyman app
-        Atlantis.addGRPC(url: "https://my-server.com/grpc",
-                         requestObject: try? note.jsonUTF8Data(),
-                         responseObject: try? createdNote.jsonUTF8Data(),
-                         success: result.success,
-                         statusCode: result.statusCode.rawValue,
-                         statusMessage: result.statusMessage)
-    })
+public class YourInterceptorFactory: YourClientInterceptorFactoryProtocol {
+    func makeGetYourCallInterceptors() -> [ClientInterceptor<YourRequest, YourResponse>] {
+        [AtlantisInterceptor()]
+    }
 }
+
+// Your GRPC services that is generated from SwiftGRPC
+private let client = NoteServiceServiceClient.init(channel: connectionChannel, interceptors: YourInterceptorFactory())
 ```
 
 #### 3. Use Atlantis on Swift Playground

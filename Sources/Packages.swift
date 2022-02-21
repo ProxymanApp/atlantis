@@ -81,11 +81,18 @@ public final class TrafficPackage: Codable, CustomDebugStringConvertible, Serial
 
     // MARK: - Init
 
-    init(id: String, request: Request, response: Response? = nil, responseBodyData: Data? = nil, packageType: PackageType = .http) {
+    init(id: String,
+         request: Request,
+         response: Response? = nil,
+         responseBodyData: Data? = nil,
+         packageType: PackageType = .http,
+         startAt: TimeInterval = Date().timeIntervalSince1970,
+         endAt: TimeInterval? = nil) {
         self.id = id
         self.request = request
         self.response = nil
-        self.startAt = Date().timeIntervalSince1970
+        self.startAt = startAt
+        self.endAt = endAt
         self.response = response
         self.responseBodyData = responseBodyData ?? Data()
         self.packageType = packageType
@@ -325,16 +332,16 @@ public struct CustomError: Codable {
     }
 }
 
-struct WebsocketMessagePackage: Codable, Serializable {
+public struct WebsocketMessagePackage: Codable, Serializable {
 
-    enum MessageType: String, Codable {
+    public enum MessageType: String, Codable {
         case pingPong
         case send
         case receive
         case sendCloseMessage
     }
 
-    enum Message {
+    public enum Message {
         case data(Data)
         case string(String)
 
