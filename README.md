@@ -12,6 +12,7 @@ A lightweight and powerful iOS framework for intercepting HTTP/HTTPS Traffic fro
 ## Features
 - [x] **Automatically** intercept all HTTP/HTTPS Traffic with ease
 - [x] Capture WS/WSS Traffic from URLSessionWebSocketTask
+- [x] Capture gRPC traffic 
 - [x] ✅ **No need to config HTTP Proxy, Install or Trust any Certificate**
 - [x] Support iOS Physical Devices and Simulators
 - [x] Review traffic log from macOS [Proxyman](https://proxyman.io) app ([Github](https://github.com/ProxymanApp/Proxyman))
