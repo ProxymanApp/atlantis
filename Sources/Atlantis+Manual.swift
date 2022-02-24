@@ -62,7 +62,7 @@ extension Atlantis {
     }
 
 
-    /// Helper func to convert GRPC message to Atlantis format that could show on Proxyman app as a HTTP Message
+    /// Helper func to convert unary GRPC message to Atlantis format that could show on Proxyman app as a HTTP Message
     /// - Parameters:
     ///   - url: The url of the grpc message to distinguish each message
     ///   - requestObject: Request Data for the Request, use `try? request.jsonUTF8Data()` for this.
@@ -70,25 +70,128 @@ extension Atlantis {
     ///   - success: success state. Get from `CallResult.success`
     ///   - statusCode: statusCode state. Get from `CallResult.statusCode`
     ///   - statusMessage: statusMessage state. Get from `CallResult.statusMessage`
+    ///   - startetAt: when the request started
+    ///   - endedAt: when the request ended
     ///   - HPACKHeadersRequest: Transformed request headers from gRPC. Get it from `callOptions?.customMetadata`
     ///   - HPACKHeadersResponse: Transformed response headers from gRPC. Get it from `CallResult.trailingMetadata` or `CallResult.initialMetadata`
-    public class func addGRPC(url: String,
-                                 requestObject: Data?,
-                                 responseObject: Data?,
-                                 success: Bool,
-                                 statusCode: Int,
-                                 statusMessage: String?,
-                                 HPACKHeadersRequest: [Header]? = nil,
-                                 HPACKHeadersResponse: [Header]? = nil){
-
-        let request = Request(url: url, method: "GRPC", headers: HPACKHeadersRequest ?? [], body: requestObject)
+    public class func addGRPCUnary(path: String,
+                            requestObject: Data?,
+                            responseObject: Data?,
+                            success: Bool,
+                            statusCode: Int,
+                            statusMessage: String?,
+                            startetAt: Date?,
+                            endedAt: Date?,
+                            HPACKHeadersRequest: [Header] = [],
+                            HPACKHeadersResponse: [Header] = []) {
+        let request = Request(url: path, method: "GRPC", headers: HPACKHeadersRequest, body: requestObject)
 
         // Wrap the CallResult to Response Headers
-        var headers =  [Header(key: "success", value: "\(success ? "true" : "false")"),
-                        Header(key: "statusCode", value: GRPCStatusCode(rawValue: statusCode)?.description ?? "Unknown status Code \(statusCode)"),
-        				Header(key: "statusMessage", value: statusMessage ?? "nil")]
-        headers.append(contentsOf: HPACKHeadersResponse ?? [])
+        var headers = [Header(key: "success", value: "\(success ? "true" : "false")"),
+                       Header(key: "statusCode", value: GRPCStatusCode(rawValue: statusCode)?.description ?? "Unknown status Code \(statusCode)"),
+                       Header(key: "statusMessage", value: statusMessage ?? "nil")]
+        headers.append(contentsOf: HPACKHeadersResponse)
         let response = Response(statusCode: success ? 200 : 503, headers: headers)
-        self.add(request: request, response: response, responseBody: responseObject)
+
+        // Build package from raw given input
+        let package = TrafficPackage(id: UUID().uuidString,
+                                     request: request,
+                                     response: response,
+                                     responseBodyData: responseObject,
+                                     startAt: startetAt?.timeIntervalSince1970 ?? Date().timeIntervalSince1970,
+                                     endAt: endedAt?.timeIntervalSince1970)
+
+        // Compose and send the message to Proxyman
+        Atlantis.shared.startSendingMessage(package: package)
+    }
+
+    /// Helper func to convert streaming GRPC messages to Atlantis format that could show up on Proxyman as WebSockets
+    /// - Parameters:
+    ///   - id: UUID of th request to identify it for WebSockts
+    ///   - message: The WebSocketMessage, it's plain data or a string
+    ///   - success: success state. Get from `CallResult.success`
+    ///   - statusCode: statusCode state. Get from `CallResult.statusCode`
+    ///   - statusMessage: statusMessage state. Get from `CallResult.statusMessage`
+    ///   - streamingType: Determines the stremaing type. `client`, `server` or `biderectional`. Extract it from the interceptor context
+    ///   - type: The WebSocket Message Type, we are mostly using `send` and `receive` for determine the direction
+    ///   - startetAt: when the request started
+    ///   - endedAt: when the request ended
+    ///   - HPACKHeadersRequest: Transformed request headers from gRPC. Get it from `callOptions?.customMetadata`
+    ///   - HPACKHeadersResponse: Transformed response headers from gRPC. Get it from `CallResult.trailingMetadata` or `CallResult.initialMetadata`
+    public class func addGRPCStreaming(id: UUID,
+                                path: String,
+                                message: WebsocketMessagePackage.Message,
+                                success: Bool,
+                                statusCode: Int,
+                                statusMessage: String?,
+                                streamingType: GRPCStreamingType,
+                                type: WebsocketMessagePackage.MessageType,
+                                startetAt: Date?,
+                                endedAt: Date?,
+                                HPACKHeadersRequest: [Header] = [],
+                                HPACKHeadersResponse: [Header] = []) {
+        let request: Request
+        switch streamingType
+        {
+        case .client:
+            request = Request(url: path, method: "GRPC", headers: HPACKHeadersRequest, body: nil)
+        case .server:
+            request = Request(url: path, method: "GRPC", headers: HPACKHeadersRequest, body: message.optionalData)
+        case .bidirectional:
+            request = Request(url: path, method: "GRPC", headers: HPACKHeadersRequest, body: nil)
+        }
+        // Wrap the CallResult to Response Headers
+        var headers = [Header(key: "success", value: "\(success ? "true" : "false")"),
+                       Header(key: "statusCode", value: GRPCStatusCode(rawValue: statusCode)?.description ?? "Unknown status Code \(statusCode)"),
+                       Header(key: "statusMessage", value: statusMessage ?? "nil")]
+        headers.append(contentsOf: HPACKHeadersResponse)
+        let response = Response(statusCode: success ? 200 : 503, headers: headers)
+        let responseObject: Data? = {
+            switch streamingType {
+            case .client:
+                return message.optionalData
+            case .server:
+                return nil
+            case .bidirectional:
+                return nil
+            }
+        }()
+        let package = TrafficPackage(id: id.uuidString,
+                                     request: request,
+                                     response: response,
+                                     responseBodyData: responseObject,
+                                     packageType: .websocket,
+                                     startAt: startetAt?.timeIntervalSince1970 ?? Date().timeIntervalSince1970,
+                                     endAt: endedAt?.timeIntervalSince1970)
+        switch (streamingType, type) {
+        case (.client, .send),
+             (.bidirectional, .send),
+             (_, .pingPong),
+             (_, .receive),
+             (_, .sendCloseMessage):
+            package.setWebsocketMessagePackage(package: .init(id: id.uuidString,
+                                                              message: message,
+                                                              messageType: type))
+        case (.server, .send):
+            break
+        }
+        Atlantis.shared.startSendingWebsocketMessage(package)
+    }
+
+    public enum GRPCStreamingType {
+        case client
+        case server
+        case bidirectional
+    }
+}
+
+extension WebsocketMessagePackage.Message {
+    var optionalData: Data? {
+        switch self {
+        case .data(let data):
+            return data
+        case .string(let string):
+            return string.data(using: .utf8)
+        }
     }
 }
