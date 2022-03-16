@@ -48,7 +48,7 @@ final class NetworkInjector: Injector {
         // Make sure we swizzle *ONCE*
         DispatchQueue.once {
             injectAllURLSession()
-            injectAllURLConnection()
+            //injectAllURLConnection()
         }
     }
 }
@@ -78,11 +78,9 @@ extension NetworkInjector {
 
     private func injectAllURLConnection() {
         // Find all classes that conform URLConnection delegates and start the injection
-        let allClasses = Runtime.getAllClasses()
+        let allClasses = Runtime.getAllClassesConformsProtocol(NSURLConnectionDataDelegate.self)
         for anyClass in allClasses {
-            if class_conformsToProtocol(anyClass, NSURLConnectionDataDelegate.self) {
-                injectURLConnectionDelegate(anyClass: anyClass)
-            }
+            injectURLConnectionDelegate(anyClass: anyClass)
         }
     }
 

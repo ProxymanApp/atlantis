@@ -10,34 +10,19 @@ import Foundation
 
 struct Runtime {
 
-    static func getAllClasses() -> [AnyClass] {
-        let expectedClassCount = objc_getClassList(nil, 0)
-        let allClasses = UnsafeMutablePointer<AnyClass?>.allocate(capacity: Int(expectedClassCount))
-
-        let autoreleasingAllClasses = AutoreleasingUnsafeMutablePointer<AnyClass>(allClasses)
-        let actualClassCount: Int32 = objc_getClassList(autoreleasingAllClasses, expectedClassCount)
-
-        var classes = [AnyClass]()
-        for i in 0 ..< actualClassCount {
-            if let currentClass: AnyClass = allClasses[Int(i)] {
-                classes.append(currentClass)
+    static func getAllClassesConformsProtocol(_ aProtocol: Protocol) -> [AnyClass] {
+        var numberClasses: UInt32 = 0
+        var result = Array<AnyClass>()
+        if let classes = UnsafePointer(objc_copyClassList(&numberClasses)) {
+            for i in 0..<Int(numberClasses) {
+                let aClass: AnyClass = classes[i]
+                if class_conformsToProtocol(aClass, aProtocol) {
+                    result.append(aClass)
+                }
             }
+            free(UnsafeMutableRawPointer(mutating: classes))
         }
-
-        allClasses.deallocate()
-        return classes
-    }
-
-    static func getAllMethod(anyClass: AnyClass) -> [String] {
-        var methods: [String] = []
-        var methodCount: UInt32 = 0
-        let methodList = class_copyMethodList(anyClass, &methodCount)
-        for i in 0 ..< Int(methodCount) {
-            let selName = sel_getName(method_getName(methodList![i]))
-            let name = String(cString: selName)
-            methods.append(name)
-        }
-        return methods
+        return result
     }
 }
 
