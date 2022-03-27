@@ -161,9 +161,15 @@ grpc-swift and leverage this to get a complete log of your calls.
 
 
 <details><summary>Here is an example for an AtlantisInterceptor</summary>
-    <p>
-    ```
-        
+
+```swift
+        import Atlantis
+        import Foundation
+        import GRPC
+        import NIO
+        import NIOHPACK
+        import SwiftProtobuf
+
         extension HPACKHeaders {
             var atlantisHeaders: [Header] { map { Header(key: $0.name, value: $0.value) } }
         }
@@ -375,10 +381,19 @@ grpc-swift and leverage this to get a complete log of your calls.
             }
         }
 
-    ```
-    </p>
-</details>
+        private extension Data {
+            var prettyJson: String? {
+                guard let object = try? JSONSerialization.jsonObject(with: self),
+                      let data = try? JSONSerialization.data(withJSONObject: object, options: [.prettyPrinted]),
+                      let prettyPrintedString = String(data: data, encoding: .utf8) else {
+                          return nil
+                      }
+                return prettyPrintedString
+            }
+        }
+```
 
+</details>
 
 - Example:
 ```swift
