@@ -10,7 +10,7 @@ import Foundation
 extension Atlantis {
 
     /// Handy func to manually add Request & Response to Atlantis, then sending to Proxyman app for inspecting.
-    /// It's useful if your app makes HTTP Request that not using URLSession or NSURLConnection. e.g. Swift-NIO-GRPC, C++ Network library, ...
+    /// It's useful if your app makes HTTP Request that not using URLSession e.g. Swift-NIO-GRPC, C++ Network library, ...
     /// - Parameters:
     ///   - request: Request that needs send to Proxyman
     ///   - response: Response that needs send to Proxyman

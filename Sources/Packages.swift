@@ -119,11 +119,6 @@ public final class TrafficPackage: Codable, CustomDebugStringConvertible, Serial
         return TrafficPackage(id: id, request: request)
     }
 
-    static func buildRequest(connection: NSURLConnection, id: String) -> TrafficPackage? {
-        guard let request = Request(connection.currentRequest) else { return nil }
-        return TrafficPackage(id: id, request: request)
-    }
-
     static func buildRequest(urlRequest: URLRequest, urlResponse: URLResponse, bodyData: Data?) -> TrafficPackage? {
         guard let request = Request(urlRequest) else { return nil }
         let response = Response(urlResponse)
