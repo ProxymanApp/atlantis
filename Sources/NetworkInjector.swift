@@ -28,12 +28,6 @@ protocol InjectorDelegate: AnyObject {
     func injectorSessionWebSocketDidReceive(task: URLSessionTask, message: URLSessionWebSocketTask.Message)
     func injectorSessionWebSocketDidSendPingPong(task: URLSessionTask)
     func injectorSessionWebSocketDidSendCancelWithReason(task: URLSessionTask, closeCode: URLSessionWebSocketTask.CloseCode, reason: Data?)
-
-    // For URLConnection
-    func injectorConnectionDidReceive(connection: NSURLConnection, response: URLResponse)
-    func injectorConnectionDidReceive(connection: NSURLConnection, data: Data)
-    func injectorConnectionDidFailWithError(connection: NSURLConnection, error: Error)
-    func injectorConnectionDidFinishLoading(connection: NSURLConnection)
 }
 
 final class NetworkInjector: Injector {
@@ -48,7 +42,6 @@ final class NetworkInjector: Injector {
         // Make sure we swizzle *ONCE*
         DispatchQueue.once {
             injectAllURLSession()
-            injectAllURLConnection()
         }
     }
 }
@@ -76,27 +69,10 @@ extension NetworkInjector {
         injectURLSessionWebsocketTasks()
     }
 
-    private func injectAllURLConnection() {
-        // Find all classes that conform URLConnection delegates and start the injection
-        let allClasses = Runtime.getAllClasses()
-        for anyClass in allClasses {
-            if class_conformsToProtocol(anyClass, NSURLConnectionDataDelegate.self) {
-                injectURLConnectionDelegate(anyClass: anyClass)
-            }
-        }
-    }
-
     private func injectIntoURLSessionDelegate(anyClass: AnyClass) {
         _swizzleURLSessionDataTaskDidReceiveResponse(baseClass: anyClass)
         _swizzleURLSessionDataTaskDidReceiveData(baseClass: anyClass)
         _swizzleURLSessionTaskDidCompleteWithError(baseClass: anyClass)
-    }
-
-    private func injectURLConnectionDelegate(anyClass: AnyClass) {
-        _swizzleConnectionDidReceiveResponse(anyClass: anyClass)
-        _swizzleConnectionDidReceiveData(anyClass: anyClass)
-        _swizzleConnectionDidFinishLoading(anyClass: anyClass)
-        _swizzleConnectionDidFailWithError(anyClass: anyClass)
     }
 
     private func injectURLSessionResume() {

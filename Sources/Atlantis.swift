@@ -15,7 +15,7 @@ public protocol AtlantisDelegate: AnyObject {
 }
 
 /// The main class of Atlantis
-/// Responsible to swizzle certain functions from URLSession and URLConnection
+/// Responsible to swizzle certain functions from URLSession
 /// to capture the network and send to Proxyman app via Bonjour Service
 public final class Atlantis: NSObject {
 
@@ -216,13 +216,6 @@ extension Atlantis {
             }
             packages[id] = package
             return package
-        case let connection as NSURLConnection:
-            guard let package = TrafficPackage.buildRequest(connection: connection, id: id) else {
-                assertionFailure("Should build package from NSURLConnection")
-                return nil
-            }
-            packages[id] = package
-            return package
         default:
             assertionFailure("Do not support new Type \(String(describing: taskOrConnection.className))")
         }
@@ -280,32 +273,6 @@ extension Atlantis: InjectorDelegate {
                 package?.appendRequestData(data)
             }
         }
-    }
-
-    func injectorConnectionDidReceive(connection: NSURLConnection, response: URLResponse) {
-        queue.sync {
-            guard Atlantis.isEnabled.value else { return }
-
-            // Cache
-            let package = getPackage(connection)
-            package?.updateResponse(response)
-        }
-    }
-
-    func injectorConnectionDidReceive(connection: NSURLConnection, data: Data) {
-        queue.sync {
-            guard Atlantis.isEnabled.value else { return }
-            let package = getPackage(connection)
-            package?.appendResponseData(data)
-        }
-    }
-
-    func injectorConnectionDidFailWithError(connection: NSURLConnection, error: Error) {
-        handleDidFinish(connection, error: error)
-    }
-
-    func injectorConnectionDidFinishLoading(connection: NSURLConnection) {
-        handleDidFinish(connection, error: nil)
     }
 }
 

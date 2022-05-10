@@ -118,7 +118,7 @@ Atlantis provides a simple example that it can demonstrate how to integrate and 
 ![Atlantis: Capture HTTP/HTTPS traffic from iOS app without Proxy and Certificate with Proxyman](https://raw.githubusercontent.com/ProxymanApp/atlantis/main/images/iOS_Example_App.png)
 
 ## Advanced Usage
-By default, if your iOS app uses Apple's Networking classes (e.g URLSession or NSURLConnection) or using popular Networking libraries (e.g Alamofire and AFNetworking) to make an HTTP Request, Atlantis will work **OUT OF THE BOX**.
+By default, if your iOS app uses Apple's Networking classes (e.g URLSession) or using popular Networking libraries (e.g Alamofire and AFNetworking) to make an HTTP Request, Atlantis will work **OUT OF THE BOX**.
 
 However, if your app doesn't use any one of them, Atlantis is not able to automatically capture the network traffic. 
 
@@ -430,7 +430,7 @@ Atlantis.start()
 ## FAQ
 #### 1. How does Atlantis work?
 
-Atlantis uses [Method Swizzling](https://nshipster.com/method-swizzling/) technique to swizzle certain functions of NSURLSession and NSURLConnection that enables Atlantis captures HTTP/HTTPS traffic on the fly.
+Atlantis uses [Method Swizzling](https://nshipster.com/method-swizzling/) technique to swizzle certain functions of NSURLSession that enables Atlantis captures HTTP/HTTPS traffic on the fly.
 
 Then it sends to [Proxyman app](https://proxyman.io) for inspecting later.
 
