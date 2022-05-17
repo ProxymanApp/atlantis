@@ -54,6 +54,9 @@ You can get the `hostName` from Proxyman -> Certificate menu -> Install for iOS 
 ```objective-c
 #import "Atlantis-Swift.h"
 
+// Or import Atlantis as a module, you can use:
+@import Atlantis;
+
 // Add to the end of `application(_:didFinishLaunchingWithOptions:)` in AppDelegate
 [Atlantis startWithHostName:nil];
 ```
