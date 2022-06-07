@@ -9,6 +9,7 @@
 import Foundation
 import ObjectiveC
 
+@available(iOS 13.0, macOS 10.15, tvOS 13.0, *)
 public protocol AtlantisDelegate: AnyObject {
 
     func atlantisDidHaveNewPackage(_ package: TrafficPackage)
@@ -17,6 +18,7 @@ public protocol AtlantisDelegate: AnyObject {
 /// The main class of Atlantis
 /// Responsible to swizzle certain functions from URLSession
 /// to capture the network and send to Proxyman app via Bonjour Service
+@available(iOS 13.0, macOS 10.15, tvOS 13.0, *)
 public final class Atlantis: NSObject {
 
     static let shared = Atlantis()
@@ -140,6 +142,7 @@ public final class Atlantis: NSObject {
 
 // MARK: - Private
 
+@available(iOS 13.0, macOS 10.15, tvOS 13.0, *)
 extension Atlantis {
 
     private func safetyCheck() {
@@ -225,6 +228,7 @@ extension Atlantis {
 
 // MARK: - Injection Methods
 
+@available(iOS 13.0, macOS 10.15, tvOS 13.0, *)
 extension Atlantis: InjectorDelegate {
 
     func injectorSessionDidCallResume(task: URLSessionTask) {
@@ -278,6 +282,7 @@ extension Atlantis: InjectorDelegate {
 
 // MARK: - Websocket
 
+@available(iOS 13.0, macOS 10.15, tvOS 13.0, *)
 extension Atlantis {
 
     func injectorSessionWebSocketDidSendPingPong(task: URLSessionTask) {
@@ -348,6 +353,7 @@ extension Atlantis {
 
 // MARK: - Private
 
+@available(iOS 13.0, macOS 10.15, tvOS 13.0, *)
 extension Atlantis {
 
     private func handleDidFinish(_ taskOrConnection: AnyObject, error: Error?) {

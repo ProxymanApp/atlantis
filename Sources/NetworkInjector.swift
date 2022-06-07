@@ -8,12 +8,14 @@
 
 import Foundation
 
+@available(iOS 13.0, macOS 10.15, tvOS 13.0, *)
 protocol Injector {
 
     var delegate: InjectorDelegate? { get set }
     func injectAllNetworkClasses()
 }
 
+@available(iOS 13.0, macOS 10.15, tvOS 13.0, *)
 protocol InjectorDelegate: AnyObject {
 
     // For URLSession
@@ -30,6 +32,7 @@ protocol InjectorDelegate: AnyObject {
     func injectorSessionWebSocketDidSendCancelWithReason(task: URLSessionTask, closeCode: URLSessionWebSocketTask.CloseCode, reason: Data?)
 }
 
+@available(iOS 13.0, macOS 10.15, tvOS 13.0, *)
 final class NetworkInjector: Injector {
 
     // MARK: - Variables
@@ -46,6 +49,7 @@ final class NetworkInjector: Injector {
     }
 }
 
+@available(iOS 13.0, macOS 10.15, tvOS 13.0, *)
 extension NetworkInjector {
 
     private func injectAllURLSession() {

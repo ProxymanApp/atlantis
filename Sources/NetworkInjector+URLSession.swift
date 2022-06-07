@@ -8,6 +8,7 @@
 
 import Foundation
 
+@available(iOS 13.0, macOS 10.15, tvOS 13.0, *)
 extension NetworkInjector {
 
     func _swizzleURLSessionResumeSelector(baseClass: AnyClass) {
@@ -179,6 +180,7 @@ extension NetworkInjector {
 
 // MARK: - Upload
 
+@available(iOS 13.0, macOS 10.15, tvOS 13.0, *)
 extension NetworkInjector {
 
     func _swizzleURLSessionUploadSelector(baseClass: AnyClass) {
@@ -324,6 +326,7 @@ extension NetworkInjector {
 
 // MARK: - WebSocket
 
+@available(iOS 13.0, macOS 10.15, tvOS 13.0, *)
 extension NetworkInjector {
 
     func _swizzleURLSessionWebsocketSelector() {
