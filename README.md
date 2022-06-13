@@ -230,7 +230,7 @@ grpc-swift and leverage this to get a complete log of your calls.
                                               statusMessage: nil,
                                               streamingType: type.streamingType,
                                               type: .send,
-                                              startetAt: logEntry.started,
+                                              startedAt: logEntry.started,
                                               endedAt: Date(),
                                               HPACKHeadersRequest: logEntry.request.metadata,
                                               HPACKHeadersResponse: logEntry.response.metadata)
@@ -248,7 +248,7 @@ grpc-swift and leverage this to get a complete log of your calls.
                                                   statusMessage: nil,
                                                   streamingType: type.streamingType,
                                                   type: .send,
-                                                  startetAt: logEntry.started,
+                                                  startedAt: logEntry.started,
                                                   endedAt: Date(),
                                                   HPACKHeadersRequest: logEntry.request.metadata,
                                                   HPACKHeadersResponse: logEntry.response.metadata)
@@ -291,7 +291,7 @@ grpc-swift and leverage this to get a complete log of your calls.
                                               statusMessage: nil,
                                               streamingType: type.streamingType,
                                               type: .receive,
-                                              startetAt: logEntry.started,
+                                              startedAt: logEntry.started,
                                               endedAt: Date(),
                                               HPACKHeadersRequest: logEntry.request.metadata,
                                               HPACKHeadersResponse: logEntry.response.metadata)
@@ -304,7 +304,7 @@ grpc-swift and leverage this to get a complete log of your calls.
                                               statusMessage: status.message,
                                               streamingType: type.streamingType,
                                               type: .receive,
-                                              startetAt: logEntry.started,
+                                              startedAt: logEntry.started,
                                               endedAt: Date(),
                                               HPACKHeadersRequest: logEntry.request.metadata,
                                               HPACKHeadersResponse: logEntry.response.metadata)
@@ -324,7 +324,7 @@ grpc-swift and leverage this to get a complete log of your calls.
                                           success: status.isOk,
                                           statusCode: status.code.rawValue,
                                           statusMessage: status.message,
-                                          startetAt: logEntry.started,
+                                          startedAt: logEntry.started,
                                           endedAt: Date(),
                                           HPACKHeadersRequest: logEntry.request.metadata,
                                           HPACKHeadersResponse: logEntry.response.metadata)
@@ -341,7 +341,7 @@ grpc-swift and leverage this to get a complete log of your calls.
                                           success: false,
                                           statusCode: GRPCStatus(code: .unknown, message: "").code.rawValue,
                                           statusMessage: error.localizedDescription,
-                                          startetAt: logEntry.started,
+                                          startedAt: logEntry.started,
                                           endedAt: Date(),
                                           HPACKHeadersRequest: logEntry.request.metadata,
                                           HPACKHeadersResponse: logEntry.response.metadata)
@@ -360,7 +360,7 @@ grpc-swift and leverage this to get a complete log of your calls.
                                           success: false,
                                           statusCode: GRPCStatus(code: .cancelled, message: nil).code.rawValue,
                                           statusMessage: "canceled",
-                                          startetAt: logEntry.started,
+                                          startedAt: logEntry.started,
                                           endedAt: Date(),
                                           HPACKHeadersRequest: logEntry.request.metadata,
                                           HPACKHeadersResponse: logEntry.response.metadata)
