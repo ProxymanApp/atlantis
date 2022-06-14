@@ -70,7 +70,7 @@ extension Atlantis {
     ///   - success: success state. Get from `CallResult.success`
     ///   - statusCode: statusCode state. Get from `CallResult.statusCode`
     ///   - statusMessage: statusMessage state. Get from `CallResult.statusMessage`
-    ///   - startetAt: when the request started
+    ///   - startedAt: when the request started
     ///   - endedAt: when the request ended
     ///   - HPACKHeadersRequest: Transformed request headers from gRPC. Get it from `callOptions?.customMetadata`
     ///   - HPACKHeadersResponse: Transformed response headers from gRPC. Get it from `CallResult.trailingMetadata` or `CallResult.initialMetadata`
@@ -80,7 +80,7 @@ extension Atlantis {
                             success: Bool,
                             statusCode: Int,
                             statusMessage: String?,
-                            startetAt: Date?,
+                            startedAt: Date?,
                             endedAt: Date?,
                             HPACKHeadersRequest: [Header] = [],
                             HPACKHeadersResponse: [Header] = []) {
@@ -98,7 +98,7 @@ extension Atlantis {
                                      request: request,
                                      response: response,
                                      responseBodyData: responseObject,
-                                     startAt: startetAt?.timeIntervalSince1970 ?? Date().timeIntervalSince1970,
+                                     startAt: startedAt?.timeIntervalSince1970 ?? Date().timeIntervalSince1970,
                                      endAt: endedAt?.timeIntervalSince1970)
 
         // Compose and send the message to Proxyman
@@ -114,7 +114,7 @@ extension Atlantis {
     ///   - statusMessage: statusMessage state. Get from `CallResult.statusMessage`
     ///   - streamingType: Determines the stremaing type. `client`, `server` or `biderectional`. Extract it from the interceptor context
     ///   - type: The WebSocket Message Type, we are mostly using `send` and `receive` for determine the direction
-    ///   - startetAt: when the request started
+    ///   - startedAt: when the request started
     ///   - endedAt: when the request ended
     ///   - HPACKHeadersRequest: Transformed request headers from gRPC. Get it from `callOptions?.customMetadata`
     ///   - HPACKHeadersResponse: Transformed response headers from gRPC. Get it from `CallResult.trailingMetadata` or `CallResult.initialMetadata`
@@ -126,7 +126,7 @@ extension Atlantis {
                                 statusMessage: String?,
                                 streamingType: GRPCStreamingType,
                                 type: WebsocketMessagePackage.MessageType,
-                                startetAt: Date?,
+                                startedAt: Date?,
                                 endedAt: Date?,
                                 HPACKHeadersRequest: [Header] = [],
                                 HPACKHeadersResponse: [Header] = []) {
@@ -161,7 +161,7 @@ extension Atlantis {
                                      response: response,
                                      responseBodyData: responseObject,
                                      packageType: .websocket,
-                                     startAt: startetAt?.timeIntervalSince1970 ?? Date().timeIntervalSince1970,
+                                     startAt: startedAt?.timeIntervalSince1970 ?? Date().timeIntervalSince1970,
                                      endAt: endedAt?.timeIntervalSince1970)
         switch (streamingType, type) {
         case (.client, .send),
