@@ -7,18 +7,19 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		BA906E94286AC09300ACA71C /* Atlantis in Frameworks */ = {isa = PBXBuildFile; productRef = BA906E93286AC09300ACA71C /* Atlantis */; };
 		BAD1DF342723A95500E84C7A /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAD1DF332723A95500E84C7A /* AppDelegate.swift */; };
 		BAD1DF362723A95500E84C7A /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAD1DF352723A95500E84C7A /* SceneDelegate.swift */; };
 		BAD1DF382723A95500E84C7A /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAD1DF372723A95500E84C7A /* ViewController.swift */; };
 		BAD1DF3B2723A95500E84C7A /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = BAD1DF392723A95500E84C7A /* Main.storyboard */; };
 		BAD1DF3D2723A95600E84C7A /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = BAD1DF3C2723A95600E84C7A /* Assets.xcassets */; };
 		BAD1DF402723A95600E84C7A /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = BAD1DF3E2723A95600E84C7A /* LaunchScreen.storyboard */; };
-		BAD1DF4C2723B14100E84C7A /* Atlantis in Frameworks */ = {isa = PBXBuildFile; productRef = BAD1DF4B2723B14100E84C7A /* Atlantis */; };
 		BAD1DF4F2723B15900E84C7A /* Alamofire in Frameworks */ = {isa = PBXBuildFile; productRef = BAD1DF4E2723B15900E84C7A /* Alamofire */; };
 		BAD1DF512723B54F00E84C7A /* image.jpg in Resources */ = {isa = PBXBuildFile; fileRef = BAD1DF502723B54F00E84C7A /* image.jpg */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		BA906E91286AC07D00ACA71C /* atlantis */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = atlantis; path = ../..; sourceTree = "<group>"; };
 		BAD1DF302723A95500E84C7A /* Atlantis-Example-App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Atlantis-Example-App.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		BAD1DF332723A95500E84C7A /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		BAD1DF352723A95500E84C7A /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
@@ -35,7 +36,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				BAD1DF4C2723B14100E84C7A /* Atlantis in Frameworks */,
+				BA906E94286AC09300ACA71C /* Atlantis in Frameworks */,
 				BAD1DF4F2723B15900E84C7A /* Alamofire in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -43,11 +44,28 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		BA906E90286AC07D00ACA71C /* Packages */ = {
+			isa = PBXGroup;
+			children = (
+				BA906E91286AC07D00ACA71C /* atlantis */,
+			);
+			name = Packages;
+			sourceTree = "<group>";
+		};
+		BA906E92286AC09300ACA71C /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		BAD1DF272723A95500E84C7A = {
 			isa = PBXGroup;
 			children = (
+				BA906E90286AC07D00ACA71C /* Packages */,
 				BAD1DF322723A95500E84C7A /* Atlantis-Example-App */,
 				BAD1DF312723A95500E84C7A /* Products */,
+				BA906E92286AC09300ACA71C /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -91,8 +109,8 @@
 			);
 			name = "Atlantis-Example-App";
 			packageProductDependencies = (
-				BAD1DF4B2723B14100E84C7A /* Atlantis */,
 				BAD1DF4E2723B15900E84C7A /* Alamofire */,
+				BA906E93286AC09300ACA71C /* Atlantis */,
 			);
 			productName = "Atlantis-Example-App";
 			productReference = BAD1DF302723A95500E84C7A /* Atlantis-Example-App.app */;
@@ -123,7 +141,6 @@
 			);
 			mainGroup = BAD1DF272723A95500E84C7A;
 			packageReferences = (
-				BAD1DF4A2723B14100E84C7A /* XCRemoteSwiftPackageReference "atlantis" */,
 				BAD1DF4D2723B15900E84C7A /* XCRemoteSwiftPackageReference "Alamofire" */,
 			);
 			productRefGroup = BAD1DF312723A95500E84C7A /* Products */;
@@ -378,14 +395,6 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
-		BAD1DF4A2723B14100E84C7A /* XCRemoteSwiftPackageReference "atlantis" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/ProxymanApp/atlantis";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 1.0.0;
-			};
-		};
 		BAD1DF4D2723B15900E84C7A /* XCRemoteSwiftPackageReference "Alamofire" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/Alamofire/Alamofire";
@@ -397,9 +406,8 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		BAD1DF4B2723B14100E84C7A /* Atlantis */ = {
+		BA906E93286AC09300ACA71C /* Atlantis */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = BAD1DF4A2723B14100E84C7A /* XCRemoteSwiftPackageReference "atlantis" */;
 			productName = Atlantis;
 		};
 		BAD1DF4E2723B15900E84C7A /* Alamofire */ = {
