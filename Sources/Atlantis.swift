@@ -184,7 +184,7 @@ extension Atlantis {
             if !instruction.isEmpty {
                 let message = """
                 ---------------------------------------------------------------------------------
-                --------- [Atlantis] MISSING REQUIRED CONFIG from Info.plist for iOS 14+ --------
+                --------- ⚠️ [Atlantis] MISSING REQUIRED CONFIG from Info.plist for iOS 14+ --------
                 ---------------------------------------------------------------------------------
                 Read more at: https://docs.proxyman.io/atlantis/atlantis-for-ios
                 Please add the following config to your MainApp's Info.plist

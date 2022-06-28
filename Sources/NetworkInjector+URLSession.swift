@@ -8,6 +8,10 @@
 
 import Foundation
 
+func logError(name: String) {
+    print("❌ [Atlantis] Could not swizzle this func: \(name)! It looks like the latest iOS (beta) has changed, please contact support@proxyman.io")
+}
+
 extension NetworkInjector {
 
     func _swizzleURLSessionResumeSelector(baseClass: AnyClass) {
@@ -15,6 +19,7 @@ extension NetworkInjector {
         let selector = NSSelectorFromString("resume")
         guard let method = class_getInstanceMethod(baseClass, selector),
             baseClass.instancesRespond(to: selector) else {
+            logError(name: "_swizzleURLSessionResumeSelector")
             return
         }
 
@@ -49,18 +54,24 @@ extension NetworkInjector {
     /// urlSession(_:dataTask:didReceive:completionHandler:)
     /// https://developer.apple.com/documentation/foundation/urlsessiondatadelegate/1410027-urlsession
     func _swizzleURLSessionDataTaskDidReceiveResponse(baseClass: AnyClass) {
-        if #available(iOS 13.0, *) {
-            _swizzleURLSessionDataTaskDidReceiveResponseForIOS13AndLater(baseClass: baseClass)
+        // For iOS 16 and later, it uses the same method as iOS 12 and later
+        // https://github.com/ProxymanApp/Proxyman/issues/1271
+        if #available(iOS 16.0, *) {
+            _swizzleURLSessionDataTaskDidReceiveResponseWithoutRewrite(baseClass: baseClass)
+        } else if #available(iOS 13.0, *) {
+            // Except for the iOS 13, iOS 14, iOS 15, it has a slightly different method
+            _swizzleURLSessionDataTaskDidReceiveResponseWithRewrite(baseClass: baseClass)
         } else {
-            _swizzleURLSessionDataTaskDidReceiveResponseForBelowIOS13(baseClass: baseClass)
+            _swizzleURLSessionDataTaskDidReceiveResponseWithoutRewrite(baseClass: baseClass)
         }
     }
 
-    func _swizzleURLSessionDataTaskDidReceiveResponseForIOS13AndLater(baseClass: AnyClass) {
+    private func _swizzleURLSessionDataTaskDidReceiveResponseWithRewrite(baseClass: AnyClass) {
         // Prepare
         let selector = NSSelectorFromString("_didReceiveResponse:sniff:rewrite:")
         guard let method = class_getInstanceMethod(baseClass, selector),
             baseClass.instancesRespond(to: selector) else {
+            logError(name: "_swizzleURLSessionDataTaskDidReceiveResponseWithRewrite")
             return
         }
 
@@ -87,11 +98,12 @@ extension NetworkInjector {
         method_setImplementation(method, imp_implementationWithBlock(block))
     }
 
-    private func _swizzleURLSessionDataTaskDidReceiveResponseForBelowIOS13(baseClass: AnyClass) {
+    private func _swizzleURLSessionDataTaskDidReceiveResponseWithoutRewrite(baseClass: AnyClass) {
         // Prepare
         let selector = NSSelectorFromString("_didReceiveResponse:sniff:")
         guard let method = class_getInstanceMethod(baseClass, selector),
             baseClass.instancesRespond(to: selector) else {
+            logError(name: "_swizzleURLSessionDataTaskDidReceiveResponseWithoutRewrite")
             return
         }
 
@@ -123,6 +135,7 @@ extension NetworkInjector {
         let selector = NSSelectorFromString("_didReceiveData:")
         guard let method = class_getInstanceMethod(baseClass, selector),
             baseClass.instancesRespond(to: selector) else {
+            logError(name: "_swizzleURLSessionDataTaskDidReceiveData")
             return
         }
 
@@ -153,6 +166,7 @@ extension NetworkInjector {
         let selector = NSSelectorFromString("_didFinishWithError:")
         guard let method = class_getInstanceMethod(baseClass, selector),
             baseClass.instancesRespond(to: selector) else {
+            logError(name: "_swizzleURLSessionTaskDidCompleteWithError")
             return
         }
 
@@ -193,6 +207,7 @@ extension NetworkInjector {
         let selector = NSSelectorFromString("uploadTaskWithRequest:fromFile:")
         guard let method = class_getInstanceMethod(baseClass, selector),
             baseClass.instancesRespond(to: selector) else {
+            logError(name: "_swizzleURLSessionUploadFromFileSelector")
             return
         }
 
@@ -226,6 +241,7 @@ extension NetworkInjector {
         let selector = NSSelectorFromString("uploadTaskWithRequest:fromFile:completionHandler:")
         guard let method = class_getInstanceMethod(baseClass, selector),
             baseClass.instancesRespond(to: selector) else {
+            logError(name: "_swizzleURLSessionUploadFromFileWithCompleteHandlerSelector")
             return
         }
 
@@ -260,6 +276,7 @@ extension NetworkInjector {
         let selector = NSSelectorFromString("uploadTaskWithRequest:fromData:")
         guard let method = class_getInstanceMethod(baseClass, selector),
             baseClass.instancesRespond(to: selector) else {
+            logError(name: "_swizzleURLSessionUploadFromDataSelector")
             return
         }
 
@@ -293,6 +310,7 @@ extension NetworkInjector {
         let selector = NSSelectorFromString("uploadTaskWithRequest:fromData:completionHandler:")
         guard let method = class_getInstanceMethod(baseClass, selector),
             baseClass.instancesRespond(to: selector) else {
+            logError(name: "_swizzleURLSessionUploadFromDataWithCompleteHandlerSelector")
             return
         }
 
@@ -345,6 +363,7 @@ extension NetworkInjector {
         let selector = NSSelectorFromString("sendMessage:completionHandler:")
         guard let method = class_getInstanceMethod(baseClass, selector),
             baseClass.instancesRespond(to: selector) else {
+            logError(name: "_swizzleURLSessionWebSocketSendMessageSelector")
             return
         }
 
@@ -379,6 +398,7 @@ extension NetworkInjector {
         let selector = NSSelectorFromString("receiveMessageWithCompletionHandler:")
         guard let method = class_getInstanceMethod(baseClass, selector),
             baseClass.instancesRespond(to: selector) else {
+            logError(name: "_swizzleURLSessionWebSocketReceiveMessageSelector")
             return
         }
 
@@ -413,6 +433,7 @@ extension NetworkInjector {
         let selector = NSSelectorFromString("sendPingWithPongReceiveHandler:")
         guard let method = class_getInstanceMethod(baseClass, selector),
             baseClass.instancesRespond(to: selector) else {
+            logError(name: "_swizzleURLSessionWebSocketSendPingPongSelector")
             return
         }
 
@@ -443,6 +464,7 @@ extension NetworkInjector {
         let selector = NSSelectorFromString("cancelWithCloseCode:reason:")
         guard let method = class_getInstanceMethod(baseClass, selector),
             baseClass.instancesRespond(to: selector) else {
+            logError(name: "_swizzleURLSessionWebSocketCancelWithCloseCodeReasonSelector")
             return
         }
 
