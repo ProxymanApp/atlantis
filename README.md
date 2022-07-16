@@ -108,7 +108,7 @@ pod 'atlantis-proxyman'
 ```
 github "ProxymanApp/atlantis"
 ```
-2. Run `carthage update`
+2. Run `carthage update --use-xcframeworks`
 3. Drag Atlantis.framework from your project
 3. Create a Carthage Script as the [Carthage guideline](https://github.com/Carthage/Carthage#quick-start)  
 
