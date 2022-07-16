@@ -16,8 +16,9 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
 
         // Auto connect to a current Macbook
+//        Atlantis.start()
         Atlantis.start()
-
+        
         //
         // If you have multiple Macbook on the same network, let use the following method:
         // You can get the _your_host_name from Proxyman -> Certificate menu -> Install for iOS -> Atlantis -> How to Start Atlantis -> and copy the HostName
