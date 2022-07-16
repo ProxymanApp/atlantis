@@ -30,19 +30,27 @@ By default, Bonjour service will try to connect all Proxyman app in the same net
 - If you have only **ONE** MacOS machine that has Proxyman. Let use the simple version:
 
 ```swift
-import Atlantis
+#if DEBUG
+    import Atlantis
+#endif
 
 // Add to the end of `application(_:didFinishLaunchingWithOptions:)` in AppDelegate.swift or SceneDelegate.swift
-Atlantis.start()
+#if DEBUG
+    Atlantis.start()
+#endif
 ```
 
 - If there are many Proxyman apps from colleague's Mac Machines, and you would Atlantis connects to your macOS machine. Let use `Atlantis.start(hostName:)` version
 
 ```swift
-import Atlantis
+#if DEBUG
+    import Atlantis
+#endif
 
 // Add to the end of `application(_:didFinishLaunchingWithOptions:)` in AppDelegate.swift or SceneDelegate.swift
-Atlantis.start(hostName: "_your_host_name")
+#if DEBUG
+    Atlantis.start(hostName: "_your_host_name")
+#endif
 ```
 
 You can get the `hostName` from Proxyman -> Certificate menu -> Install for iOS -> Atlantis -> How to Start Atlantis -> and copy the `HostName`
