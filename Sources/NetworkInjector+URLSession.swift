@@ -56,9 +56,9 @@ extension NetworkInjector {
     func _swizzleURLSessionDataTaskDidReceiveResponse(baseClass: AnyClass) {
         // For iOS 16 and later, it uses the same method as iOS 12 and later
         // https://github.com/ProxymanApp/Proxyman/issues/1271
-        if #available(iOS 16.0, *) {
+        if #available(iOS 16.0, tvOS 16.0, *) {
             _swizzleURLSessionDataTaskDidReceiveResponseWithoutRewrite(baseClass: baseClass)
-        } else if #available(iOS 13.0, *) {
+        } else if #available(iOS 13.0, tvOS 13.0, *) {
             // Except for the iOS 13, iOS 14, iOS 15, it has a slightly different method
             _swizzleURLSessionDataTaskDidReceiveResponseWithRewrite(baseClass: baseClass)
         } else {
