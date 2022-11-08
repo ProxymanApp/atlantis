@@ -122,8 +122,11 @@ extension NetServiceTransport: Transporter {
     func send(package: Serializable) {
         queue.async {[weak self] in
             guard let strongSelf = self else { return }
-            guard !strongSelf.connections.isEmpty else {
-                // It means the connection is not ready
+
+            // Make sure we have 1 ready connection
+            guard !strongSelf.connections.isEmpty,
+                  strongSelf.connections.contains(where: { $0.state == .ready })  else {
+                // If the connection is not ready
                 // We add the package to the pending list
                 strongSelf.appendToPendingList(package)
                 return
@@ -248,12 +251,11 @@ extension NetServiceTransport {
         connection.stateUpdateHandler = {[weak self] (newState) in
             guard let strongSelf = self else { return }
             switch (newState) {
-            case .setup:
-                print("Connection setup")
-            case .preparing:
-                print("Connection preparing")
+            case .setup,
+                    .preparing:
+                break
             case .ready:
-                print("Connection established")
+                print("[Atlantis] Connection established")
 
                 // After the connection is established, Tell Proxyman app that who we are
                 strongSelf.queue.async {
@@ -261,13 +263,17 @@ extension NetServiceTransport {
                 }
 
             case .waiting(let error):
-                print("Connection to server waiting to establish, error=\(error)")
+                print("[Atlantis] Connection to server waiting to establish, error=\(error)")
             case .failed(let error):
-                print("Connection to server failed, error=\(error)")
-                strongSelf.connections.removeAll { $0 === connection }
+                print("[Atlantis] ❌ Connection to Proxyman app is failed, error=\(error)")
+                strongSelf.queue.async {
+                    strongSelf.connections.removeAll { $0 === connection }
+                }
             case .cancelled:
-                print("Connection was cancelled, not retrying")
-                strongSelf.connections.removeAll { $0 === connection }
+                print("[Atlantis] Connection to Proxyman app is cancelled!")
+                strongSelf.queue.async {
+                    strongSelf.connections.removeAll { $0 === connection }
+                }
             @unknown default:
                 break
             }
