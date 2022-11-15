@@ -203,7 +203,7 @@ extension NetServiceTransport {
     private func connectToService(_ service: NetService) {
 
         if let hostName = service.hostName {
-            print("[Atlantis] Found Proxyman with HostName = \(hostName)")
+            print("[Atlantis] 🔎 Found Proxyman at HostName = \(hostName)")
         }
 
         // If user want to connect to particular host name
@@ -214,7 +214,7 @@ extension NetServiceTransport {
 
             // Skip if it's not the service we're looking for
             if hostName.lowercased() != serviceHostName.lowercased() {
-                print("[Atlantis] Skip connect to \(serviceHostName)")
+                print("[Atlantis] ⏭️ Avoid connecting to \(serviceHostName)")
                 return
             }
         }
@@ -224,27 +224,45 @@ extension NetServiceTransport {
             return
         }
 
-        // use HostName and Port instead of streamTask(with service: NetService)
-        // It's crashed on iOS 14 for some reasons
-        print("[Atlantis] ✅ Connect to \(hostName)")
-
-        // Use NWConnection instead of URLSessionStreamTask
-        // Because we've recently encountered some crashed when reading/writing data from Proxyman app
-        // The problem might be we use different two connection classes
-        // Proxyman uses NWConnection, but the old version of Atlantis used URLSessionStreamTask
-        //
-        // Use the same NWConnection in both apps might fix the crash. However, NWConnection requires macOS 10.14 and iOS 13.0
-        //
-        let connection = NWConnection(to: .service(name: service.name, type: service.type, domain: service.domain, interface: nil), using: .tcp)
-        setupConnectionStateHandler(connection)
-
-        // Safe-thread
+        // safe thread
         queue.async {[weak self] in
-            self?.connections.append(connection)
-        }
+            guard let strongSelf = self else {
+                return
+            }
 
-        // Start
-        connection.start(queue: queue)
+            // Don't allow to connect multiple times to the same Host
+            let isDuplicated = strongSelf.connections.contains { connection in
+                switch connection.endpoint {
+                case .service(let name, _, _, _):
+                    return name == service.name
+                default:
+                    break
+                }
+                return false
+            }
+            if isDuplicated {
+                print("[Atlantis] ⚠️ Avoid connecting to \(hostName) because it's already connected!")
+                return
+            }
+
+            // use HostName and Port instead of streamTask(with service: NetService)
+            // It's crashed on iOS 14 for some reasons
+            print("[Atlantis] ✅ Connect to \(hostName)")
+
+            // Use NWConnection instead of URLSessionStreamTask
+            // Because we've recently encountered some crashed when reading/writing data from Proxyman app
+            // The problem might be we use different two connection classes
+            // Proxyman uses NWConnection, but the old version of Atlantis used URLSessionStreamTask
+            //
+            // Use the same NWConnection in both apps might fix the crash. However, NWConnection requires macOS 10.14 and iOS 13.0
+            //
+            let connection = NWConnection(to: .service(name: service.name, type: service.type, domain: service.domain, interface: nil), using: .tcp)
+            strongSelf.setupConnectionStateHandler(connection)
+            strongSelf.connections.append(connection)
+
+            // Start
+            connection.start(queue: strongSelf.queue)
+        }
     }
 
     private func setupConnectionStateHandler(_ connection: NWConnection) {
