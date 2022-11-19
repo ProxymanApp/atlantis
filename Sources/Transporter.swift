@@ -69,6 +69,7 @@ final class NetServiceTransport: NSObject {
 
     override init() {
         self.serviceBrowser = NetServiceBrowser()
+        self.serviceBrowser.includesPeerToPeer = true
         self.connections = []
         let config = URLSessionConfiguration.default
         #if os(iOS)

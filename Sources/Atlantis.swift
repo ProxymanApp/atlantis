@@ -145,7 +145,7 @@ extension Atlantis {
     private func safetyCheck() {
         if Atlantis.isServiceAvailable {
             print("---------------------------------------------------------------------------------")
-            print("---------- 🧊 Atlantis is running (version \(Bundle(for: Atlantis.self).object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "Unknown"))")
+            print("---------- 🧊 Atlantis is running (version \(Atlantis.buildVersion))")
             print("---------- Github: https://github.com/ProxymanApp/atlantis")
             print("---------------------------------------------------------------------------------")
         }
