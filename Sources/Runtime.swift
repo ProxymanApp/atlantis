@@ -37,6 +37,7 @@ struct Runtime {
             let name = String(cString: selName)
             methods.append(name)
         }
+        methodList?.deallocate()
         return methods
     }
 }
