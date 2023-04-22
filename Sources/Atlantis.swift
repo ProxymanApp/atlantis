@@ -211,13 +211,13 @@ extension Atlantis {
         switch taskOrConnection {
         case let task as URLSessionTask:
             guard let package = TrafficPackage.buildRequest(sessionTask: task, id: id) else {
-                assertionFailure("Should build package from URLSessionTask")
+                print("[Atlantis] ❌ Error: Should build package from URLSessionTask")
                 return nil
             }
             packages[id] = package
             return package
         default:
-            assertionFailure("Do not support new Type \(String(describing: taskOrConnection.className))")
+            print("[Atlantis] ❌ Error: Do not support new Type \(String(describing: taskOrConnection.className))")
         }
         return nil
     }
@@ -340,8 +340,6 @@ extension Atlantis {
 
             // Sending via Bonjour service
             startSendingWebsocketMessage(package)
-        } else {
-            assertionFailure("Something went wrong! Should find a previous WS Package! Please contact the author!")
         }
     }
 }
