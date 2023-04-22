@@ -65,7 +65,7 @@ class AtlantisHelper: NSObject {
                         }
 
                         // And default.
-                        assertionFailure("Have NSURLSessionWebSocketMessage but can neither get data nor string.")
+                        print("[Atlantis] ❌ Error: Have NSURLSessionWebSocketMessage but can neither get data nor string.")
                         return (nil, nil)
                     }()
                     responseHandler(body.string, body.data, error)
