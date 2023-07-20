@@ -18,7 +18,7 @@ final class ViewController: UIViewController {
     // MARK: - IBActions
 
     @IBAction func getBtnOnTap(_ sender: Any) {
-        let url = URL(string: "https://httpbin.org/get")!
+        let url = URL(string: "https://httpbin.proxyman.app/get")!
         let query: [String: String] = ["name": "Proxyman",
                                        "id": "123"]
         let header: [String: String] = ["X-Proxyman-Data": "123",
@@ -29,7 +29,7 @@ final class ViewController: UIViewController {
     }
 
     @IBAction func postJsonBtnOnTap(_ sender: Any) {
-        let url = URL(string: "https://httpbin.org/post")!
+        let url = URL(string: "https://httpbin.proxyman.app/post")!
         let body: [String: String] = ["name": "Proxyman",
                                        "id": "123"]
         let header: [String: String] = ["X-Proxyman-Data": "123",
@@ -40,7 +40,7 @@ final class ViewController: UIViewController {
     }
 
     @IBAction func postUrlEncodedBtnOnTap(_ sender: Any) {
-        let url = URL(string: "https://httpbin.org/post")!
+        let url = URL(string: "https://httpbin.proxyman.app/post")!
         let body: [String: String] = ["name": "Proxyman",
                                        "id": "123"]
         let header: [String: String] = ["X-Proxyman-Data": "123",
@@ -52,7 +52,7 @@ final class ViewController: UIViewController {
 
     @IBAction func uploadMultipartFormBtnOnClick(_ sender: Any) {
         let imageURL = Bundle.main.url(forResource: "image", withExtension: "jpg")!
-        let url = URL(string: "https://httpbin.org/post")!
+        let url = URL(string: "https://httpbin.proxyman.app/post")!
         let data = MultipartFormData()
         data.append("Hello Word".data(using: .utf8)!, withName: "text")
         data.append(imageURL, withName: "image", fileName: "bigsur", mimeType: "jpg")
@@ -62,7 +62,7 @@ final class ViewController: UIViewController {
     }
 
     @IBAction func deleteBtnOnTap(_ sender: Any) {
-        let url = URL(string: "https://httpbin.org/delete")!
+        let url = URL(string: "https://httpbin.proxyman.app/delete")!
         let body: [String: String] = ["name": "Proxyman",
                                        "id": "123"]
         let header: [String: String] = ["X-Proxyman-Data": "123",
@@ -75,11 +75,14 @@ final class ViewController: UIViewController {
     @IBAction func uploadTaskBtnOnTap(_ sender: Any) {
         let imageURL = Bundle.main.url(forResource: "image", withExtension: "jpg")!
         let imageData = try! Data(contentsOf: imageURL)
-        let url = URL(string: "https://httpbin.org/post")!
+        let url = URL(string: "https://httpbin.proxyman.app/post")!
         var request = URLRequest(url: url)
         request.method = .post
 
         let task = URLSession.shared.uploadTask(with: request, from: imageData) { _, response, _ in
+            guard let response = response else {
+                return
+            }
             print(response)
         }
         task.resume()
@@ -89,5 +92,20 @@ final class ViewController: UIViewController {
         let controller = UIImagePickerController()
         controller.sourceType = UIImagePickerController.SourceType.camera
         show(controller, sender: self)
+    }
+
+    @IBAction func uploadBtnOnTap(_ sender: Any) {
+        var request = URLRequest(url: URL(string: "https://httpbin.proxyman.app/put")!)
+        request.method = .put
+        let data = "123 Hello World".data(using: .utf8)!
+
+        let task = URLSession.shared.uploadTask(with: request, from: data) { data, _, error in
+            if let error = error {
+                print(error)
+                return
+            }
+            print("Upload success!")
+        }
+        task.resume()
     }
 }
