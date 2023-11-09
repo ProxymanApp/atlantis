@@ -8,10 +8,21 @@
 
 import Foundation
 
+struct NetworkConfiguration {
+
+    /// Whether or not Atlantis should perform the Method Swizzling on WS/WSS connection.
+    let shouldCaptureWebSocketTraffic: Bool
+
+    // init
+    init(shouldCaptureWebSocketTraffic: Bool = true) {
+        self.shouldCaptureWebSocketTraffic = shouldCaptureWebSocketTraffic
+    }
+}
+
 protocol Injector {
 
     var delegate: InjectorDelegate? { get set }
-    func injectAllNetworkClasses()
+    func injectAllNetworkClasses(config: NetworkConfiguration)
 }
 
 protocol InjectorDelegate: AnyObject {
@@ -38,17 +49,17 @@ final class NetworkInjector: Injector {
 
     // MARK: - Internal
 
-    func injectAllNetworkClasses() {
+    func injectAllNetworkClasses(config: NetworkConfiguration = NetworkConfiguration()) {
         // Make sure we swizzle *ONCE*
         DispatchQueue.once {
-            injectAllURLSession()
+            injectAllURLSession(config)
         }
     }
 }
 
 extension NetworkInjector {
 
-    private func injectAllURLSession() {
+    private func injectAllURLSession(_ config: NetworkConfiguration) {
 
         // iOS 8: __NSCFURLSessionConnection
         // iOS 9, 10, 11, 12, 13, 14: __NSCFURLLocalSessionConnection
@@ -66,7 +77,10 @@ extension NetworkInjector {
         injectURLSessionUploadTasks()
 
         // Websocket
-        injectURLSessionWebsocketTasks()
+        // Able to opt-out the WS/WSS if needed
+        if config.shouldCaptureWebSocketTraffic {
+            injectURLSessionWebsocketTasks()
+        }
     }
 
     private func injectIntoURLSessionDelegate(anyClass: AnyClass) {
