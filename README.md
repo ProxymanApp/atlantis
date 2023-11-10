@@ -22,6 +22,26 @@ A lightweight and powerful iOS framework for intercepting HTTP/HTTPS Traffic fro
 
 ![Atlantis: Capture HTTP/HTTPS traffic from iOS app without Proxy and Certificate with Proxyman](https://raw.githubusercontent.com/ProxymanApp/atlantis/main/images/proxyman_atlantis_3.png)
 
+## Requirement
+- macOS Proxyman app
+- iOS 13.0+ / macOS 10.15+ / Mac Catalyst 13.0+
+- Xcode 11+
+- Swift 5.0+
+
+### Required Configuration for iOS 14+
+From iOS 14, it's required to add `NSLocalNetworkUsageDescription` and `NSBonjourServices` to your `info.plist`
+- Open your `Info.plist` file and add the following keys and values:
+- [Example](https://github.com/ProxymanApp/atlantis/blob/main/Example/Atlantis-Example-App/Atlantis-Example-App/Info.plist)
+
+```xml
+<key>NSLocalNetworkUsageDescription</key>
+<string>Atlantis would use Bonjour Service to discover Proxyman app from your local network.</string>
+<key>NSBonjourServices</key>
+<array>
+    <string>_Proxyman._tcp</string>
+</array>
+```
+
 ## How to use
 1. Install Atlantis by CocoaPod or SPM, then start Atlantis
 
@@ -88,25 +108,6 @@ You can get the `hostName` from Proxyman -> Certificate menu -> Install for iOS 
 5. Open your iOS app and Inspect traffic logs from Proxyman app
 6. Enjoy debugging ❤️
 
-## Requirement
-- macOS Proxyman app
-- iOS 13.0+ / macOS 10.15+ / Mac Catalyst 13.0+
-- Xcode 11+
-- Swift 5.0+
-
-### Required Configuration for iOS 14+
-From iOS 14, it's required to add `NSLocalNetworkUsageDescription` and `NSBonjourServices` to your info.plist
-- Open your `Info.plist` file and add the following keys and values:
-
-```xml
-<key>NSLocalNetworkUsageDescription</key>
-<string>Atlantis would use Bonjour Service to discover Proxyman app from your local network.</string>
-<key>NSBonjourServices</key>
-<array>
-    <string>_Proxyman._tcp</string>
-</array>
-```
-
 ## Install
 ### CocoaPod
 - Add the following line to your Podfile
@@ -133,7 +134,7 @@ From Atlantis 1.9.0+, Atlantis is capable of capturing all [WS/WSS Traffic](http
 You don't need to config anything, it works out of the box.
 
 ## Run Example App
-Atlantis provides a simple example that it can demonstrate how to integrate and use Atlantis and Proxyman. Please follow the following steps:
+Atlantis provides a simple example that can demonstrate how to integrate and use Atlantis and Proxyman. Please follow the following steps:
 1. Open Proxyman for macOS
 2. Open iOS Project at `Example/Atlantis-Example-App.xcodeproj`
 3. Start the project with any iPhone/iPad Simulator
@@ -143,13 +144,13 @@ Atlantis provides a simple example that it can demonstrate how to integrate and 
 ![Atlantis: Capture HTTP/HTTPS traffic from iOS app without Proxy and Certificate with Proxyman](https://raw.githubusercontent.com/ProxymanApp/atlantis/main/images/iOS_Example_App.png)
 
 ## Advanced Usage
-By default, if your iOS app uses Apple's Networking classes (e.g URLSession) or using popular Networking libraries (e.g Alamofire and AFNetworking) to make an HTTP Request, Atlantis will work **OUT OF THE BOX**.
+By default, if your iOS app uses Apple's Networking classes (e.g. URLSession) or using popular Networking libraries (e.g. Alamofire and AFNetworking) to make an HTTP Request, Atlantis will work **OUT OF THE BOX**.
 
 However, if your app doesn't use any one of them, Atlantis is not able to automatically capture the network traffic. 
 
 To resolve it, Atlantis offers certain functions to help you **manually*** add your Request and Response that will present on the Proxyman app as usual.
 
-#### 1. My app uses C++ Network library and doesn't use URLSession, NSURLSession or any iOS Networking library
+#### 1. My app uses C++ Network library and doesn't use URLSession, NSURLSession, or any iOS Networking library
 You can construct the Request and Response for Atlantis from the following func
 ```swift
     /// Handy func to manually add Atlantis' Request & Response, then sending to Proxyman for inspecting
@@ -180,7 +181,7 @@ You can construct the Request and Response for Atlantis from the following func
 }
 ```
 
-#### 2. My app use GRPC
+#### 2. My app uses GRPC
 You can construct the unary Request and Response from GRPC models via the interceptor pattern that is provided by
 grpc-swift and leverage this to get a complete log of your calls. 
 
