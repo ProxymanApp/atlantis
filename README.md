@@ -23,34 +23,48 @@ A lightweight and powerful iOS framework for intercepting HTTP/HTTPS Traffic fro
 ![Atlantis: Capture HTTP/HTTPS traffic from iOS app without Proxy and Certificate with Proxyman](https://raw.githubusercontent.com/ProxymanApp/atlantis/main/images/proxyman_atlantis_3.png)
 
 ## How to use
-1. Install Atlantis by CocoaPod or SPM, then starting Atlantis
+1. Install Atlantis by CocoaPod or SPM, then start Atlantis
 
 By default, Bonjour service will try to connect all Proxyman app in the same network:
 
-- If you have only **ONE** MacOS machine that has Proxyman. Let use the simple version:
+If you have only **ONE** MacOS machine that has Proxyman. Let's use the simple version:
+
+2. Open file `AppDelegate.swift`
 
 ```swift
 #if DEBUG
-    import Atlantis
+import Atlantis
 #endif
 
-// Add to the end of `application(_:didFinishLaunchingWithOptions:)` in AppDelegate.swift or SceneDelegate.swift
-#if DEBUG
-    Atlantis.start()
-#endif
+func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
+
+    // Auto connect to a current Macbook
+    // Add to the end of `application(_:didFinishLaunchingWithOptions:)` in AppDelegate.swift or SceneDelegate.swift
+    #if DEBUG
+        Atlantis.start()
+    #endif
+
+    return true
+}
 ```
 
-- If there are many Proxyman apps from colleague's Mac Machines, and you would Atlantis connects to your macOS machine. Let use `Atlantis.start(hostName:)` version
+- If there are many Proxyman apps from colleagues' Mac Machines, and you would Atlantis connects to your macOS machine. Let use `Atlantis.start(hostName:)` version
 
 ```swift
 #if DEBUG
-    import Atlantis
+import Atlantis
 #endif
 
-// Add to the end of `application(_:didFinishLaunchingWithOptions:)` in AppDelegate.swift or SceneDelegate.swift
-#if DEBUG
-    Atlantis.start(hostName: "_your_host_name")
-#endif
+func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
+
+    // Auto connect to a current Macbook
+    // Add to the end of `application(_:didFinishLaunchingWithOptions:)` in AppDelegate.swift or SceneDelegate.swift
+    #if DEBUG
+        Atlantis.start(hostName: "Your_host_name")
+    #endif
+
+    return true
+}
 ```
 
 You can get the `hostName` from Proxyman -> Certificate menu -> Install for iOS -> Atlantis -> How to Start Atlantis -> and copy the `HostName`
@@ -69,20 +83,20 @@ You can get the `hostName` from Proxyman -> Certificate menu -> Install for iOS 
 [Atlantis startWithHostName:nil];
 ```
 
-2. Make sure your iOS devices/simulator and macOS Proxyman are in the **same Wifi Network** or connect your iOS Devices to Mac by a **USB cable**
-3. Open macOS [Proxyman](https://proxyman.io) (or [download the lasted here](https://proxyman.io/release/osx/Proxyman_latest.dmg)) ([Github](https://github.com/ProxymanApp/Proxyman))(2.11.0+)
-4. Open your iOS app and Inspect traffic logs from Proxyman app
-5. Enjoy debugging ❤️
+3. Make sure your iOS devices/simulator and macOS Proxyman are in the **same Wi-Fi network** or connect your iOS Devices to your Mac by a **USB cable**
+4. Open macOS [Proxyman](https://proxyman.io) (or [download the lasted here](https://proxyman.io/release/osx/Proxyman_latest.dmg))
+5. Open your iOS app and Inspect traffic logs from Proxyman app
+6. Enjoy debugging ❤️
 
 ## Requirement
-- macOS Proxyman app 2.11.0+
+- macOS Proxyman app
 - iOS 13.0+ / macOS 10.15+ / Mac Catalyst 13.0+
 - Xcode 11+
 - Swift 5.0+
 
 ### Required Configuration for iOS 14+
 From iOS 14, it's required to add `NSLocalNetworkUsageDescription` and `NSBonjourServices` to your info.plist
-- Open Info.plist file and adding the following keys and values:
+- Open your `Info.plist` file and add the following keys and values:
 
 ```xml
 <key>NSLocalNetworkUsageDescription</key>
