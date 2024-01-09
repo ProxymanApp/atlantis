@@ -42,31 +42,6 @@ struct Runtime {
     }
 }
 
-/// A simple atomic lock
-/// We might consider using swift-atomic in the future
-/// https://github.com/apple/swift-atomics
-final class Atomic<A> {
-
-    private let queue = DispatchQueue(label: "com.proxyman.atlantis.atomic")
-    private var _value: A
-
-    init(_ value: A) {
-        self._value = value
-    }
-
-    var value: A {
-        get {
-            return queue.sync { self._value }
-        }
-    }
-
-    func mutate(_ transform: (inout A) -> ()) {
-        queue.sync {
-            transform(&self._value)
-        }
-    }
-}
-
 extension URLSessionTask {
 
     static var AtlantisIDKey: UInt8 = 0

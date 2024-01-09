@@ -25,6 +25,18 @@ protocol Serializable {
     func toData() -> Data?
 }
 
+private extension NWBrowser.Result {
+    var name: String? {
+        switch endpoint {
+        case .service(let name, _, _, _):
+            return name
+        default:
+            return nil
+        }
+    }
+}
+
+
 extension Serializable {
 
     func toCompressedData() -> Data? {
@@ -49,8 +61,7 @@ final class NetServiceTransport: NSObject {
     // https://github.com/ProxymanApp/atlantis/issues/57
     static let MaximumSizePackage = 52428800 // 50Mb
 
-    private let serviceBrowser: NetServiceBrowser
-    private var services: [NetService] = []
+    private var browser: NWBrowser!
     private let queue = DispatchQueue(label: "com.proxyman.atlantis.netservices") // Serial on purpose
     private let session: URLSession
     private var pendingPackages: [Serializable] = []
@@ -59,17 +70,27 @@ final class NetServiceTransport: NSObject {
     // Multiple task connection
     // it allows Atlantis can simultaneously connect to many Proxyman instances
     // https://github.com/ProxymanApp/atlantis/issues/72
+
+    @Protected
     private var connections: [NWConnection]
 
     // The maximum number of pending item to prevent Atlantis consumes too much RAM
     // https://github.com/ProxymanApp/atlantis/issues/74
     private let maxPendingItem = 30
 
+    public private(set) var servers: Set<NWBrowser.Result> = [] {
+        didSet {
+            print("Set servers: \(servers.map { $0.name ?? "" })")
+        }
+    }
+    public private(set) var browserState: NWBrowser.State = .setup {
+        didSet { print("Set browser state \(browserState)") }
+    }
+    public private(set) var browserError: NWError?
+
     // MARK: - Init
 
     override init() {
-        self.serviceBrowser = NetServiceBrowser()
-        self.serviceBrowser.includesPeerToPeer = true
         self.connections = []
         let config = URLSessionConfiguration.default
         #if os(iOS)
@@ -77,7 +98,6 @@ final class NetServiceTransport: NSObject {
         #endif
         session = URLSession(configuration: config)
         super.init()
-        serviceBrowser.delegate = self
         initNotification()
     }
 
@@ -105,19 +125,29 @@ extension NetServiceTransport: Transporter {
         // Reset all current connections if need
         stop()
 
-        // Start searching
-        // Have to run on MainThread, otherwise, the service will stop for some reason
-        serviceBrowser.searchForServices(ofType: Constants.netServiceType, inDomain: Constants.netServiceDomain)
+        // Must init new Browser
+        // if we cancel it, it cannot be started again! You must create a new browser object and start it.
+        let parameters = NWParameters()
+        parameters.includePeerToPeer = true
+        let browser = NWBrowser(for: .bonjour(type: Constants.netServiceType, domain: Constants.netServiceDomain), using: parameters)
+        self.browser = browser
+
+        browser.stateUpdateHandler = { [weak self] in
+            self?.browserDidUpdateState($0)
+        }
+        browser.browseResultsChangedHandler = { [weak self] results, _ in
+            self?.browserDidUpdateResults(results)
+        }
+        browser.start(queue: .main)
     }
 
     func stop() {
-        queue.sync {
-            services.forEach { $0.stop() }
-            services.removeAll()
-            serviceBrowser.stop()
-            connections.forEach { $0.cancel() }
-            connections.removeAll()
-        }
+        servers.removeAll()
+        browser?.stateUpdateHandler = nil
+        browser?.browseResultsChangedHandler = nil
+        browser?.cancel()
+        connections.forEach { $0.cancel() }
+        connections.removeAll()
     }
 
     func send(package: Serializable) {
@@ -317,42 +347,6 @@ extension NetServiceTransport {
     }
 }
 
-// MARK: - NetServiceBrowserDelegate
-
-extension NetServiceTransport: NetServiceBrowserDelegate {
-
-    func netServiceBrowser(_ browser: NetServiceBrowser, didFind service: NetService, moreComing: Bool) {
-        queue.async {[weak self] in
-            guard let strongSelf = self else { return }
-            strongSelf.services.append(service)
-            service.delegate = strongSelf
-            service.resolve(withTimeout: 30)
-        }
-    }
-
-    func netServiceBrowser(_ browser: NetServiceBrowser, didRemove service: NetService, moreComing: Bool) {
-        queue.async {[weak self] in
-            guard let strongSelf = self else { return }
-
-            // For some reason, we the service in this method is not the same with the server when we append.
-            // It's impossible to know which service is
-            // Best case, we should remove all
-            strongSelf.services.removeAll()
-        }
-    }
-
-    func netServiceBrowser(_ browser: NetServiceBrowser, didNotSearch errorDict: [String : NSNumber]) {
-        // Retry again after going from the foregronud
-        start()
-    }
-
-    func netServiceBrowserWillSearch(_ browser: NetServiceBrowser) {
-    }
-
-    func netServiceBrowserDidStopSearch(_ browser: NetServiceBrowser) {
-    }
-}
-
 // MARK: - NetServiceDelegate
 
 extension NetServiceTransport: NetServiceDelegate {
@@ -385,5 +379,41 @@ extension NetServiceTransport {
         queue.async {[weak self] in
             self?.pendingPackages.removeAll()
         }
+    }
+}
+
+extension NetServiceTransport {
+
+    private func browserDidUpdateState(_ newState: NWBrowser.State) {
+        print("Browser did update state to \(newState)")
+
+        browserState = newState
+        browserError = nil
+
+        switch newState {
+        case .waiting(let error):
+            print("[Atlantis] ❌ Browser waiting with error: \(error.debugDescription)")
+            browserError = error
+        case .failed(let error):
+            print("[Atlantis] ❌ Browser failed with error: \(error.debugDescription)")
+            browserError = error
+//            scheduleBrowserRetry()
+        case .ready:
+            servers = browser.browseResults
+        case .cancelled:
+            servers = []
+        default:
+            break
+        }
+    }
+
+    private func browserDidUpdateResults(_ results: Set<NWBrowser.Result>) {
+        print("browserDidUpdateResults")
+        servers = results
+        connectAutomaticallyIfNeeded()
+    }
+
+    private func connectAutomaticallyIfNeeded() {
+
     }
 }

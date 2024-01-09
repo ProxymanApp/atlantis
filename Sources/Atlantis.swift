@@ -54,7 +54,8 @@ public final class Atlantis: NSObject {
 
     /// Determine whether or not the Atlantis is active
     /// It must be wrapped into an atomic for safe-threads
-    private static var isEnabled = Atomic<Bool>(false)
+    @Protected
+    private static var isEnabled = false
 
     /// Determine whether or not the transport layer (e.g. Bonjour service) is enabled
     /// If it's enabled, it will send the traffic to Proxyman macOS app
@@ -102,8 +103,8 @@ public final class Atlantis: NSObject {
         }
 
         // 
-        guard !isEnabled.value else { return }
-        isEnabled.mutate { $0 = true }
+        guard !isEnabled else { return }
+        isEnabled = true
 
         // Enable the injector
         Atlantis.shared.configuration = configuration
@@ -117,8 +118,8 @@ public final class Atlantis: NSObject {
 
     /// Stop monitoring
     @objc public class func stop() {
-        guard isEnabled.value else { return }
-        isEnabled.mutate { $0 = false }
+        guard isEnabled else { return }
+        isEnabled = false
         if Atlantis.shared.isEnabledTransportLayer {
             Atlantis.shared.transporter.stop()
         }
@@ -236,7 +237,7 @@ extension Atlantis: InjectorDelegate {
         queue.sync {
             // Since it's not possible to revert the Method Swizzling change
             // We use isEnable instead
-            guard Atlantis.isEnabled.value else { return }
+            guard Atlantis.isEnabled else { return }
 
             // Cache
             _ = getPackage(task)
@@ -245,7 +246,7 @@ extension Atlantis: InjectorDelegate {
 
     func injectorSessionDidReceiveResponse(dataTask: URLSessionTask, response: URLResponse) {
         queue.sync {
-            guard Atlantis.isEnabled.value else { return }
+            guard Atlantis.isEnabled else { return }
             let package = getPackage(dataTask)
             package?.updateResponse(response)
         }
@@ -253,7 +254,7 @@ extension Atlantis: InjectorDelegate {
 
     func injectorSessionDidReceiveData(dataTask: URLSessionTask, data: Data) {
         queue.sync {
-            guard Atlantis.isEnabled.value else { return }
+            guard Atlantis.isEnabled else { return }
             let package = getPackage(dataTask)
             package?.appendResponseData(data)
         }
@@ -267,7 +268,7 @@ extension Atlantis: InjectorDelegate {
         queue.sync {
             // Since it's not possible to revert the Method Swizzling change
             // We use isEnable instead
-            guard Atlantis.isEnabled.value else { return }
+            guard Atlantis.isEnabled else { return }
 
             // Generate new request and add the data
             let package = getPackage(task)
@@ -299,7 +300,7 @@ extension Atlantis {
         queue.sync {
             // Since it's not possible to revert the Method Swizzling change
             // We use isEnable instead
-            guard Atlantis.isEnabled.value else { return }
+            guard Atlantis.isEnabled else { return }
             prepareAndSendWSMessage(task: task) { (id) -> WebsocketMessagePackage? in
                 guard let atlantisMessage = WebsocketMessagePackage.Message(message: message) else {
                     return nil
@@ -313,7 +314,7 @@ extension Atlantis {
         queue.sync {
             // Since it's not possible to revert the Method Swizzling change
             // We use isEnable instead
-            guard Atlantis.isEnabled.value else { return }
+            guard Atlantis.isEnabled else { return }
             prepareAndSendWSMessage(task: task) { (id) -> WebsocketMessagePackage? in
                 return WebsocketMessagePackage(id: id, closeCode: closeCode.rawValue, reason: reason)
             }
@@ -352,7 +353,7 @@ extension Atlantis {
 
     private func handleDidFinish(_ taskOrConnection: AnyObject, error: Error?) {
         queue.sync {
-            guard Atlantis.isEnabled.value else { return }
+            guard Atlantis.isEnabled else { return }
             guard let package = getPackage(taskOrConnection) else {
                 return
             }
