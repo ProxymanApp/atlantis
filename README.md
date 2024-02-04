@@ -120,6 +120,7 @@ You can get the `hostName`: Open Proxyman macPS -> Certificate menu -> Install f
 ## Websocket Traffic
 - By using Atlantis, Proxyman can capture Websocket from `URLSessionWebsocketTask` from iOS out of the box.
 - If your app uses 3rd-party Websocket libraries (e.g. Starscream), Atlantis doesn't work because Starscream doesn't use `URLSessionWebsocketTask` under hood.
+- Example app: https://github.com/NghiaTranUIT/WebsocketWithProxyman
 
 ![Proxyman capture websocket from iOS](./images/capture_ws_proxyman.jpg)
 
