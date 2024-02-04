@@ -1,7 +1,5 @@
 ![Atlantis: Debug iOS with ease](https://raw.githubusercontent.com/ProxymanApp/atlantis/main/images/cover.png)
 
-A lightweight and powerful iOS framework for intercepting HTTP/HTTPS Traffic from your app. No more messing around with proxy, certificate config. 
-
 [![Version](https://img.shields.io/cocoapods/v/atlantis-proxyman.svg?style=flat)](https://cocoapods.org/pods/atlantis-proxyman)
 [![Carthage compatible](https://img.shields.io/badge/Carthage-compatible-4BC51D.svg?style=flat)](https://github.com/Carthage/Carthage)
 [![Platform](https://img.shields.io/cocoapods/p/atlantis-proxyman.svg?style=flat)](https://cocoapods.org/pods/atlantis-proxyman)
@@ -10,28 +8,40 @@ A lightweight and powerful iOS framework for intercepting HTTP/HTTPS Traffic fro
 [![License](https://img.shields.io/cocoapods/l/atlantis-proxyman.svg?style=flat)](https://cocoapods.org/pods/atlantis-proxyman)
 
 ## Features
-- [x] **Automatically** intercept all HTTP/HTTPS Traffic with ease
-- [x] Capture WS/WSS Traffic from URLSessionWebSocketTask
-- [x] Capture gRPC traffic 
+- [x] ✅ **Automatically** intercept all HTTP/HTTPS Traffic with ease
+- [x] ✅ Capture WS/WSS Traffic from URLSessionWebSocketTask
+- [x] Capture gRPC traffic (Advanced)
 - [x] ✅ **No need to config HTTP Proxy, Install or Trust any Certificate**
 - [x] Support iOS Physical Devices and Simulators
 - [x] Review traffic log from macOS [Proxyman](https://proxyman.io) app ([Github](https://github.com/ProxymanApp/Proxyman))
 - [x] Categorize the log by project and devices.
-- [x] Only for Traffic Inspector, not for Debugging Tools
 - [x] Ready for Production
 
 ![Atlantis: Capture HTTP/HTTPS traffic from iOS app without Proxy and Certificate with Proxyman](https://raw.githubusercontent.com/ProxymanApp/atlantis/main/images/proxyman_atlantis_3.png)
 
+## ⚠️ Note
+- Atlantis is built for debugging purposes. All debugging tools (such as Map Local, Breakpoint, and Scripting) don't work.
+- If you want to use debugging tools, please use normal Proxy.
+
 ## Requirement
 - macOS Proxyman app
-- iOS 13.0+ / macOS 10.15+ / Mac Catalyst 13.0+
-- Xcode 11+
+- iOS 16.0+ / macOS 11+ / Mac Catalyst 13.0+
+- Xcode 14+
 - Swift 5.0+
 
-### Required Configuration for iOS 14+
-From iOS 14, it's required to add `NSLocalNetworkUsageDescription` and `NSBonjourServices` to your `info.plist`
-- Open your `Info.plist` file and add the following keys and values:
-- [Example](https://github.com/ProxymanApp/atlantis/blob/main/Example/Atlantis-Example-App/Atlantis-Example-App/Info.plist)
+## 👉 How to use
+### 1. Install Atlantis framework
+### Swift Packages Manager (Recommended)
+- Add `https://github.com/ProxymanApp/atlantis` to your project by: Open Xcode -> File Menu -> Swift Packages -> Add Package Dependency...
+
+### CocoaPod
+- Add the following line to your Podfile
+```bash 
+pod 'atlantis-proxyman'
+```
+
+### 2. Add Required Configuration to `Info.plist` (iOS 14 or later)
+1. Open your iOS Project -> Open the `Info.plist` file and add the following keys and values:
 
 ```xml
 <key>NSLocalNetworkUsageDescription</key>
@@ -42,14 +52,13 @@ From iOS 14, it's required to add `NSLocalNetworkUsageDescription` and `NSBonjou
 </array>
 ```
 
-## How to use
-1. Install Atlantis by CocoaPod or SPM, then start Atlantis
+- [Info.plist Example](https://github.com/ProxymanApp/atlantis/blob/main/Example/Atlantis-Example-App/Atlantis-Example-App/Info.plist)
+  
+### 3. Start debugging
 
-By default, Bonjour service will try to connect all Proxyman app in the same network:
+1. If you have only **ONE** macOS machine that opened Proxyman. Let's use the simple version:
 
-If you have only **ONE** MacOS machine that has Proxyman. Let's use the simple version:
-
-2. Open file `AppDelegate.swift`
+- Open file `AppDelegate.swift`
 
 ```swift
 #if DEBUG
@@ -87,7 +96,7 @@ func application(_ application: UIApplication, didFinishLaunchingWithOptions lau
 }
 ```
 
-You can get the `hostName` from Proxyman -> Certificate menu -> Install for iOS -> Atlantis -> How to Start Atlantis -> and copy the `HostName`
+You can get the `hostName`: Open Proxyman macPS -> Certificate menu -> Install for iOS -> Atlantis -> How to Start Atlantis -> and copy the `HostName`
 
 <img src="https://raw.githubusercontent.com/ProxymanApp/atlantis/main/images/atlantis_hostname.png" alt="Proxyman screenshot" width="70%" height="auto"/>
 
@@ -103,40 +112,19 @@ You can get the `hostName` from Proxyman -> Certificate menu -> Install for iOS 
 [Atlantis startWithHostName:nil];
 ```
 
-3. Make sure your iOS devices/simulator and macOS Proxyman are in the **same Wi-Fi network** or connect your iOS Devices to your Mac by a **USB cable**
-4. Open macOS [Proxyman](https://proxyman.io) (or [download the lasted here](https://proxyman.io/release/osx/Proxyman_latest.dmg))
-5. Open your iOS app and Inspect traffic logs from Proxyman app
-6. Enjoy debugging ❤️
+2. Make sure your iOS devices/simulator and macOS Proxyman are in the **same Wi-Fi network** or connect your iOS Devices to your Mac by a **USB cable**
+3. Start your iOS app via Xcode. Works with iOS Simulator or iOS Devices.
+4. Proxyman now captures all HTTP/HTTPS, Websocket from your iOS app
+5. Enjoy debugging ❤️
 
-## Install
-### CocoaPod
-- Add the following line to your Podfile
-```bash 
-pod 'atlantis-proxyman'
-```
+## Websocket Traffic
 
-### Swift Packages Manager
-- Add `https://github.com/ProxymanApp/atlantis` to your project by: Open Xcode -> File Menu -> Swift Packages -> Add Package Dependency...
 
-### Carthage
-1. Add to your Cartfile
-```
-github "ProxymanApp/atlantis"
-```
-2. Run `carthage update --use-xcframeworks`
-3. Drag Atlantis.framework from your project
-3. Create a Carthage Script as the [Carthage guideline](https://github.com/Carthage/Carthage#quick-start)  
 
-For Carthage with Xcode 12, please check out the workaround: https://github.com/Carthage/Carthage/blob/master/Documentation/Xcode12Workaround.md
-
-## WS/WSS Traffic
-From Atlantis 1.9.0+, Atlantis is capable of capturing all [WS/WSS Traffic](https://github.com/ProxymanApp/atlantis/releases/tag/1.9.0), which is made by URLSessionWebSocketTask, and send to Proxyman app.
-You don't need to config anything, it works out of the box.
-
-## Run Example App
-Atlantis provides a simple example that can demonstrate how to integrate and use Atlantis and Proxyman. Please follow the following steps:
+## Example App
+Atlantis provides a simple iOS app that can demonstrate how to integrate and use Atlantis and Proxyman. Please follow the following steps:
 1. Open Proxyman for macOS
-2. Open iOS Project at `Example/Atlantis-Example-App.xcodeproj`
+2. Open iOS Project at `./Example/Atlantis-Example-App.xcodeproj`
 3. Start the project with any iPhone/iPad Simulator
 4. Click on buttons on the main screen
 5. Back to Proxyman app and inspect your HTTPS Request/Response.
@@ -489,7 +477,7 @@ For some reason, Bonjour service might not be able to find Proxyman app.
 => Please use `Atlantis.start(hostName: "_your_host_name")` version to explicitly tell Atlantis connect to your Mac.
 
 ### 2. I could not use Debugging Tools on Atlantis's requests?
-Atlantis is built for inspecting the Network, not debugging purpose. If you would like to use Debugging Tools, please consider using normal HTTP Proxy
+Atlantis is built for inspecting the Network, not debugging purposes. If you would like to use Debugging Tools, please consider using a normal HTTP Proxy
 
 
 ## Credit
