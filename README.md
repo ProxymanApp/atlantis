@@ -1,7 +1,7 @@
-![Atlantis: Debug iOS with ease](./images/atlantis_logo.jpg)
+
+<img src="https://github.com/ProxymanApp/atlantis/blob/0352184d411dbf0a9471967bfdd675cb850b0ccb/images/atlantis_logo.jpg" alt="Capture HTTP, HTTPS, Websocket from iOS with Atlantis by Proxyman" width="60%" height="auto"/>
 
 [![Version](https://img.shields.io/cocoapods/v/atlantis-proxyman.svg?style=flat)](https://cocoapods.org/pods/atlantis-proxyman)
-[![Carthage compatible](https://img.shields.io/badge/Carthage-compatible-4BC51D.svg?style=flat)](https://github.com/Carthage/Carthage)
 [![Platform](https://img.shields.io/cocoapods/p/atlantis-proxyman.svg?style=flat)](https://cocoapods.org/pods/atlantis-proxyman)
 [![Twitter](https://img.shields.io/twitter/url?label=%40proxyman_app&style=social&url=https%3A%2F%2Ftwitter.com%2Fproxyman_app)](https://twitter.com/proxyman_app)
 [![Join the chat at https://gitter.im/Proxyman-app/community](https://badges.gitter.im/Proxyman-app/community.svg)](https://gitter.im/Proxyman-app/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
