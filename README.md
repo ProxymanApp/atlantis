@@ -118,8 +118,10 @@ You can get the `hostName`: Open Proxyman macPS -> Certificate menu -> Install f
 5. Enjoy debugging ❤️
 
 ## Websocket Traffic
+- By using Atlantis, Proxyman can capture Websocket from `URLSessionWebsocketTask` from iOS out of the box.
+- If your app uses 3rd-party Websocket libraries (e.g. Starscream), Atlantis doesn't work because Starscream doesn't use `URLSessionWebsocketTask` under hood.
 
-
+![Proxyman capture websocket from iOS](./images/capture_ws_proxyman.jpg)
 
 ## Example App
 Atlantis provides a simple iOS app that can demonstrate how to integrate and use Atlantis and Proxyman. Please follow the following steps:
@@ -129,7 +131,7 @@ Atlantis provides a simple iOS app that can demonstrate how to integrate and use
 4. Click on buttons on the main screen
 5. Back to Proxyman app and inspect your HTTPS Request/Response.
 
-![Atlantis: Capture HTTP/HTTPS traffic from iOS app without Proxy and Certificate with Proxyman](https://raw.githubusercontent.com/ProxymanApp/atlantis/main/images/iOS_Example_App.png)
+<img src="https://raw.githubusercontent.com/ProxymanApp/atlantis/main/images/iOS_Example_App.png" width="500" alt="Atlantis: Capture HTTP/HTTPS traffic from iOS app without Proxy and Certificate with Proxyman">
 
 ## Advanced Usage
 By default, if your iOS app uses Apple's Networking classes (e.g. URLSession) or using popular Networking libraries (e.g. Alamofire and AFNetworking) to make an HTTP Request, Atlantis will work **OUT OF THE BOX**.
