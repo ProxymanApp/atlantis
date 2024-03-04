@@ -8,7 +8,7 @@
 [![License](https://img.shields.io/cocoapods/l/atlantis-proxyman.svg?style=flat)](https://cocoapods.org/pods/atlantis-proxyman)
 
 ## Features
-- [x] ✅ **Automatically** intercept all HTTP/HTTPS Traffic with ease
+- [x] ✅ **Automatically** intercept all YOUR HTTP/HTTPS Traffic with ease
 - [x] ✅ Capture WS/WSS Traffic from URLSessionWebSocketTask
 - [x] Capture gRPC traffic (Advanced)
 - [x] ✅ **No need to config HTTP Proxy, Install or Trust any Certificate**
