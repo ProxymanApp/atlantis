@@ -138,7 +138,7 @@ public final class TrafficPackage: Codable, CustomDebugStringConvertible, Serial
         // Construct the Response without body
         self.response = Response(response)
     }
-    
+
     func updateDidComplete(_ error: Error?) {
         endAt = Date().timeIntervalSince1970
         if let error = error {
@@ -165,6 +165,12 @@ public final class TrafficPackage: Codable, CustomDebugStringConvertible, Serial
             return
         }
         lastData = data
+
+        // Avoid memory consumes in app when download large file that causing crash app
+        guard responseBodyData.count < NetServiceTransport.MaximumSizeResponse else {
+          endAt = Date().timeIntervalSince1970
+          return
+        }
         responseBodyData.append(data)
     }
 
