@@ -200,6 +200,7 @@ extension NetworkInjector {
         _swizzleURLSessionUploadFromFileWithCompleteHandlerSelector(baseClass)
         _swizzleURLSessionUploadFromDataSelector(baseClass)
         _swizzleURLSessionUploadFromDataWithCompleteHandlerSelector(baseClass)
+        _swizzleURLSessionUploadWithStreamedRequest(baseClass)
     }
 
     private func _swizzleURLSessionUploadFromFileSelector(_ baseClass: AnyClass) {
@@ -337,6 +338,39 @@ extension NetworkInjector {
 
         method_setImplementation(method, imp_implementationWithBlock(block))
     }
+
+    private func _swizzleURLSessionUploadWithStreamedRequest(_ baseClass: AnyClass) {
+        // Prepare
+        let selector = NSSelectorFromString("uploadTaskWithStreamedRequest:")
+        guard let method = class_getInstanceMethod(baseClass, selector),
+            baseClass.instancesRespond(to: selector) else {
+            logError(name: "_swizzleURLSessionUploadWithStreamedRequest")
+            return
+        }
+
+        // For safety, we should cast to AnyObject
+        // To prevent app crashes in the future if the object type is changed
+        typealias NewClosureType =  @convention(c) (AnyObject, Selector, AnyObject) -> AnyObject
+        let originalImp: IMP = method_getImplementation(method)
+        let block: @convention(block) (AnyObject, AnyObject) -> AnyObject = {[weak self](me, request) in
+
+            // call the original
+            let original: NewClosureType = unsafeBitCast(originalImp, to: NewClosureType.self)
+            let task = original(me, selector, request)
+
+            // Safe-check
+            if let task = task as? URLSessionTask,
+               let request = request as? NSURLRequest {
+                self?.delegate?.injectorSessionDidUpload(task: task, request: request, data: request.httpBody)
+            } else {
+                assertionFailure("Could not get data from _swizzleURLSessionUploadSelector. It might causes due to the latest iOS changes. Please contact the author!")
+            }
+            return task
+        }
+
+        method_setImplementation(method, imp_implementationWithBlock(block))
+    }
+
 }
 
 // MARK: - WebSocket
