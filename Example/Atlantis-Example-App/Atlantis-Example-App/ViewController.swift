@@ -10,6 +10,10 @@ import Alamofire
 
 final class ViewController: UIViewController {
 
+    private lazy var uploadSession: URLSession = {
+        return URLSession(configuration: URLSessionConfiguration.default, delegate: self, delegateQueue: .main)
+    }()
+
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view.
@@ -31,7 +35,7 @@ final class ViewController: UIViewController {
     @IBAction func postJsonBtnOnTap(_ sender: Any) {
         let url = URL(string: "https://httpbin.proxyman.app/post")!
         let body: [String: String] = ["name": "Proxyman",
-                                       "id": "123"]
+                                      "id": "123"]
         let header: [String: String] = ["X-Proxyman-Data": "123",
                                         "X-Data": "JSON"]
         AF.request(url, method: HTTPMethod.post, parameters: body, encoder: JSONParameterEncoder(), headers: HTTPHeaders(header)).responseJSON { response in
@@ -42,7 +46,7 @@ final class ViewController: UIViewController {
     @IBAction func postUrlEncodedBtnOnTap(_ sender: Any) {
         let url = URL(string: "https://httpbin.proxyman.app/post")!
         let body: [String: String] = ["name": "Proxyman",
-                                       "id": "123"]
+                                      "id": "123"]
         let header: [String: String] = ["X-Proxyman-Data": "123",
                                         "X-Data": "JSON"]
         AF.request(url, method: HTTPMethod.post, parameters: body, encoder: URLEncodedFormParameterEncoder(), headers: HTTPHeaders(header)).responseJSON { response in
@@ -64,7 +68,7 @@ final class ViewController: UIViewController {
     @IBAction func deleteBtnOnTap(_ sender: Any) {
         let url = URL(string: "https://httpbin.proxyman.app/delete")!
         let body: [String: String] = ["name": "Proxyman",
-                                       "id": "123"]
+                                      "id": "123"]
         let header: [String: String] = ["X-Proxyman-Data": "123",
                                         "X-Data": "JSON"]
         AF.request(url, method: HTTPMethod.delete, parameters: body, encoder: JSONParameterEncoder(), headers: HTTPHeaders(header)).responseJSON { response in
@@ -108,4 +112,46 @@ final class ViewController: UIViewController {
         }
         task.resume()
     }
+
+    @IBAction func uploadStreamedRequest(_ sender: Any) {
+        var request = URLRequest(url: URL(string: "https://httpbin.proxyman.app/post")!)
+        request.method = .post
+        let task = uploadSession.uploadTask(withStreamedRequest: request)
+        task.resume()
+    }
+
+    // Hold received data
+    var receivedData: Data? = nil
+}
+
+extension ViewController: URLSessionDataDelegate {
+
+    func urlSession(_ session: URLSession, task: URLSessionTask, needNewBodyStream completionHandler: @escaping (InputStream?) -> Void) {
+        let imageURL = Bundle.main.url(forResource: "image", withExtension: "jpg")!
+        let data = try! Data(contentsOf: imageURL)
+        completionHandler(InputStream(data: data))
+    }
+
+    // Called multiple times. Append new data to receivedData
+    func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive data: Data) {
+        if receivedData == nil {
+            receivedData = data
+        } else {
+            receivedData?.append(data)
+        }
+    }
+
+    func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
+        if let error = error {
+            print("Error: \(error)")
+        } else if let response = task.response as? HTTPURLResponse {
+            print("Status code: \(response.statusCode)")
+
+            if let receivedData = receivedData {
+                let str = String(data: receivedData, encoding: .utf8)
+                print("Response data: \(str ?? "")")
+            }
+        }
+    }
+
 }
