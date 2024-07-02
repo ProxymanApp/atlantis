@@ -8,16 +8,16 @@
 [![License](https://img.shields.io/cocoapods/l/atlantis-proxyman.svg?style=flat)](https://cocoapods.org/pods/atlantis-proxyman)
 
 ## Features
-- [x] ✅ **Automatically** intercept all YOUR HTTP/HTTPS Traffic with ease
+- [x] ✅ **Automatically** intercept all YOUR HTTP/HTTPS Traffic with 1 click
+- [x] ✅ **No Proxy or trust any Certificates**
 - [x] ✅ Capture WS/WSS Traffic from URLSessionWebSocketTask
 - [x] Capture gRPC traffic (Advanced)
-- [x] ✅ **No need to config HTTP Proxy, Install or Trust any Certificate**
 - [x] Support iOS Physical Devices and Simulators
 - [x] Review traffic log from macOS [Proxyman](https://proxyman.io) app ([Github](https://github.com/ProxymanApp/Proxyman))
 - [x] Categorize the log by project and devices.
 - [x] Ready for Production
 
-![Atlantis: Capture HTTP/HTTPS traffic from iOS app without Proxy and Certificate with Proxyman](https://raw.githubusercontent.com/ProxymanApp/atlantis/main/images/proxyman_atlantis_3.png)
+![Atlantis: Capture HTTP/HTTPS traffic from iOS app without Proxy and Certificate with Proxyman](/images/atlantis_capture_ios.jpg)
 
 ## ⚠️ Note
 - Atlantis is built for debugging purposes. All debugging tools (such as Map Local, Breakpoint, and Scripting) don't work.
