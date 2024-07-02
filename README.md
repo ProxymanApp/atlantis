@@ -32,7 +32,7 @@
 ## 👉 How to use
 ### 1. Install Atlantis framework
 ### Swift Packages Manager (Recommended)
-- Add `https://github.com/ProxymanApp/atlantis` to your project by: Open Xcode -> File Menu -> Swift Packages -> Add Package Dependency...
+- Add `https://github.com/ProxymanApp/atlantis` to your project
 
 ### CocoaPod
 - Add the following line to your Podfile
@@ -53,7 +53,9 @@ pod 'atlantis-proxyman'
 ```
 
 - [Info.plist Example](https://github.com/ProxymanApp/atlantis/blob/main/Example/Atlantis-Example-App/Atlantis-Example-App/Info.plist)
-  
+- Reason: Atlantis uses Bonjour Service to transfer the data on your iPhone -> Proxyman macOS. It runs locally on your local network.
+
+
 ### 3. Start debugging
 
 1. If you have only **ONE** macOS machine that opened Proxyman. Let's use the simple version:
@@ -96,7 +98,7 @@ func application(_ application: UIApplication, didFinishLaunchingWithOptions lau
 }
 ```
 
-You can get the `hostName`: Open Proxyman macPS -> Certificate menu -> Install for iOS -> Atlantis -> How to Start Atlantis -> and copy the `HostName`
+You can get the `hostName`: Open Proxyman macOS -> Certificate menu -> Install for iOS -> Atlantis -> How to Start Atlantis -> and copy the `HostName`
 
 <img src="https://raw.githubusercontent.com/ProxymanApp/atlantis/main/images/atlantis_hostname.png" alt="Proxyman screenshot" width="70%" height="auto"/>
 
@@ -134,7 +136,9 @@ Atlantis provides a simple iOS app that can demonstrate how to integrate and use
 
 <img src="https://raw.githubusercontent.com/ProxymanApp/atlantis/main/images/iOS_Example_App.png" width="500" alt="Atlantis: Capture HTTP/HTTPS traffic from iOS app without Proxy and Certificate with Proxyman">
 
-## Advanced Usage
+<details>
+  <summary>Advanced Usage</summary>
+
 By default, if your iOS app uses Apple's Networking classes (e.g. URLSession) or using popular Networking libraries (e.g. Alamofire and AFNetworking) to make an HTTP Request, Atlantis will work **OUT OF THE BOX**.
 
 However, if your app doesn't use any one of them, Atlantis is not able to automatically capture the network traffic. 
@@ -444,12 +448,15 @@ Atlantis.start()
 - Sample Code: https://github.com/ProxymanApp/Atlantis-Swift-Playground-Sample-App
 
 
-## FAQ
+</details>
+
+
+## ❓ FAQ 
 #### 1. How does Atlantis work?
 
-Atlantis uses [Method Swizzling](https://nshipster.com/method-swizzling/) technique to swizzle certain functions of NSURLSession that enables Atlantis captures HTTP/HTTPS traffic on the fly.
+Atlantis uses [Method Swizzling](https://nshipster.com/method-swizzling/) technique to swizzle certain functions of NSURLSession that enables Atlantis to capture HTTP/HTTPS traffic on the fly.
 
-Then it sends to [Proxyman app](https://proxyman.io) for inspecting later.
+Then it sends to [Proxyman app](https://proxyman.io) via a local Bonjour Service for inspecting.
 
 #### 2. How can Atlantis stream the data to the Proxyman app?
 
@@ -459,9 +466,9 @@ As soon as your iOS app (Atlantis is enabled) and the Proxyman macOS app are the
 
 It's completely **safe** since your data is locally transferred between your iOS app and the Proxyman app, no Internet is required. All traffic logs are captures and send to the Proxyman app for inspecting on the fly. 
 
-Atlantis and Proxyman app do not store any of your data on any server.
+Atlantis and Proxyman apps do not store any of your data on any server.
 
-#### 4. What kind of data that Atlantis capture?
+#### 4. What kind of data does Atlantis capture?
 
 - All HTTP/HTTPS traffic from your iOS apps, that integrate the Atlantis framework 
 - Your iOS app name, bundle identifier, and small size of the logo
@@ -473,13 +480,13 @@ They are required to categorize the traffic on the Proxyman app by project and d
 
 ## Troubleshooting
 ### 1. I could not see any request from Atlantis on Proxyman app?
-For some reason, Bonjour service might not be able to find Proxyman app. 
+For some reason, Bonjour service might not be able to find the Proxyman app. 
 
-=> Make sure your iOS devices and the Mac are in the **same Wifi Network** or connect to your Mac with **USB Cable**
+=> Make sure your iOS devices and the Mac are in the **same Wi-Fi network** or connect to your Mac with **USB Cable**
 
-=> Please use `Atlantis.start(hostName: "_your_host_name")` version to explicitly tell Atlantis connect to your Mac.
+=> Please use `Atlantis.start(hostName: "_your_host_name")` version to explicitly tell Atlantis to connect to your Mac.
 
-### 2. I could not use Debugging Tools on Atlantis's requests?
+### 2. I could not use Debugging Tools on Atlantis's requests.
 Atlantis is built for inspecting the Network, not debugging purposes. If you would like to use Debugging Tools, please consider using a normal HTTP Proxy
 
 
