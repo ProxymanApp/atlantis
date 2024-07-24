@@ -14,6 +14,7 @@ let package = Package(
             name: "Atlantis",
             targets: ["Atlantis"]),
     ],
+    dependencies: [.package(url: "https://github.com/Alamofire/Alamofire", from: "5.9.1")],
     targets: [
         // Targets are the basic building blocks of a package. A target can define a module or a test suite.
         // Targets can depend on other targets in this package, and on products in packages which this package depends on.
@@ -23,7 +24,7 @@ let package = Package(
             path: "Sources",
             resources: [.copy("PrivacyInfo.xcprivacy")]),
             .testTarget(name: "AtlantisTests",
-                                            dependencies: ["Atlantis"],
+                                            dependencies: ["Atlantis", "Alamofire"],
                                             path: "Tests",
                                             exclude: [],
                                             resources: [])

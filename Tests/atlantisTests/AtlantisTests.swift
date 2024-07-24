@@ -47,7 +47,7 @@ class AtlantisTests: XCTestCase {
         }
     }
 
-    func testURLSessionDataTask() {
+    func testURLSessionDataTask_GET() {
 
 
     }
