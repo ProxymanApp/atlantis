@@ -27,7 +27,7 @@ let package = Package(
                                             dependencies: ["Atlantis", "Alamofire"],
                                             path: "Tests",
                                             exclude: [],
-                                            resources: [])
+                        resources: [.copy("Info.plist")])
     ],
     swiftLanguageVersions: [.v5]
 )
