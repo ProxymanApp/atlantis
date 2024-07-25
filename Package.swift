@@ -23,11 +23,11 @@ let package = Package(
             dependencies: [],
             path: "Sources",
             resources: [.copy("PrivacyInfo.xcprivacy")]),
-            .testTarget(name: "AtlantisTests",
-                                            dependencies: ["Atlantis", "Alamofire"],
-                                            path: "Tests",
-                                            exclude: [],
-                        resources: [.copy("Info.plist")])
+        .testTarget(name: "AtlantisTests",
+                    dependencies: ["Atlantis", "Alamofire"],
+                    path: "Tests",
+                    exclude: [],
+                    resources: [])
     ],
     swiftLanguageVersions: [.v5]
 )

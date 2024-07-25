@@ -16,6 +16,7 @@ class AtlantisTests: XCTestCase {
     // MARK: Variables
 
     private var session: URLSession!
+    private var bonjourService: BonjourService!
 
     // MARK: Base
 
@@ -24,9 +25,12 @@ class AtlantisTests: XCTestCase {
 
         session = URLSession(configuration: URLSessionConfiguration.ephemeral)
 
+        bonjourService = BonjourService()
+        try bonjourService.start()
+
         // skip the info.plist file
         Atlantis.setIsRunningOniOSPlayground(true)
-        Atlantis.start(hostName: "")
+        Atlantis.start()
     }
 
     override func tearDownWithError() throws {
@@ -34,6 +38,9 @@ class AtlantisTests: XCTestCase {
 
         session.invalidateAndCancel()
         session = nil
+
+        bonjourService.stop()
+        bonjourService = nil
         Atlantis.stop()
 
         // clear all
