@@ -178,10 +178,10 @@ public final class TrafficPackage: Codable, CustomDebugStringConvertible, Serial
         // We decice to skip the body, but send the request/response
         // https://github.com/ProxymanApp/atlantis/issues/57
         if isLargeReponseBody {
-            self.responseBodyData = "<Skip Large Body>".data(using: String.Encoding.utf8)!
+            self.responseBodyData = "<Skip Large Body. Max size = \(NetServiceTransport.MaximumSizePackage) Bytes>".data(using: String.Encoding.utf8)!
         }
         if isLargeRequestBody {
-            self.request.resetBody()
+            self.request.ignoreLargeBody()
         }
 
         // Encode to JSON
@@ -279,8 +279,8 @@ public final class Request: Codable {
         self.body?.append(data)
     }
 
-    func resetBody() {
-        self.body = nil
+    func ignoreLargeBody() {
+        self.body = "<Skip Large Body. Max size = \(NetServiceTransport.MaximumSizePackage) Bytes>".data(using: String.Encoding.utf8)!
     }
 }
 
