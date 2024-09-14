@@ -6,6 +6,7 @@
 //  Copyright © 2020 Proxyman. All rights reserved.
 //
 
+import class AVFoundation.AVAggregateAssetDownloadTask
 import Foundation
 
 #if os(OSX)
@@ -101,6 +102,13 @@ public final class TrafficPackage: Codable, CustomDebugStringConvertible, Serial
     // MARK: - Builder
 
     static func buildRequest(sessionTask: URLSessionTask, id: String) -> TrafficPackage? {
+        // If sessionTask is AVAggregateAssetDownloadTask,
+        // accessing currentRequest crashes with not supported error,
+        // so we need to check for it in advance.
+        if sessionTask is AVAggregateAssetDownloadTask {
+            return nil
+        }
+
         guard let currentRequest = sessionTask.currentRequest,
             let request = Request(currentRequest) else { return nil }
 
