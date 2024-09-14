@@ -105,9 +105,11 @@ public final class TrafficPackage: Codable, CustomDebugStringConvertible, Serial
         // If sessionTask is AVAggregateAssetDownloadTask,
         // accessing currentRequest crashes with not supported error,
         // so we need to check for it in advance.
+        #if os(iOS) || os(macOS)
         if sessionTask is AVAggregateAssetDownloadTask {
             return nil
         }
+        #endif
 
         guard let currentRequest = sessionTask.currentRequest,
             let request = Request(currentRequest) else { return nil }
