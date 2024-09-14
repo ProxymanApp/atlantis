@@ -12,7 +12,7 @@ Pod::Spec.new do |spec|
 
   spec.homepage     = "https://github.com/ProxymanApp/atlantis"
   spec.documentation_url = 'https://docs.proxyman.io/atlantis/atlantis-for-ios'
-  spec.screenshots  = "https://raw.githubusercontent.com/ProxymanApp/atlantis/main/images/cover.png"
+  spec.screenshots  = "https://raw.githubusercontent.com/ProxymanApp/atlantis/main/images/capture_ws_proxyman.jpg"
   spec.license      = { :type => "Apache License, Version 2.0", :file => "LICENSE" }
 
   spec.author             = { "Nghia Tran" => "nghia@proxyman.io" }

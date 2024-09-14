@@ -6,7 +6,10 @@
 //  Copyright © 2020 Proxyman. All rights reserved.
 //
 
+#if os(iOS) || os(macOS)
 import class AVFoundation.AVAggregateAssetDownloadTask
+#endif
+
 import Foundation
 
 #if os(OSX)
