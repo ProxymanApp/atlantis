@@ -437,6 +437,13 @@ extension Atlantis {
         // Release the list
         waitingWebsocketPackages[id] = nil
     }
+
+    func getAllPendingPackages() -> [Serializable] {
+        guard let netTransporter = self.transporter as? NetServiceTransport else {
+            return []
+        }
+        return netTransporter.pendingPackages
+    }
 }
 
 // MARK: - Helper
