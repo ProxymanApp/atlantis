@@ -1,0 +1,29 @@
+{
+  "configurations" : [
+    {
+      "id" : "4F4BCF98-E720-4CD8-8C24-F5A00F666948",
+      "name" : "Configuration 1",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+    "environmentVariableEntries" : [
+      {
+        "key" : "UNIT_TEST",
+        "value" : "1"
+      }
+    ]
+  },
+  "testTargets" : [
+    {
+      "target" : {
+        "containerPath" : "container:",
+        "identifier" : "AtlantisTests",
+        "name" : "AtlantisTests"
+      }
+    }
+  ],
+  "version" : 1
+}
