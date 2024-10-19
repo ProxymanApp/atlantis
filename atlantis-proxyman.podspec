@@ -1,21 +1,21 @@
 Pod::Spec.new do |spec|
   spec.name         = "atlantis-proxyman"
   spec.version      = "1.25.1"
-  spec.summary      = "A lightweight and powerful iOS framework for intercepting HTTP/HTTPS Traffic"
+  spec.summary      = "A iOS framework for intercepting HTTP/HTTPS Traffic without Proxy and Certificate config"
   spec.description  = <<-DESC
-  A lightweight and powerful iOS framework for intercepting HTTP/HTTPS Traffic from your app. No more messing around with proxy, certificate config.
-  Automatically intercept all HTTP/HTTPS Traffic with ease
-  No need to config HTTP Proxy, Install or Trust any Certificate
-  Review traffic log from Proxyman
+  ✅ A iOS framework (Developed and Maintained by Proxyman Team) for intercepting HTTP/HTTPS Traffic from your app. No more messing around with proxy, certificate config.
+  ✅ Automatically intercept all HTTP/HTTPS Traffic from your app
+  ✅ No need to config HTTP Proxy, Install or Trust any Certificate
+  Review Request/Response from Proxyman macOS
   Categorize the log by project and devices.
                    DESC
 
-  spec.homepage     = "https://github.com/ProxymanApp/atlantis"
-  spec.documentation_url = 'https://docs.proxyman.io/atlantis/atlantis-for-ios'
+  spec.homepage     = "https://proxyman.io/"
+  spec.documentation_url = 'https://github.com/ProxymanApp/atlantis'
   spec.screenshots  = "https://raw.githubusercontent.com/ProxymanApp/atlantis/main/images/capture_ws_proxyman.jpg"
   spec.license      = { :type => "Apache License, Version 2.0", :file => "LICENSE" }
 
-  spec.author             = { "Nghia Tran" => "nghia@proxyman.io" }
+  spec.author             = { "Proxyman LLC" => "nghia@proxyman.io" }
   spec.social_media_url   = "https://twitter.com/proxyman_app"
 
   spec.ios.deployment_target = "13.0"

@@ -4,8 +4,13 @@
 [![Version](https://img.shields.io/cocoapods/v/atlantis-proxyman.svg?style=flat)](https://cocoapods.org/pods/atlantis-proxyman)
 [![Platform](https://img.shields.io/cocoapods/p/atlantis-proxyman.svg?style=flat)](https://cocoapods.org/pods/atlantis-proxyman)
 [![Twitter](https://img.shields.io/twitter/url?label=%40proxyman_app&style=social&url=https%3A%2F%2Ftwitter.com%2Fproxyman_app)](https://twitter.com/proxyman_app)
-[![Join the chat at https://gitter.im/Proxyman-app/community](https://badges.gitter.im/Proxyman-app/community.svg)](https://gitter.im/Proxyman-app/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 [![License](https://img.shields.io/cocoapods/l/atlantis-proxyman.svg?style=flat)](https://cocoapods.org/pods/atlantis-proxyman)
+[Join our Discord Channel](https://discord.gg/tjWEq6Da42)
+
+## Atlantis is developed by Proxyman Team
+- Homepage: [https://proxyman.io](https://proxyman.io)
+- Twitter: [https://twitter.com/proxyman_app](https://twitter.com/proxyman_app)
+- Github: [https://github.com/ProxymanApp](https://github.com/ProxymanApp)
 
 ## Features
 - [x] ✅ **Automatically** intercept all YOUR HTTP/HTTPS Traffic with 1 click
