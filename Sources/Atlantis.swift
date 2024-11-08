@@ -31,6 +31,7 @@ public final class Atlantis: NSObject {
     private lazy var waitingWebsocketPackages: [String: [TrafficPackage]] = [:]
     private var ignoreProtocols: [AnyClass] = []
     private let queue = DispatchQueue(label: "com.proxyman.atlantis")
+    private var ignoredRequestIds: Set<String> = []
 
     // MARK: - Variables
 
@@ -231,11 +232,16 @@ extension Atlantis {
         return false
     }
 
-    private func getPackage(_ taskOrConnection: AnyObject) -> TrafficPackage? {
+    private func getPackage(_ taskOrConnection: AnyObject, isCompleted: Bool = false) -> TrafficPackage? {
         // This method should be called from our queue
-
         // Receive package from the cache
         let id = PackageIdentifier.getID(taskOrConnection: taskOrConnection)
+        guard !ignoredRequestIds.contains(id) else {
+            if isCompleted {
+                ignoredRequestIds.remove(id)
+            }
+            return nil
+        }
         if let package = packages[id] {
             return package
         }
@@ -250,6 +256,7 @@ extension Atlantis {
             }
             
             if checkShouldIgnore(on: request) {
+                ignoredRequestIds.insert(id)
                 return nil
             }
             
@@ -390,7 +397,7 @@ extension Atlantis {
     private func handleDidFinish(_ taskOrConnection: AnyObject, error: Error?) {
         queue.sync {
             guard Atlantis.isEnabled.value else { return }
-            guard let package = getPackage(taskOrConnection) else {
+            guard let package = getPackage(taskOrConnection, isCompleted: true) else {
                 return
             }
 
