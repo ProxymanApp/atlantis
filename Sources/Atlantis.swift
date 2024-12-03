@@ -29,7 +29,9 @@ public final class Atlantis: NSObject {
     private(set) var configuration: Configuration = Configuration.default()
     private var packages: [String: TrafficPackage] = [:]
     private lazy var waitingWebsocketPackages: [String: [TrafficPackage]] = [:]
+    private var ignoreProtocols: [AnyClass] = []
     private let queue = DispatchQueue(label: "com.proxyman.atlantis")
+    private var ignoredRequestIds: Set<String> = []
 
     // MARK: - Variables
 
@@ -138,6 +140,11 @@ public final class Atlantis: NSObject {
     public class func setDelegate(_ delegate: AtlantisDelegate) {
         Atlantis.shared.delegate = delegate
     }
+    
+    /// Set list of URLProtocol classes that cause the duplicate records
+    public class func setIgnoreProtocols(_ protocols: [AnyClass]) {
+        Atlantis.shared.ignoreProtocols = protocols
+    }
 }
 
 // MARK: - Private
@@ -199,12 +206,46 @@ extension Atlantis {
         }
         #endif
     }
+    
+    private func checkShouldIgnoreByURLProtocol(on request: URLRequest) -> Bool {
+        // Get the BBHTTPProtocolHandler class by name
+        for cls in ignoreProtocols {
+            
+            // Get the canInitWithRequest: selector
+            let selector = NSSelectorFromString("canInitWithRequest:")
+            
+            // Ensure the class responds to the selector
+            guard let method = class_getClassMethod(cls, selector) else {
+                print("[Atlantis] ❓ Warn: canInitWithRequest: method not found.")
+                return false
+            }
+            
+            // Cast the method implementation to the correct function signature
+            typealias CanInitWithRequestFunction = @convention(c) (AnyClass, Selector, URLRequest) -> Bool
+            let canInitWithRequest = unsafeBitCast(method_getImplementation(method), to: CanInitWithRequestFunction.self)
+            
+            // Call the method with the request
+            if canInitWithRequest(cls, selector, request) {
+                return true
+            }
+        }
+        return false
+    }
 
-    private func getPackage(_ taskOrConnection: AnyObject) -> TrafficPackage? {
+    private func getPackage(_ taskOrConnection: AnyObject, isCompleted: Bool = false) -> TrafficPackage? {
         // This method should be called from our queue
-
         // Receive package from the cache
         let id = PackageIdentifier.getID(taskOrConnection: taskOrConnection)
+
+        //
+        if ignoredRequestIds.contains(id) {
+            if isCompleted {
+                ignoredRequestIds.remove(id)
+            }
+            return nil
+        }
+
+        // find the package
         if let package = packages[id] {
             return package
         }
@@ -212,10 +253,18 @@ extension Atlantis {
         // If not found, just generate and cache
         switch taskOrConnection {
         case let task as URLSessionTask:
-            guard let package = TrafficPackage.buildRequest(sessionTask: task, id: id) else {
+            guard let request = task.currentRequest,
+                  let package = TrafficPackage.buildRequest(sessionTask: task, id: id) else {
                 print("[Atlantis] ❌ Error: Should build package from URLSessionTask")
                 return nil
             }
+            
+            // check should ignore this request because it's duplicated by URLProtocol classes
+            if checkShouldIgnoreByURLProtocol(on: request) {
+                ignoredRequestIds.insert(id)
+                return nil
+            }
+            
             packages[id] = package
             return package
         default:
@@ -353,7 +402,7 @@ extension Atlantis {
     private func handleDidFinish(_ taskOrConnection: AnyObject, error: Error?) {
         queue.sync {
             guard Atlantis.isEnabled.value else { return }
-            guard let package = getPackage(taskOrConnection) else {
+            guard let package = getPackage(taskOrConnection, isCompleted: true) else {
                 return
             }
 
