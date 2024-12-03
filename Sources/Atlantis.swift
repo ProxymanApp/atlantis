@@ -207,7 +207,7 @@ extension Atlantis {
         #endif
     }
     
-    private func checkShouldIgnore(on request: URLRequest) -> Bool {
+    private func checkShouldIgnoreByURLProtocol(on request: URLRequest) -> Bool {
         // Get the BBHTTPProtocolHandler class by name
         for cls in ignoreProtocols {
             
@@ -236,12 +236,16 @@ extension Atlantis {
         // This method should be called from our queue
         // Receive package from the cache
         let id = PackageIdentifier.getID(taskOrConnection: taskOrConnection)
-        guard !ignoredRequestIds.contains(id) else {
+
+        //
+        if ignoredRequestIds.contains(id) {
             if isCompleted {
                 ignoredRequestIds.remove(id)
             }
             return nil
         }
+
+        // find the package
         if let package = packages[id] {
             return package
         }
@@ -255,7 +259,8 @@ extension Atlantis {
                 return nil
             }
             
-            if checkShouldIgnore(on: request) {
+            // check should ignore this request because it's duplicated by URLProtocol classes
+            if checkShouldIgnoreByURLProtocol(on: request) {
                 ignoredRequestIds.insert(id)
                 return nil
             }
