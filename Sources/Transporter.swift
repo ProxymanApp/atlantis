@@ -53,7 +53,7 @@ final class NetServiceTransport: NSObject {
     private var services: [NetService] = []
     private let queue = DispatchQueue(label: "com.proxyman.atlantis.netservices") // Serial on purpose
     private let session: URLSession
-    private var pendingPackages: [Serializable] = []
+    private(set) var pendingPackages: [Serializable] = []
     private var config: Configuration?
 
     // Multiple task connection
