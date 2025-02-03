@@ -207,9 +207,9 @@ extension Atlantis {
         #endif
     }
     
-    private func checkShouldIgnoreByURLProtocol(on request: URLRequest) -> Bool {
+    private func checkShouldIgnoreByURLProtocol(protocols: [AnyClass], on request: URLRequest) -> Bool {
         // Get the BBHTTPProtocolHandler class by name
-        for cls in ignoreProtocols {
+        for cls in protocols {
             
             // Get the canInitWithRequest: selector
             let selector = NSSelectorFromString("canInitWithRequest:")
@@ -259,8 +259,16 @@ extension Atlantis {
                 return nil
             }
             
+            // Just check ignore protocols if it's not empty and the session resumes the task has this protocol
+            var sessionProtocols: [AnyClass] = []
+            if !ignoreProtocols.isEmpty, let session = task.value(forKey: "session") as? URLSession {
+                let protocols = Set((session.configuration.protocolClasses ?? []).map { NSStringFromClass($0) })
+                let shouldIgnores = Set(ignoreProtocols.map { NSStringFromClass($0) })
+                sessionProtocols = protocols.intersection(shouldIgnores).compactMap { NSClassFromString($0) }
+            }
+            
             // check should ignore this request because it's duplicated by URLProtocol classes
-            if checkShouldIgnoreByURLProtocol(on: request) {
+            if checkShouldIgnoreByURLProtocol(protocols: sessionProtocols, on: request) {
                 ignoredRequestIds.insert(id)
                 return nil
             }
