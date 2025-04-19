@@ -10,13 +10,13 @@ Pod::Spec.new do |spec|
   Categorize the log by project and devices.
                    DESC
 
-  spec.homepage     = "https://proxyman.io/"
+  spec.homepage     = "https://proxyman.com/"
   spec.documentation_url = 'https://github.com/ProxymanApp/atlantis'
-  spec.screenshots  = "https://raw.githubusercontent.com/ProxymanApp/atlantis/main/images/capture_ws_proxyman.jpg"
+  spec.screenshots  = "https://raw.githubusercontent.com/ProxymanApp/atlantis/refs/heads/main/images/Atlantis_Dashboard_1.jpg"
   spec.license      = { :type => "Apache License, Version 2.0", :file => "LICENSE" }
 
-  spec.author             = { "Proxyman LLC" => "nghia@proxyman.io" }
-  spec.social_media_url   = "https://twitter.com/proxyman_app"
+  spec.author             = { "Proxyman LLC" => "nghia@proxyman.com" }
+  spec.social_media_url   = "https://x.com/proxyman_app"
 
   spec.ios.deployment_target = "13.0"
   spec.osx.deployment_target = "10.15"
