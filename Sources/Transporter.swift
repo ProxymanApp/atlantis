@@ -61,6 +61,10 @@ final class NetServiceTransport: NSObject {
     // The maximum number of pending item to prevent Atlantis consumes too much RAM
     private let maxPendingItem = 50
 
+    // Retry mechanism for simulator direct connection
+    private var simulatorRetryCount = 0
+    private let maxSimulatorRetries = 5
+
     // MARK: - Init
 
     override init() {
@@ -89,10 +93,10 @@ extension NetServiceTransport: Transporter {
 
             #if targetEnvironment(simulator)
             // iOS Simulator: Direct TCP connection
-            let port = Constants.directConnectionPort
-            let host = NWEndpoint.Host("localhost") // Simulators connect to localhost
-            let endpoint = NWEndpoint.hostPort(host: host, port: port)
+            let endpoint = strongSelf.getEndpointForLocalhost()
             
+            // Reset retry count before starting
+            strongSelf.simulatorRetryCount = 0
             print("⚡️[Atlantis][Simulator] Attempting direct connection to Proxyman app on your Mac... without using Bonjour service (due to macOS 15.4+ issue)")
             let connection = NWConnection(to: endpoint, using: .tcp)
             strongSelf.setupAndStartConnection(connection)
@@ -323,27 +327,44 @@ extension NetServiceTransport {
             case .ready:
                 print("[\(endpointDesc)] ✅ Connection established.")
                 // Send initial connection info and flush pending
+                #if targetEnvironment(simulator)
+                // Reset retry counter on successful simulator connection
+                strongSelf.simulatorRetryCount = 0
+                #endif
                 strongSelf.sendConnectionPackage(connection: connection)
                 strongSelf.flushAllPendingPackagesIfNeed()
             case .waiting(let error):
                 #if targetEnvironment(simulator)
-                let endpointToRetry = connection.endpoint
-                
                 // For simulator, attempt to retry the connection after a delay
                 // instead of just printing the waiting state.
-                print("Could not found Proxyman app on your Mac.")
-                print("🔄 Attempting re-connect to Proxyman app in 15 second... Make sure Proxyman app is running on your Mac.")
 
                 // Cancel the current connection attempt
                 connection.cancel()
 
                 // Remove the connection immediately to allow retry
-                strongSelf.connections.removeAll { $0 === connection }
+                if let index = strongSelf.connections.firstIndex(where: { $0 === connection }) {
+                    strongSelf.connections.remove(at: index)
+                }
 
-                // Schedule a retry
-                strongSelf.queue.asyncAfter(deadline: .now() + 15.0) { [weak strongSelf] in
-                    // Re-attempt connection using the original logic
-                    strongSelf?.connectToEndpointIfNeeded(endpointToRetry)
+                // Check retry limit
+                if strongSelf.simulatorRetryCount < strongSelf.maxSimulatorRetries {
+                    strongSelf.simulatorRetryCount += 1
+                    let currentRetry = strongSelf.simulatorRetryCount
+                    let maxRetries = strongSelf.maxSimulatorRetries
+                    print("Could not found Proxyman app on your Mac.")
+                    print("🔄 Attempting re-connect (\(currentRetry)/\(maxRetries)) to Proxyman app in 15 seconds... Make sure Proxyman app is running on your Mac.")
+
+                    // Schedule a retry
+                    strongSelf.queue.asyncAfter(deadline: .now() + 15.0) { [weak self] in
+                        guard let strongSelf = self else { return }
+                        // Re-attempt connection using the original logic
+                        let endpoint = strongSelf.getEndpointForLocalhost()
+                        let newConnection = NWConnection(to: endpoint, using: .tcp)
+                        print("[Atlantis][Simulator] Retry #\(currentRetry): Creating new connection to \(endpoint.debugDescription)")
+                        strongSelf.setupAndStartConnection(newConnection) // Start the *new* connection attempt
+                    }
+                } else {
+                    print("❌ [Atlantis][Simulator] Maximum retry limit (\(strongSelf.maxSimulatorRetries)) reached. Stopping connection attempts.")
                 }
                 #else
                 print("[\(endpointDesc)] ⚠️ Connection waiting: \(error).")
@@ -436,6 +457,7 @@ extension NetServiceTransport {
         connections.forEach { $0.cancel() }
         connections.removeAll()
         pendingPackages.removeAll()
+        simulatorRetryCount = 0 // Reset retry count on stop
         print("[Atlantis] Transport stopped and connections cleared.") // Added log for clarity
     }
 }
@@ -456,6 +478,13 @@ extension NetServiceTransport {
             print("[Atlantis] Received memory warning. Clearing pending packages.")
             self?.pendingPackages.removeAll()
         }
+    }
+
+    private func getEndpointForLocalhost() -> NWEndpoint {
+        let port = Constants.directConnectionPort
+        let host = NWEndpoint.Host("localhost") // Simulators connect to localhost
+        let endpoint = NWEndpoint.hostPort(host: host, port: port)
+        return endpoint
     }
 }
 
