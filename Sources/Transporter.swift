@@ -58,7 +58,7 @@ final class NetServiceTransport: NSObject {
     private var connections: [NWConnection] = []
 
     // The maximum number of pending item to prevent Atlantis consumes too much RAM
-    private let maxPendingItem = 30
+    private let maxPendingItem = 50
 
     // MARK: - Init
 
@@ -155,11 +155,9 @@ extension NetServiceTransport: Transporter {
     private func appendToPendingList(_ package: Serializable) {
         // Remove oldest items if limit exceeded (FIFO approach)
         while pendingPackages.count >= maxPendingItem {
-            print("[Atlantis] Pending list full. Removing oldest item.")
             pendingPackages.removeFirst()
         }
         pendingPackages.append(package)
-        print("[Atlantis] Connection not ready. Added package to pending list (count: \(pendingPackages.count))")
     }
 
     private func flushAllPendingPackagesIfNeed() {
