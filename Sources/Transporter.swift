@@ -89,20 +89,17 @@ extension NetServiceTransport: Transporter {
 
             #if targetEnvironment(simulator)
             // iOS Simulator: Direct TCP connection
-            guard let port = NWEndpoint.Port(rawValue: Constants.directConnectionPort.rawValue) else {
-                 print("[Atlantis][Simulator] ❌ Error: Invalid port for direct connection.")
-                 return
-            }
-
+            let port = Constants.directConnectionPort
             let host = NWEndpoint.Host("localhost") // Simulators connect to localhost
             let endpoint = NWEndpoint.hostPort(host: host, port: port)
-            print("[Atlantis][Simulator] Attempting direct connection to \(endpoint.debugDescription)...")
+
+            print("⚡️[Atlantis][Simulator] Attempting direct connection to Proxyman app on your Mac... without using Bonjour service (due to macOS 15.4+ issue)")
             let connection = NWConnection(to: endpoint, using: .tcp)
             strongSelf.setupAndStartConnection(connection)
 
             #else
             // iOS Real Device: Use Bonjour Browsing
-            print("[Atlantis] Looking for Proxyman app using Bonjour (\(Constants.netServiceType))...")
+            print("⚡️[Atlantis] Looking for Proxyman app using Bonjour on the local network (\(Constants.netServiceType))...")
             strongSelf.startBrowsing()
             #endif
         }
