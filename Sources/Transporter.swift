@@ -92,14 +92,18 @@ extension NetServiceTransport: Transporter {
             let port = Constants.directConnectionPort
             let host = NWEndpoint.Host("localhost") // Simulators connect to localhost
             let endpoint = NWEndpoint.hostPort(host: host, port: port)
-
+            
             print("⚡️[Atlantis][Simulator] Attempting direct connection to Proxyman app on your Mac... without using Bonjour service (due to macOS 15.4+ issue)")
             let connection = NWConnection(to: endpoint, using: .tcp)
             strongSelf.setupAndStartConnection(connection)
 
             #else
             // iOS Real Device: Use Bonjour Browsing
-            print("⚡️[Atlantis] Looking for Proxyman app using Bonjour on the local network (\(Constants.netServiceType))...")
+            if let hostName = config.hostName {
+                print("⚡️[Atlantis] Looking for Proxyman app with name \"\(hostName)\" by using Bonjour service on the local network...")
+            } else {
+                print("⚡️[Atlantis] Looking for Proxyman app using Bonjour service on the local network...")
+            }
             strongSelf.startBrowsing()
             #endif
         }
@@ -184,7 +188,6 @@ extension NetServiceTransport: Transporter {
         for package in packagesToFlush {
             streamToAllReadyConnections(package: package) // Stream copies
         }
-        print("[Atlantis] Finished flushing pending items.")
     }
 }
 
@@ -199,7 +202,6 @@ extension NetServiceTransport {
 
         browser.stateUpdateHandler = {[weak self] newState in
             guard let strongSelf = self else { return }
-            print("[Atlantis] Browser state updated: \(newState)")
             switch newState {
             case .failed(let error):
                 print("[Atlantis][Error] Bonjour Browser failed: \(error). Ensure network permissions and Bonjour service are correct.")
@@ -315,22 +317,42 @@ extension NetServiceTransport {
 
             switch newState {
             case .setup:
-                print("[\(endpointDesc)] Connection state: Setup")
+                break
             case .preparing:
-                print("[\(endpointDesc)] Connection state: Preparing")
+                break
             case .ready:
                 print("[\(endpointDesc)] ✅ Connection established.")
                 // Send initial connection info and flush pending
                 strongSelf.sendConnectionPackage(connection: connection)
                 strongSelf.flushAllPendingPackagesIfNeed()
             case .waiting(let error):
+                #if targetEnvironment(simulator)
+                let endpointToRetry = connection.endpoint
+                
+                // For simulator, attempt to retry the connection after a delay
+                // instead of just printing the waiting state.
+                print("Could not found Proxyman app on your Mac.")
+                print("🔄 Attempting re-connect to Proxyman app in 15 second... Make sure Proxyman app is running on your Mac.")
+
+                // Cancel the current connection attempt
+                connection.cancel()
+
+                // Remove the connection immediately to allow retry
+                strongSelf.connections.removeAll { $0 === connection }
+
+                // Schedule a retry
+                strongSelf.queue.asyncAfter(deadline: .now() + 15.0) { [weak strongSelf] in
+                    // Re-attempt connection using the original logic
+                    strongSelf?.connectToEndpointIfNeeded(endpointToRetry)
+                }
+                #else
                 print("[\(endpointDesc)] ⚠️ Connection waiting: \(error).")
+                #endif
             case .failed(let error):
                 print("[\(endpointDesc)] ❌ Connection failed: \(error).")
                 // Remove the failed connection
                 strongSelf.connections.removeAll { $0 === connection }
             case .cancelled:
-                print("[\(endpointDesc)] 🛑 Connection cancelled.")
                 // Remove the cancelled connection
                 strongSelf.connections.removeAll { $0 === connection }
             @unknown default:
@@ -352,7 +374,6 @@ extension NetServiceTransport {
             print("[\(connection.endpoint.debugDescription)][Error] Could not create connection package data.")
             return
         }
-        print("[\(connection.endpoint.debugDescription)] Sending connection package...")
         send(connection: connection, data: data)
     }
 
