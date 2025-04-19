@@ -41,6 +41,7 @@ final class NetServiceTransport: NSObject {
     struct Constants {
         static let netServiceType = "_Proxyman._tcp"
         static let netServiceDomain = ""
+        static let directConnectionPort: NWEndpoint.Port = 10909 // Port for direct simulator connection
     }
 
     // MARK: - Variables
@@ -80,19 +81,37 @@ extension NetServiceTransport: Transporter {
     func start(_ config: Configuration) {
         self.config = config
 
-        queue.async {
-            // Reset all current connections and browser if needed
-            self.stopInternal()
+        queue.async {[weak self] in
+            guard let strongSelf = self else { return }
 
-            // Always use NWBrowser for discovery now
+            // Reset all current connections and browser if needed
+            strongSelf.stopInternal()
+
+            #if targetEnvironment(simulator)
+            // iOS Simulator: Direct TCP connection
+            guard let port = NWEndpoint.Port(rawValue: Constants.directConnectionPort.rawValue) else {
+                 print("[Atlantis][Simulator] ❌ Error: Invalid port for direct connection.")
+                 return
+            }
+
+            let host = NWEndpoint.Host("localhost") // Simulators connect to localhost
+            let endpoint = NWEndpoint.hostPort(host: host, port: port)
+            print("[Atlantis][Simulator] Attempting direct connection to \(endpoint.debugDescription)...")
+            let connection = NWConnection(to: endpoint, using: .tcp)
+            strongSelf.setupAndStartConnection(connection)
+
+            #else
+            // iOS Real Device: Use Bonjour Browsing
             print("[Atlantis] Looking for Proxyman app using Bonjour (\(Constants.netServiceType))...")
-            self.startBrowsing()
+            strongSelf.startBrowsing()
+            #endif
         }
     }
 
     func stop() {
-        queue.async {
-            self.stopInternal()
+        queue.async {[weak self] in
+            guard let strongSelf = self else { return }
+            strongSelf.stopInternal()
         }
     }
 
@@ -395,8 +414,11 @@ extension NetServiceTransport {
     private func stopInternal() {
         browser?.cancel()
         browser = nil
+        // Cancel all active connections before removing them
+        connections.forEach { $0.cancel() }
         connections.removeAll()
         pendingPackages.removeAll()
+        print("[Atlantis] Transport stopped and connections cleared.") // Added log for clarity
     }
 }
 
