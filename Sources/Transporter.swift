@@ -268,13 +268,9 @@ extension NetServiceTransport {
             return
         }
 
-        // If a specific hostname is configured, only connect to that host
-        if let requiredHost = config?.hostName,
-           let endpointHost = NetServiceTransport.hostname(from: endpoint) {
-            if requiredHost.lowercased() != endpointHost.lowercased() {
-                print("[Atlantis] ⏭️ Skipping connection to \(endpointHost) (Required: \(requiredHost))")
-                return
-            }
+        // Check if we should connect based on hostname configuration
+        guard shouldConnectToEndpoint(endpoint) else {
+            return // Log message is printed inside shouldConnectToEndpoint
         }
 
         print("[Atlantis] ✅ Attempting to connect to \(endpoint.debugDescription)")
@@ -346,12 +342,49 @@ extension NetServiceTransport {
         send(connection: connection, data: data)
     }
 
+    // MARK: - Helper Methods
+
+    // Check if connection should proceed based on configured hostname
+    private func shouldConnectToEndpoint(_ endpoint: NWEndpoint) -> Bool {
+        // If no specific hostname is configured, always allow connection
+        guard let requiredHost = config?.hostName else {
+            return true
+        }
+
+        // If a hostname is configured, only connect if it matches or contains the required host
+        guard let endpointHost = NetServiceTransport.hostname(from: endpoint) else {
+            print("[Atlantis] ⚠️ Could not determine hostname for endpoint \(endpoint.debugDescription). Allowing connection attempt.")
+            return true // Allow connection if hostname cannot be determined
+        }
+
+        // compare
+        var lowercasedRequiredHost = requiredHost.lowercased()
+        let lowercasedEndpointHost = endpointHost.lowercased()
+
+        // Remove trailing dot from required host if present
+        if lowercasedRequiredHost.hasSuffix(".") {
+            lowercasedRequiredHost = String(lowercasedRequiredHost.dropLast())
+        }
+
+        // Allow connection if the endpoint host *contains* the required host (case-insensitive)
+        // This handles cases like required="mac-mini.local" and endpoint="Proxyman-mac-mini.local"
+        // or "Proxyman-mac-mini.local" and "mac-mini.local"
+        // This is useful for local network discovery where the hostname might vary slightly because Proxyman macOS is stil using old-fashioned BonjourService class.
+        // Meanwhile, Atlantis now uses NWBrowser for discovery
+        if !lowercasedEndpointHost.contains(lowercasedRequiredHost) {
+            print("[Atlantis] ⏭️ Skipping connection to \(endpointHost) (Required host \(requiredHost) not found within endpoint host)")
+            return false
+        }
+
+        return true
+    }
+
     // Helper to extract hostname string from NWEndpoint
     private class func hostname(from endpoint: NWEndpoint) -> String? {
         switch endpoint {
         case .hostPort(let host, _):
             return "\(host)"
-        case .service(let name, _, _, _):
+        case .service(let name, let type, let domain, _):
             // Extract hostname from service name (e.g., "MyMac._Proxyman._tcp.local.")
             // This might need refinement based on actual service name formats
             return name
