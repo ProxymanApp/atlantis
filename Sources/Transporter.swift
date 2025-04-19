@@ -201,7 +201,38 @@ extension NetServiceTransport {
                 if strongSelf.browser === browser { // Ensure we are cancelling the current browser
                     strongSelf.browser = nil
                 }
-            default:
+            case .waiting(let error):
+
+                switch error {
+                case .dns(let code):
+                    switch Int(code) {
+                    case kDNSServiceErr_PolicyDenied:
+                        #if targetEnvironment(simulator)
+                        print("--------------------------------")
+                        print("❌[Atlantis][Error] Bonjour service failed with PolicyDenied (kDNSServiceErr_PolicyDenied). This might be related to a known issue on macOS 15.4+ with iOS Simulators.")
+                        print("✅ [Atlantis] Suggested Solutions:")
+                        print("[Atlantis] 1. Use Atlantis on a real iOS device.")
+                        print("[Atlantis] OR")
+                        print("[Atlantis] 2. Don't use Atlantis on iOS Simulator, and use normal Proxy instead. Open Proxyman on macOS -> Certificate menu -> Install certificate on iOS -> Simulators -> Follow guide to set up your iOS Simulator.")
+                        print("--------------------------------")
+                        print("[Atlantis] Github Issue: https://github.com/ProxymanApp/Proxyman/issues/2294")
+                        print("--------------------------------")
+                        #else
+                        print("--------------------------------")
+                        print("[Atlantis][Error] Bonjour service failed with PolicyDenied (kDNSServiceErr_PolicyDenied). This could be due to missing Local Network permission for your app.")
+                        print("✅ [Atlantis] Suggested Solutions:")
+                        print("[Atlantis] 1. Go to iOS Settings -> Privacy & Security -> Local Network -> Find your app -> Turn ON.")
+                        print("[Atlantis] OR")
+                        print("[Atlantis] 2. Alternatively, try deleting the app from your device and running it again. Click 'Allow' when system asks for Local Network permission.")
+                        print("-------------------------------- ")
+                        #endif
+                    default:
+                        print(code)
+                    }
+                @unknown default:
+                    fatalError()
+                }
+            @unknown default:
                 break
             }
         }
