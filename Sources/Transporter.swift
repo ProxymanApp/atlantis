@@ -249,9 +249,15 @@ extension NetServiceTransport {
                     default:
                         print(code)
                     }
+                case .posix:
+                    break
+                case .tls:
+                    break
                 @unknown default:
                     fatalError()
                 }
+            case .setup:
+                break
             @unknown default:
                 break
             }
@@ -440,7 +446,7 @@ extension NetServiceTransport {
         switch endpoint {
         case .hostPort(let host, _):
             return "\(host)"
-        case .service(let name, let type, let domain, _):
+        case .service(let name, _, _, _):
             // Extract hostname from service name (e.g., "MyMac._Proxyman._tcp.local.")
             // This might need refinement based on actual service name formats
             return name
@@ -501,6 +507,8 @@ extension NWEndpoint {
             return "unix:\(path)"
         case .url(let url):
             return url.absoluteString
+        case .opaque:
+            return "opaque"
         @unknown default:
             return "UnknownEndpoint"
         }
