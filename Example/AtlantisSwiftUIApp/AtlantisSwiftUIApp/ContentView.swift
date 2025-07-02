@@ -49,6 +49,11 @@ struct ContentView: View {
                         makeDELETERequest()
                     }
                     .buttonStyle(.borderedProminent)
+                    
+                    Button("Upload Request with Data") {
+                        makeUploadRequest()
+                    }
+                    .buttonStyle(.borderedProminent)
                 }
                 .padding()
                 
@@ -143,6 +148,49 @@ struct ContentView: View {
         request.httpMethod = "DELETE"
         
         performRequest(request, title: "DELETE Request")
+    }
+    
+    func makeUploadRequest() {
+        guard let url = URL(string: "https://httpbin.org/post") else { return }
+        
+        // Create sample data to upload
+        let uploadData = """
+        {
+            "message": "This is uploaded data",
+            "timestamp": "\(Date().timeIntervalSince1970)",
+            "method": "upload"
+        }
+        """.data(using: .utf8)!
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        responseText = "Uploading..."
+        
+        URLSession.shared.uploadTask(with: request, from: uploadData) { data, response, error in
+            DispatchQueue.main.async {
+                if let error = error {
+                    self.responseText = "Upload Error: \(error.localizedDescription)"
+                    return
+                }
+                
+                guard let data = data else {
+                    self.responseText = "No data received from upload"
+                    return
+                }
+                
+                if let jsonObject = try? JSONSerialization.jsonObject(with: data),
+                   let prettyData = try? JSONSerialization.data(withJSONObject: jsonObject, options: .prettyPrinted),
+                   let prettyString = String(data: prettyData, encoding: .utf8) {
+                    self.responseText = "Upload Request Response:\n\(prettyString)"
+                } else if let stringData = String(data: data, encoding: .utf8) {
+                    self.responseText = "Upload Request Response:\n\(stringData)"
+                } else {
+                    self.responseText = "Upload Request Response: Unable to decode response"
+                }
+            }
+        }.resume()
     }
     
     private func performRequest(_ request: URLRequest, title: String) {
