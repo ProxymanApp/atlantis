@@ -147,10 +147,17 @@ extension NetworkInjector {
             let original: NewClosureType = unsafeBitCast(originalImp, to: NewClosureType.self)
             original(me, selector, data)
 
-            // Safe-check
-            if let task = me.value(forKey: "task") as? URLSessionTask,
-               let data = data as? Data {
-                self?.delegate?.injectorSessionDidReceiveData(dataTask: task, data: data)
+            // Safe-check with additional nil protection to prevent crashes with NewRelic + airplane mode
+            if let task = me.value(forKey: "task") as? URLSessionTask {
+                // Additional safety check for data parameter to prevent EXC_BAD_ACCESS
+                // when NewRelic interferes with method swizzling in airplane mode
+                let safeData: Data? = {
+                    guard data != nil else { return nil }
+                    return data as? Data
+                }()
+                if let safeData = safeData {
+                    self?.delegate?.injectorSessionDidReceiveData(dataTask: task, data: safeData)
+                }
             } else {
                 assertionFailure("Could not get data from _swizzleURLSessionDataTaskDidReceiveData. It might causes due to the latest iOS changes. Please contact the author!")
             }
@@ -282,9 +289,9 @@ extension NetworkInjector {
 
         // For safety, we should cast to AnyObject
         // To prevent app crashes in the future if the object type is changed
-        typealias NewClosureType =  @convention(c) (AnyObject, Selector, AnyObject, AnyObject) -> AnyObject
+        typealias NewClosureType =  @convention(c) (AnyObject, Selector, AnyObject, AnyObject?) -> AnyObject
         let originalImp: IMP = method_getImplementation(method)
-        let block: @convention(block) (AnyObject, AnyObject, AnyObject) -> AnyObject = {[weak self](me, request, data) in
+        let block: @convention(block) (AnyObject, AnyObject, AnyObject?) -> AnyObject = {[weak self](me, request, data) in
 
             // call the original
             let original: NewClosureType = unsafeBitCast(originalImp, to: NewClosureType.self)
@@ -292,8 +299,8 @@ extension NetworkInjector {
 
             // Safe-check
             if let task = task as? URLSessionTask,
-               let request = request as? NSURLRequest,
-               let data = data as? Data {
+               let request = request as? NSURLRequest {
+                let data = data as? Data
                 self?.delegate?.injectorSessionDidUpload(task: task, request: request, data: data)
             } else {
                 assertionFailure("Could not get data from _swizzleURLSessionUploadSelector. It might causes due to the latest iOS changes. Please contact the author!")
