@@ -253,7 +253,7 @@ extension Atlantis {
         // If not found, just generate and cache
         switch taskOrConnection {
         case let task as URLSessionTask:
-            guard let request = task.currentRequest,
+            guard let request = task.currentRequestSafe,
                   let package = TrafficPackage.buildRequest(sessionTask: task, id: id) else {
                 print("[Atlantis] ❌ Error: Should build package from URLSessionTask")
                 return nil
