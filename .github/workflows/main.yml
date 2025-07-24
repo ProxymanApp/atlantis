@@ -26,7 +26,7 @@ jobs:
     
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v3
       
     - name: Select Xcode version
       run: sudo xcode-select -s /Applications/Xcode_15.2.app/Contents/Developer
@@ -52,7 +52,7 @@ jobs:
     
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v3
       
     - name: Select Xcode version
       run: sudo xcode-select -s /Applications/Xcode_15.2.app/Contents/Developer
@@ -94,7 +94,7 @@ jobs:
         fi
       
     - name: Upload test results XML (${{ matrix.name }})
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v3
       if: always() && hashFiles('test-results-${{ matrix.name }}.xml') != ''
       with:
         name: test-results-xml-${{ matrix.name }}
@@ -102,7 +102,7 @@ jobs:
         retention-days: 30
       
     - name: Upload Xcode result bundle (${{ matrix.name }})
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v3
       if: always()
       with:
         name: xcode-test-results-${{ matrix.name }}
