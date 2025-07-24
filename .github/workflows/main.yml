@@ -1,20 +1,130 @@
-name: main
+name: CI Tests
 
 on:
   push:
     branches:
       - main
   pull_request:
-    branches:
-      - main
+    # Remove branch restriction to allow PRs targeting any branch
+    # This ensures tests run for feature branch PRs too
+    types: [opened, synchronize, reopened]
+    # If you want to restrict to specific target branches, uncomment below:
+    # branches:
+    #   - main
+    #   - develop
+
+# Cancel in-progress runs for the same workflow on the same ref
+# This ensures only the latest commit in a PR runs tests
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build:
+    name: Quick Build Check
     runs-on: macos-latest
-
+    
     steps:
-    - name: Checkout
-      uses: actions/checkout@v2
+    - name: Checkout code
+      uses: actions/checkout@v3
+      
+    - name: Select Xcode version
+      run: sudo xcode-select -s /Applications/Xcode_16.2.app/Contents/Developer
+      
+    - name: Build project
+      run: |
+        xcodebuild build \
+          -project Atlantis.xcodeproj \
+          -scheme AtlantisTests \
+          -destination 'platform=macOS' \
+          CODE_SIGN_IDENTITY="" \
+          CODE_SIGNING_REQUIRED=NO
 
-    - name: Build
-      run: swift build
+  test:
+    name: Run Unit Tests
+    runs-on: macos-latest
+    needs: build
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+      
+    - name: Select Xcode version
+      run: sudo xcode-select -s /Applications/Xcode_16.2.app/Contents/Developer
+      
+    - name: Show Xcode version
+      run: xcodebuild -version
+      
+    - name: Show available schemes
+      run: xcodebuild -list -project Atlantis.xcodeproj
+      
+    - name: Install xcpretty
+      run: gem install xcpretty
+      
+    - name: Clean build folder
+      run: xcodebuild clean -project Atlantis.xcodeproj -scheme AtlantisTests
+      
+    - name: Build and run unit tests (macOS)
+      run: |
+        set -o pipefail
+        # Try with xcpretty first
+        if ! xcodebuild test \
+          -project Atlantis.xcodeproj \
+          -scheme AtlantisTests \
+          -destination 'platform=macOS' \
+          -derivedDataPath DerivedData \
+          -enableCodeCoverage YES \
+          -resultBundlePath TestResults-macOS.xcresult \
+          CODE_SIGN_IDENTITY="" \
+          CODE_SIGNING_REQUIRED=NO \
+          | xcpretty --report junit --output test-results-macOS.xml; then
+          
+          echo "xcpretty failed, running tests without it..."
+          # Fallback: run tests without xcpretty
+          xcodebuild test \
+            -project Atlantis.xcodeproj \
+            -scheme AtlantisTests \
+            -destination 'platform=macOS' \
+            -derivedDataPath DerivedData \
+            -enableCodeCoverage YES \
+            -resultBundlePath TestResults-macOS.xcresult \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO
+        fi
+      
+    - name: Upload test results XML (macOS)
+      uses: actions/upload-artifact@v4
+      if: always() && hashFiles('test-results-macOS.xml') != ''
+      with:
+        name: test-results-xml-macOS
+        path: test-results-macOS.xml
+        retention-days: 30
+      
+    - name: Upload Xcode result bundle (macOS)
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: xcode-test-results-macOS
+        path: TestResults-macOS.xcresult
+        retention-days: 30
+      
+    - name: Publish test results (macOS)
+      uses: dorny/test-reporter@v1
+      if: always() && hashFiles('test-results-macOS.xml') != ''
+      with:
+        name: Unit Test Results (macOS)
+        path: test-results-macOS.xml
+        reporter: java-junit
+        fail-on-error: true
+      
+    - name: Test Summary (macOS)
+      if: always()
+      run: |
+        echo "## Test Results Summary for macOS 📊" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        if [ -f "test-results-macOS.xml" ]; then
+          echo "✅ JUnit XML report generated successfully" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "⚠️ JUnit XML report not available (tests ran without xcpretty)" >> $GITHUB_STEP_SUMMARY
+        fi
+        echo "📦 Xcode result bundle uploaded as artifact" >> $GITHUB_STEP_SUMMARY
