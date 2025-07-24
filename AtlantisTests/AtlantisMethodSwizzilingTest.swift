@@ -280,7 +280,7 @@ final class AtlantisMethodSwizzilingTest: XCTestCase {
         }
         
         // Verify Atlantis is enabled
-        XCTAssertTrue(testDelegate != nil, "Test delegate should be set")
+        XCTAssertTrue(testDelegate != nil, "Test delegate should be set!")
     }
 }
 
