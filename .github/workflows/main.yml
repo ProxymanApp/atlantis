@@ -1,4 +1,4 @@
-name: main
+name: CI Tests
 
 on:
   push:
@@ -8,13 +8,119 @@ on:
     branches:
       - main
 
+# Cancel in-progress runs for the same workflow on the same ref
+# This ensures only the latest commit in a PR runs tests
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
+    name: Quick Build Check
     runs-on: macos-latest
-
+    
     steps:
-    - name: Checkout
-      uses: actions/checkout@v2
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Select Xcode version
+      run: sudo xcode-select -s /Applications/Xcode_15.2.app/Contents/Developer
+      
+    - name: Build project
+      run: |
+        xcodebuild build \
+          -project Atlantis.xcodeproj \
+          -scheme AtlantisTests \
+          -destination 'platform=iOS Simulator,name=iPhone 15,OS=17.2'
 
-    - name: Build
-      run: swift build
+  test:
+    name: Run Unit Tests
+    runs-on: macos-latest
+    needs: build
+    strategy:
+      matrix:
+        include:
+          - destination: 'platform=iOS Simulator,name=iPhone 15,OS=17.2'
+            name: iOS
+          - destination: 'platform=macOS'
+            name: macOS
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Select Xcode version
+      run: sudo xcode-select -s /Applications/Xcode_15.2.app/Contents/Developer
+      
+    - name: Show Xcode version
+      run: xcodebuild -version
+      
+    - name: Show available schemes
+      run: xcodebuild -list -project Atlantis.xcodeproj
+      
+    - name: Install xcpretty
+      run: gem install xcpretty
+      
+    - name: Clean build folder
+      run: xcodebuild clean -project Atlantis.xcodeproj -scheme AtlantisTests
+      
+    - name: Build and run unit tests (${{ matrix.name }})
+      run: |
+        set -o pipefail
+        # Try with xcpretty first
+        if ! xcodebuild test \
+          -project Atlantis.xcodeproj \
+          -scheme AtlantisTests \
+          -destination '${{ matrix.destination }}' \
+          -derivedDataPath DerivedData \
+          -enableCodeCoverage YES \
+          -resultBundlePath TestResults-${{ matrix.name }}.xcresult \
+          | xcpretty --report junit --output test-results-${{ matrix.name }}.xml; then
+          
+          echo "xcpretty failed, running tests without it..."
+          # Fallback: run tests without xcpretty
+          xcodebuild test \
+            -project Atlantis.xcodeproj \
+            -scheme AtlantisTests \
+            -destination '${{ matrix.destination }}' \
+            -derivedDataPath DerivedData \
+            -enableCodeCoverage YES \
+            -resultBundlePath TestResults-${{ matrix.name }}.xcresult
+        fi
+      
+    - name: Upload test results XML (${{ matrix.name }})
+      uses: actions/upload-artifact@v4
+      if: always() && hashFiles('test-results-${{ matrix.name }}.xml') != ''
+      with:
+        name: test-results-xml-${{ matrix.name }}
+        path: test-results-${{ matrix.name }}.xml
+        retention-days: 30
+      
+    - name: Upload Xcode result bundle (${{ matrix.name }})
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: xcode-test-results-${{ matrix.name }}
+        path: TestResults-${{ matrix.name }}.xcresult
+        retention-days: 30
+      
+    - name: Publish test results (${{ matrix.name }})
+      uses: dorny/test-reporter@v1
+      if: always() && hashFiles('test-results-${{ matrix.name }}.xml') != ''
+      with:
+        name: Unit Test Results (${{ matrix.name }})
+        path: test-results-${{ matrix.name }}.xml
+        reporter: java-junit
+        fail-on-error: true
+      
+    - name: Test Summary (${{ matrix.name }})
+      if: always()
+      run: |
+        echo "## Test Results Summary for ${{ matrix.name }} 📊" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        if [ -f "test-results-${{ matrix.name }}.xml" ]; then
+          echo "✅ JUnit XML report generated successfully" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "⚠️ JUnit XML report not available (tests ran without xcpretty)" >> $GITHUB_STEP_SUMMARY
+        fi
+        echo "📦 Xcode result bundle uploaded as artifact" >> $GITHUB_STEP_SUMMARY
