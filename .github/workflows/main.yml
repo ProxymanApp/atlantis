@@ -93,7 +93,7 @@ jobs:
         fi
       
     - name: Upload test results XML (macOS)
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       if: always() && hashFiles('test-results-macOS.xml') != ''
       with:
         name: test-results-xml-macOS
@@ -101,7 +101,7 @@ jobs:
         retention-days: 30
       
     - name: Upload Xcode result bundle (macOS)
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       if: always()
       with:
         name: xcode-test-results-macOS
