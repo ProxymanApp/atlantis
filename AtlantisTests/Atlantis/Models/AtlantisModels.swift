@@ -7,7 +7,11 @@
 //
 
 import Foundation
+#if os(macOS)
 import AppKit.NSImage
+#elseif os(iOS)
+import UIKit.UIImage
+#endif
 
 extension KeyedDecodingContainer {
     func decodeWrapper<T>(_ type: T.Type, forKey: K, defaultValue: T) throws -> T
@@ -104,7 +108,11 @@ public struct AtlantisModels {
 
         public let device: Device
         public let project: Project
+        #if os(macOS)
         public let icon: NSImage?
+        #elseif os(iOS)
+        public let icon: UIImage?
+        #endif
 
         public init(from decoder: Decoder) throws {
             let container = try decoder.container(keyedBy: CodingKeys.self)
@@ -112,7 +120,11 @@ public struct AtlantisModels {
             project = try container.decodeWrapper(Project.self, forKey: .project, defaultValue: Project(name: "Unknown", bundleIdentifier: "-"))
             if let imageString = try? container.decodeIfPresent(String.self, forKey: .icon),
                 let data = Data(base64Encoded: imageString) {
+                #if os(macOS)
                 icon = NSImage(data: data)
+                #elseif os(iOS)
+                icon = UIImage(data: data)
+                #endif
             } else {
                 icon = nil
             }
