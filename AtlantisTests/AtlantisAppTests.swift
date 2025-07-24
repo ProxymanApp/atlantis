@@ -28,7 +28,7 @@ final class AtlantisAppTests: XCTestCase {
     }
 
     override func setUpWithError() throws {
-        print("🚀 [Setup] Setting up test environment...")
+        print("🚀 [Setup] Setting up test environment")
         
         // Reset any previous Atlantis state
         Atlantis.stop()
