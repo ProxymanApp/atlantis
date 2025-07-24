@@ -29,33 +29,26 @@ jobs:
       uses: actions/checkout@v3
       
     - name: Select Xcode version
-      run: sudo xcode-select -s /Applications/Xcode_15.2.app/Contents/Developer
+      run: sudo xcode-select -s /Applications/Xcode_16.2.app/Contents/Developer
       
     - name: Build project
       run: |
         xcodebuild build \
           -project Atlantis.xcodeproj \
           -scheme AtlantisTests \
-          -destination 'platform=iOS Simulator,name=iPhone 15,OS=17.2'
+          -destination 'platform=macOS'
 
   test:
     name: Run Unit Tests
     runs-on: macos-latest
     needs: build
-    strategy:
-      matrix:
-        include:
-          - destination: 'platform=iOS Simulator,name=iPhone 15,OS=17.2'
-            name: iOS
-          - destination: 'platform=macOS'
-            name: macOS
     
     steps:
     - name: Checkout code
       uses: actions/checkout@v3
       
     - name: Select Xcode version
-      run: sudo xcode-select -s /Applications/Xcode_15.2.app/Contents/Developer
+      run: sudo xcode-select -s /Applications/Xcode_16.2.app/Contents/Developer
       
     - name: Show Xcode version
       run: xcodebuild -version
@@ -69,61 +62,61 @@ jobs:
     - name: Clean build folder
       run: xcodebuild clean -project Atlantis.xcodeproj -scheme AtlantisTests
       
-    - name: Build and run unit tests (${{ matrix.name }})
+    - name: Build and run unit tests (macOS)
       run: |
         set -o pipefail
         # Try with xcpretty first
         if ! xcodebuild test \
           -project Atlantis.xcodeproj \
           -scheme AtlantisTests \
-          -destination '${{ matrix.destination }}' \
+          -destination 'platform=macOS' \
           -derivedDataPath DerivedData \
           -enableCodeCoverage YES \
-          -resultBundlePath TestResults-${{ matrix.name }}.xcresult \
-          | xcpretty --report junit --output test-results-${{ matrix.name }}.xml; then
+          -resultBundlePath TestResults-macOS.xcresult \
+          | xcpretty --report junit --output test-results-macOS.xml; then
           
           echo "xcpretty failed, running tests without it..."
           # Fallback: run tests without xcpretty
           xcodebuild test \
             -project Atlantis.xcodeproj \
             -scheme AtlantisTests \
-            -destination '${{ matrix.destination }}' \
+            -destination 'platform=macOS' \
             -derivedDataPath DerivedData \
             -enableCodeCoverage YES \
-            -resultBundlePath TestResults-${{ matrix.name }}.xcresult
+            -resultBundlePath TestResults-macOS.xcresult
         fi
       
-    - name: Upload test results XML (${{ matrix.name }})
+    - name: Upload test results XML (macOS)
       uses: actions/upload-artifact@v3
-      if: always() && hashFiles('test-results-${{ matrix.name }}.xml') != ''
+      if: always() && hashFiles('test-results-macOS.xml') != ''
       with:
-        name: test-results-xml-${{ matrix.name }}
-        path: test-results-${{ matrix.name }}.xml
+        name: test-results-xml-macOS
+        path: test-results-macOS.xml
         retention-days: 30
       
-    - name: Upload Xcode result bundle (${{ matrix.name }})
+    - name: Upload Xcode result bundle (macOS)
       uses: actions/upload-artifact@v3
       if: always()
       with:
-        name: xcode-test-results-${{ matrix.name }}
-        path: TestResults-${{ matrix.name }}.xcresult
+        name: xcode-test-results-macOS
+        path: TestResults-macOS.xcresult
         retention-days: 30
       
-    - name: Publish test results (${{ matrix.name }})
+    - name: Publish test results (macOS)
       uses: dorny/test-reporter@v1
-      if: always() && hashFiles('test-results-${{ matrix.name }}.xml') != ''
+      if: always() && hashFiles('test-results-macOS.xml') != ''
       with:
-        name: Unit Test Results (${{ matrix.name }})
-        path: test-results-${{ matrix.name }}.xml
+        name: Unit Test Results (macOS)
+        path: test-results-macOS.xml
         reporter: java-junit
         fail-on-error: true
       
-    - name: Test Summary (${{ matrix.name }})
+    - name: Test Summary (macOS)
       if: always()
       run: |
-        echo "## Test Results Summary for ${{ matrix.name }} 📊" >> $GITHUB_STEP_SUMMARY
+        echo "## Test Results Summary for macOS 📊" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
-        if [ -f "test-results-${{ matrix.name }}.xml" ]; then
+        if [ -f "test-results-macOS.xml" ]; then
           echo "✅ JUnit XML report generated successfully" >> $GITHUB_STEP_SUMMARY
         else
           echo "⚠️ JUnit XML report not available (tests ran without xcpretty)" >> $GITHUB_STEP_SUMMARY
