@@ -36,7 +36,9 @@ jobs:
         xcodebuild build \
           -project Atlantis.xcodeproj \
           -scheme AtlantisTests \
-          -destination 'platform=macOS'
+          -destination 'platform=macOS' \
+          CODE_SIGN_IDENTITY="" \
+          CODE_SIGNING_REQUIRED=NO
 
   test:
     name: Run Unit Tests
@@ -73,6 +75,8 @@ jobs:
           -derivedDataPath DerivedData \
           -enableCodeCoverage YES \
           -resultBundlePath TestResults-macOS.xcresult \
+          CODE_SIGN_IDENTITY="" \
+          CODE_SIGNING_REQUIRED=NO \
           | xcpretty --report junit --output test-results-macOS.xml; then
           
           echo "xcpretty failed, running tests without it..."
@@ -83,7 +87,9 @@ jobs:
             -destination 'platform=macOS' \
             -derivedDataPath DerivedData \
             -enableCodeCoverage YES \
-            -resultBundlePath TestResults-macOS.xcresult
+            -resultBundlePath TestResults-macOS.xcresult \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO
         fi
       
     - name: Upload test results XML (macOS)
