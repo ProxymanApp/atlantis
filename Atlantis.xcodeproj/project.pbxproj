@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		BA1EE6D52E32148000F6C4EE /* URLSessionTask+CurrentRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA1EE6D42E32148000F6C4EE /* URLSessionTask+CurrentRequest.swift */; };
 		OBJ_35 /* Atlantis+Manual.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_8 /* Atlantis+Manual.swift */; };
 		OBJ_36 /* Atlantis.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_9 /* Atlantis.swift */; };
 		OBJ_37 /* AtlantisHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_10 /* AtlantisHelper.swift */; };
@@ -24,6 +25,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		BA1EE6D42E32148000F6C4EE /* URLSessionTask+CurrentRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "URLSessionTask+CurrentRequest.swift"; sourceTree = "<group>"; };
 		OBJ_10 /* AtlantisHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AtlantisHelper.swift; sourceTree = "<group>"; };
 		OBJ_11 /* Configuration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Configuration.swift; sourceTree = "<group>"; };
 		OBJ_12 /* DataCompression.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataCompression.swift; sourceTree = "<group>"; };
@@ -105,6 +107,7 @@
 				OBJ_18 /* Packages.swift */,
 				OBJ_19 /* Runtime.swift */,
 				OBJ_20 /* Transporter.swift */,
+				BA1EE6D42E32148000F6C4EE /* URLSessionTask+CurrentRequest.swift */,
 			);
 			path = Sources;
 			sourceTree = SOURCE_ROOT;
@@ -185,6 +188,7 @@
 				OBJ_43 /* NetworkInjector.swift in Sources */,
 				OBJ_44 /* PackageIdentifier.swift in Sources */,
 				OBJ_45 /* Packages.swift in Sources */,
+				BA1EE6D52E32148000F6C4EE /* URLSessionTask+CurrentRequest.swift in Sources */,
 				OBJ_46 /* Runtime.swift in Sources */,
 				OBJ_47 /* Transporter.swift in Sources */,
 			);
