@@ -1,6 +1,6 @@
 Pod::Spec.new do |spec|
   spec.name         = "atlantis-proxyman"
-  spec.version      = "1.29.1"
+  spec.version      = "1.29.2"
   spec.summary      = "A iOS framework for intercepting HTTP/HTTPS Traffic without Proxy and Certificate config"
   spec.description  = <<-DESC
   ✅ A iOS framework (Developed and Maintained by Proxyman Team) for intercepting HTTP/HTTPS Traffic from your app. No more messing around with proxy, certificate config.
