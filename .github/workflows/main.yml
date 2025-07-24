@@ -5,8 +5,13 @@ on:
     branches:
       - main
   pull_request:
-    branches:
-      - main
+    # Remove branch restriction to allow PRs targeting any branch
+    # This ensures tests run for feature branch PRs too
+    types: [opened, synchronize, reopened]
+    # If you want to restrict to specific target branches, uncomment below:
+    # branches:
+    #   - main
+    #   - develop
 
 # Cancel in-progress runs for the same workflow on the same ref
 # This ensures only the latest commit in a PR runs tests
