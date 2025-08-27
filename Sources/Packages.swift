@@ -110,7 +110,7 @@ public final class TrafficPackage: Codable, CustomDebugStringConvertible, Serial
             return TrafficPackage(id: id, request: request, packageType: .websocket)
         }
 
-        // Or normal websocket
+        // Or normal request
         return TrafficPackage(id: id, request: request)
     }
 
@@ -269,7 +269,16 @@ public final class Request: Codable {
         url = urlRequest.url?.absoluteString ?? "-"
         method = urlRequest.httpMethod ?? "-"
         headers = urlRequest.allHTTPHeaderFields?.map { Header(key: $0.key, value: $0.value ) } ?? []
-        body = urlRequest.httpBody
+        
+        // Try to get body from httpBody first
+        if let httpBody = urlRequest.httpBody {
+            body = httpBody
+        } else if let httpBodyStream = urlRequest.httpBodyStream {
+            // If httpBody is nil but httpBodyStream exists, try to read from the stream
+            body = Request.readDataFromStream(httpBodyStream)
+        } else {
+            body = nil
+        }
     }
 
     func appendBody(_ data: Data) {
@@ -281,6 +290,55 @@ public final class Request: Codable {
 
     func resetBody() {
         self.body = nil
+    }
+    
+    // MARK: - Helper Methods
+    
+    /// Safely reads data from an InputStream
+    /// This method attempts to read data from the stream without affecting the original request
+    private static func readDataFromStream(_ stream: InputStream) -> Data? {
+        // Check if the stream is already open
+        let wasStreamOpen = stream.streamStatus != .notOpen
+        
+        // If the stream is not open, try to open it
+        if !wasStreamOpen {
+            stream.open()
+        }
+        
+        // Check if we can read from the stream
+        guard stream.hasBytesAvailable || stream.streamStatus == .atEnd else {
+            if !wasStreamOpen {
+                stream.close()
+            }
+            return nil
+        }
+        
+        var data = Data()
+        let bufferSize = 8192  // 8KB chunks for better performance with larger bodies
+        let buffer = UnsafeMutablePointer<UInt8>.allocate(capacity: bufferSize)
+        defer {
+            buffer.deallocate()
+            // Only close the stream if we opened it
+            if !wasStreamOpen {
+                stream.close()
+            }
+        }
+        
+        while stream.hasBytesAvailable {
+            let bytesRead = stream.read(buffer, maxLength: bufferSize)
+            if bytesRead < 0 {
+                // Error occurred
+                print("[Atlantis] Error reading from httpBodyStream: \(stream.streamError?.localizedDescription ?? "Unknown error")")
+                return nil
+            } else if bytesRead == 0 {
+                // End of stream
+                break
+            } else {
+                data.append(buffer, count: bytesRead)
+            }
+        }
+        
+        return data.isEmpty ? nil : data
     }
 }
 
