@@ -14,43 +14,6 @@ func logError(name: String) {
 
 extension NetworkInjector {
 
-    func _swizzleURLSessionResumeSelector(baseClass: AnyClass) {
-        // Prepare
-        let selector = NSSelectorFromString("resume")
-        guard let method = class_getInstanceMethod(baseClass, selector),
-            baseClass.instancesRespond(to: selector) else {
-            logError(name: "_swizzleURLSessionResumeSelector")
-            return
-        }
-
-        // 
-        typealias NewClosureType =  @convention(c) (AnyObject, Selector) -> Void
-        let originalImp: IMP = method_getImplementation(method)
-        let block: @convention(block) (AnyObject) -> Void = {[weak self](me) in
-
-            // call the original
-            let original: NewClosureType = unsafeBitCast(originalImp, to: NewClosureType.self)
-            original(me, selector)
-
-
-            // If it's from Atlantis, skip it
-            if let task = me as? URLSessionTask,
-               task.isFromAtlantisFramework() {
-                return
-            }
-
-            // Safe-check
-            if let task = me as? URLSessionTask {
-                self?.delegate?.injectorSessionDidCallResume(task: task)
-            } else {
-                assertionFailure("Could not get data from _swizzleURLSessionResumeSelector. It might causes due to the latest iOS changes. Please contact the author!")
-            }
-        }
-
-        // Start method swizzling
-        method_setImplementation(method, imp_implementationWithBlock(block))
-    }
-
     /// urlSession(_:dataTask:didReceive:completionHandler:)
     /// https://developer.apple.com/documentation/foundation/urlsessiondatadelegate/1410027-urlsession
     func _swizzleURLSessionDataTaskDidReceiveResponse(baseClass: AnyClass) {

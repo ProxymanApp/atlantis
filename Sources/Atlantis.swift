@@ -286,20 +286,6 @@ extension Atlantis {
 
 extension Atlantis: InjectorDelegate {
 
-    func injectorSessionDidCallResume(task: URLSessionTask) {
-        // Use sync to prevent task.currentRequest.httpBody is nil
-        // If we use async, sometime the httpbody is released -> Atlantis could get the Request's body
-        // It's safe to use sync here because URL has their own background queue
-        queue.sync {
-            // Since it's not possible to revert the Method Swizzling change
-            // We use isEnable instead
-            guard Atlantis.isEnabled.value else { return }
-
-            // Cache
-            _ = getPackage(task)
-        }
-    }
-
     func injectorSessionDidReceiveResponse(dataTask: URLSessionTask, response: URLResponse) {
         queue.sync {
             guard Atlantis.isEnabled.value else { return }
