@@ -77,7 +77,7 @@ struct ContentView: View {
     
     func makeGETRequest() {
         // Create a URL with query parameters
-        var components = URLComponents(string: "https://httpbin.org/get")!
+        var components = URLComponents(string: "https://httpbin.proxyman.app/get")!
         components.queryItems = [
             URLQueryItem(name: "param1", value: "value1"),
             URLQueryItem(name: "param2", value: "value2")
@@ -92,8 +92,8 @@ struct ContentView: View {
     }
     
     func makePOSTRequest() {
-        guard let url = URL(string: "https://httpbin.org/post") else { return }
-        
+        guard let url = URL(string: "https://httpbin.proxyman.app/post?id=post") else { return }
+
         // JSON Body
         let jsonBody: [String: Any] = [
             "name": "John Doe",
@@ -104,7 +104,7 @@ struct ContentView: View {
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        
+        request.setValue("x-proxyman-value", forHTTPHeaderField: "X-Proxyman-Key")
         do {
             request.httpBody = try JSONSerialization.data(withJSONObject: jsonBody)
             performRequest(request, title: "POST Request")
@@ -114,7 +114,7 @@ struct ContentView: View {
     }
     
     func makePUTRequest() {
-        guard let url = URL(string: "https://httpbin.org/put") else { return }
+        guard let url = URL(string: "https://httpbin.proxyman.app/put") else { return }
         
         // Form Body
         let formBody = "name=Jane+Doe&email=jane%40example.com&age=28"
@@ -128,7 +128,7 @@ struct ContentView: View {
     }
     
     func makePATCHRequest() {
-        guard let url = URL(string: "https://httpbin.org/patch") else { return }
+        guard let url = URL(string: "https://httpbin.proxyman.app/patch") else { return }
         
         // Binary Body (Sample text as binary)
         let binaryBody = "This is a sample binary content".data(using: .utf8)
@@ -142,7 +142,7 @@ struct ContentView: View {
     }
     
     func makeDELETERequest() {
-        guard let url = URL(string: "https://httpbin.org/delete") else { return }
+        guard let url = URL(string: "https://httpbin.proxyman.app/delete") else { return }
         
         var request = URLRequest(url: url)
         request.httpMethod = "DELETE"
@@ -151,7 +151,7 @@ struct ContentView: View {
     }
     
     func makeUploadRequest() {
-        guard let url = URL(string: "https://httpbin.org/post") else { return }
+        guard let url = URL(string: "https://httpbin.proxyman.app/post") else { return }
         
         // Create sample data to upload
         let uploadData = """
