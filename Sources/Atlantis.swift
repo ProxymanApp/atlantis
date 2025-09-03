@@ -66,6 +66,8 @@ public final class Atlantis: NSObject {
     /// If it's enabled, Atlantis will bypass some safety checks
     private var isRunningOniOSPlayground = false
 
+    private var taskStartTimes: [String: TimeInterval] = [:]
+    
     // MARK: - Init
 
     private override init() {
@@ -286,10 +288,33 @@ extension Atlantis {
 
 extension Atlantis: InjectorDelegate {
 
+    func injectorSessionDidCallResume(task: URLSessionTask) {
+        // Use sync to prevent task.currentRequest.httpBody is nil
+        // If we use async, sometime the httpbody is released -> Atlantis could get the Request's body
+        // It's safe to use sync here because URL has their own background queue
+        queue.sync {
+            // store the start time, but don't create a Request here
+            // because the request might not be available yet, or missing some data
+            // https://github.com/ProxymanApp/atlantis/issues/177
+            let id = PackageIdentifier.getID(taskOrConnection: task)
+            if taskStartTimes[id] == nil {
+                taskStartTimes[id] = Date().timeIntervalSince1970
+            }
+        }
+    }
+
     func injectorSessionDidReceiveResponse(dataTask: URLSessionTask, response: URLResponse) {
         queue.sync {
             guard Atlantis.isEnabled.value else { return }
             let package = getPackage(dataTask)
+
+            // should update the start time with the actual start time (from the resume() is called)
+            let id = PackageIdentifier.getID(taskOrConnection: dataTask)
+            if let startedAt = taskStartTimes[id] {
+                package?.updateStartTime(startedAt)
+            }
+
+            // update the response
             package?.updateResponse(response)
         }
     }
@@ -364,6 +389,8 @@ extension Atlantis {
             // Remove after the WS connection is closed
             let id = PackageIdentifier.getID(taskOrConnection: task)
             packages.removeValue(forKey: id)
+            // Clean up taskStartTimes for closed WebSocket connections
+            taskStartTimes.removeValue(forKey: id)
         }
     }
 
@@ -408,9 +435,12 @@ extension Atlantis {
             startSendingMessage(package: package)
 
             // Then remove it from our cache
+            let taskId = PackageIdentifier.getID(taskOrConnection: taskOrConnection)
             switch package.packageType {
             case .http:
                 packages.removeValue(forKey: package.id)
+                // Clean up taskStartTimes for completed HTTP requests
+                taskStartTimes.removeValue(forKey: taskId)
             case .websocket:
                 // Don't remove the WS traffic
                 // Keep it in the packages, so we can send the WS Message
@@ -418,6 +448,8 @@ extension Atlantis {
 
                 // Sending all waiting WS
                 attemptSendingAllWaitingWSPackages(id: package.id)
+                // Clean up taskStartTimes for completed WebSocket requests
+                taskStartTimes.removeValue(forKey: taskId)
                 break
             }
         }

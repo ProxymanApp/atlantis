@@ -53,7 +53,7 @@ public final class TrafficPackage: Codable, CustomDebugStringConvertible, Serial
     // since we're using Codable in the main app and Atlantis
 
     public let id: String
-    public let startAt: TimeInterval
+    public private(set) var startAt: TimeInterval
     public let request: Request
     public private(set) var response: Response?
     public private(set) var error: CustomError?
@@ -149,6 +149,10 @@ public final class TrafficPackage: Codable, CustomDebugStringConvertible, Serial
     func appendRequestData(_ data: Data) {
         // This func should be called in Upload Tasks
         request.appendBody(data)
+    }
+
+    func updateStartTime(_ startTime: TimeInterval) {
+        self.startAt = startTime
     }
 
     func appendResponseData(_ data: Data) {
