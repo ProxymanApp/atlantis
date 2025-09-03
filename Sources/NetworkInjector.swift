@@ -28,6 +28,7 @@ protocol Injector {
 protocol InjectorDelegate: AnyObject {
 
     // For URLSession
+    func injectorSessionDidCallResume(task: URLSessionTask)
     func injectorSessionDidReceiveResponse(dataTask: URLSessionTask, response: URLResponse)
     func injectorSessionDidReceiveData(dataTask: URLSessionTask, data: Data)
     func injectorSessionDidComplete(task: URLSessionTask, error: Error?)
@@ -70,12 +71,7 @@ extension NetworkInjector {
         }
 
         // Resume
-        // We don't need to swizzle resume method because when the request is resumed, the request doens't have full request headers yet
-        // Some headers are added after the request is resumed
-        // If we swizzle resume method, it will cause the request headers to be missing
-        // 
-        // Solution: Get the request headers when the Response is received
-//        injectURLSessionResume()
+        injectURLSessionResume()
 
         // Upload
         injectURLSessionUploadTasks()
@@ -91,6 +87,35 @@ extension NetworkInjector {
         _swizzleURLSessionDataTaskDidReceiveResponse(baseClass: anyClass)
         _swizzleURLSessionDataTaskDidReceiveData(baseClass: anyClass)
         _swizzleURLSessionTaskDidCompleteWithError(baseClass: anyClass)
+    }
+
+    private func injectURLSessionResume() {
+        // In iOS 7 resume lives in __NSCFLocalSessionTask
+        // In iOS 8 resume lives in NSURLSessionTask
+        // In iOS 9 resume lives in __NSCFURLSessionTask
+        // In iOS 14 resume lives in NSURLSessionTask
+        var baseResumeClass: AnyClass? = nil;
+        if !ProcessInfo.processInfo.responds(to: #selector(getter: ProcessInfo.operatingSystemVersion)) {
+            baseResumeClass = NSClassFromString("__NSCFLocalSessionTask")
+        } else {
+            #if targetEnvironment(macCatalyst) || os(macOS)
+            baseResumeClass = URLSessionTask.self
+            #else
+            let majorVersion = ProcessInfo.processInfo.operatingSystemVersion.majorVersion
+            if majorVersion < 9 || majorVersion >= 14 {
+                baseResumeClass = URLSessionTask.self
+            } else {
+                baseResumeClass = NSClassFromString("__NSCFURLSessionTask")
+            }
+            #endif
+        }
+
+        guard let resumeClass = baseResumeClass else {
+            assertionFailure("Could not find URLSessionTask. Please open support ticket at https://github.com/ProxymanApp/atlantis")
+            return
+        }
+
+        _swizzleURLSessionResumeSelector(baseClass: resumeClass)
     }
 
     private func injectURLSessionUploadTasks() {
