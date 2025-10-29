@@ -7,10 +7,37 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		BA0355D32EB24DB300DDD23C /* AtlantisWatchOSApp Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = BA0355C92EB24DB200DDD23C /* AtlantisWatchOSApp Watch App.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		BA0355DA2EB24E9900DDD23C /* Atlantis in Frameworks */ = {isa = PBXBuildFile; productRef = BA0355D92EB24E9900DDD23C /* Atlantis */; };
 		BA820CA12D90254E00D79025 /* Atlantis in Frameworks */ = {isa = PBXBuildFile; productRef = BA820CA02D90254E00D79025 /* Atlantis */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXContainerItemProxy section */
+		BA0355D12EB24DB300DDD23C /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = BA820C7D2D90252300D79025 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = BA0355C82EB24DB200DDD23C;
+			remoteInfo = "AtlantisWatchOSApp Watch App";
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		BA0355D42EB24DB300DDD23C /* Embed Watch Content */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "$(CONTENTS_FOLDER_PATH)/Watch";
+			dstSubfolderSpec = 16;
+			files = (
+				BA0355D32EB24DB300DDD23C /* AtlantisWatchOSApp Watch App.app in Embed Watch Content */,
+			);
+			name = "Embed Watch Content";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
+		BA0355C92EB24DB200DDD23C /* AtlantisWatchOSApp Watch App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "AtlantisWatchOSApp Watch App.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		BA820C852D90252300D79025 /* AtlantisSwiftUIApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = AtlantisSwiftUIApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -25,6 +52,11 @@
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
+		BA0355CA2EB24DB200DDD23C /* AtlantisWatchOSApp Watch App */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = "AtlantisWatchOSApp Watch App";
+			sourceTree = "<group>";
+		};
 		BA820C872D90252300D79025 /* AtlantisSwiftUIApp */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
@@ -36,6 +68,14 @@
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		BA0355C62EB24DB200DDD23C /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				BA0355DA2EB24E9900DDD23C /* Atlantis in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		BA820C822D90252300D79025 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -47,10 +87,19 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		BA0355D82EB24E9900DDD23C /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		BA820C7C2D90252300D79025 = {
 			isa = PBXGroup;
 			children = (
 				BA820C872D90252300D79025 /* AtlantisSwiftUIApp */,
+				BA0355CA2EB24DB200DDD23C /* AtlantisWatchOSApp Watch App */,
+				BA0355D82EB24E9900DDD23C /* Frameworks */,
 				BA820C862D90252300D79025 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -59,6 +108,7 @@
 			isa = PBXGroup;
 			children = (
 				BA820C852D90252300D79025 /* AtlantisSwiftUIApp.app */,
+				BA0355C92EB24DB200DDD23C /* AtlantisWatchOSApp Watch App.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -66,6 +116,29 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		BA0355C82EB24DB200DDD23C /* AtlantisWatchOSApp Watch App */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = BA0355D72EB24DB300DDD23C /* Build configuration list for PBXNativeTarget "AtlantisWatchOSApp Watch App" */;
+			buildPhases = (
+				BA0355C52EB24DB200DDD23C /* Sources */,
+				BA0355C62EB24DB200DDD23C /* Frameworks */,
+				BA0355C72EB24DB200DDD23C /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				BA0355CA2EB24DB200DDD23C /* AtlantisWatchOSApp Watch App */,
+			);
+			name = "AtlantisWatchOSApp Watch App";
+			packageProductDependencies = (
+				BA0355D92EB24E9900DDD23C /* Atlantis */,
+			);
+			productName = "AtlantisWatchOSApp Watch App";
+			productReference = BA0355C92EB24DB200DDD23C /* AtlantisWatchOSApp Watch App.app */;
+			productType = "com.apple.product-type.application";
+		};
 		BA820C842D90252300D79025 /* AtlantisSwiftUIApp */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = BA820C932D90252400D79025 /* Build configuration list for PBXNativeTarget "AtlantisSwiftUIApp" */;
@@ -73,10 +146,12 @@
 				BA820C812D90252300D79025 /* Sources */,
 				BA820C822D90252300D79025 /* Frameworks */,
 				BA820C832D90252300D79025 /* Resources */,
+				BA0355D42EB24DB300DDD23C /* Embed Watch Content */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				BA0355D22EB24DB300DDD23C /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				BA820C872D90252300D79025 /* AtlantisSwiftUIApp */,
@@ -96,9 +171,12 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
-				LastSwiftUpdateCheck = 1620;
+				LastSwiftUpdateCheck = 2600;
 				LastUpgradeCheck = 1620;
 				TargetAttributes = {
+					BA0355C82EB24DB200DDD23C = {
+						CreatedOnToolsVersion = 26.0.1;
+					};
 					BA820C842D90252300D79025 = {
 						CreatedOnToolsVersion = 16.2;
 					};
@@ -122,11 +200,19 @@
 			projectRoot = "";
 			targets = (
 				BA820C842D90252300D79025 /* AtlantisSwiftUIApp */,
+				BA0355C82EB24DB200DDD23C /* AtlantisWatchOSApp Watch App */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		BA0355C72EB24DB200DDD23C /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		BA820C832D90252300D79025 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -137,6 +223,13 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		BA0355C52EB24DB200DDD23C /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		BA820C812D90252300D79025 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -146,7 +239,81 @@
 		};
 /* End PBXSourcesBuildPhase section */
 
+/* Begin PBXTargetDependency section */
+		BA0355D22EB24DB300DDD23C /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = BA0355C82EB24DB200DDD23C /* AtlantisWatchOSApp Watch App */;
+			targetProxy = BA0355D12EB24DB300DDD23C /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
 /* Begin XCBuildConfiguration section */
+		BA0355D52EB24DB300DDD23C /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 57SKMSUCY8;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = AtlantisWatchOSApp;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.proxyman.AtlantisSwiftUIApp;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.proxyman.AtlantisSwiftUIApp.watchkitapp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 26.0;
+			};
+			name = Debug;
+		};
+		BA0355D62EB24DB300DDD23C /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 57SKMSUCY8;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = AtlantisWatchOSApp;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.proxyman.AtlantisSwiftUIApp;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.proxyman.AtlantisSwiftUIApp.watchkitapp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 26.0;
+			};
+			name = Release;
+		};
 		BA820C912D90252400D79025 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -331,6 +498,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		BA0355D72EB24DB300DDD23C /* Build configuration list for PBXNativeTarget "AtlantisWatchOSApp Watch App" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				BA0355D52EB24DB300DDD23C /* Debug */,
+				BA0355D62EB24DB300DDD23C /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		BA820C802D90252300D79025 /* Build configuration list for PBXProject "AtlantisSwiftUIApp" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
@@ -359,6 +535,11 @@
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		BA0355D92EB24E9900DDD23C /* Atlantis */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = BA820C9F2D90254E00D79025 /* XCLocalSwiftPackageReference "../../../atlantis" */;
+			productName = Atlantis;
+		};
 		BA820CA02D90254E00D79025 /* Atlantis */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = Atlantis;
