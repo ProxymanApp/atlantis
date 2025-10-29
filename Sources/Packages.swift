@@ -14,6 +14,10 @@ typealias Image = NSImage
 #elseif os(iOS) || targetEnvironment(macCatalyst)  || os(tvOS) || os(visionOS)
 import UIKit
 typealias Image = UIImage
+#elseif os(watchOS)
+import UIKit
+import WatchKit
+typealias Image = UIImage
 #endif
 
 struct ConnectionPackage: Codable, Serializable {
@@ -222,6 +226,12 @@ struct Device: Codable {
         let device = UIDevice.current
         name = device.name
         model = "\(device.name) (\(device.systemName) \(device.systemVersion))"
+        #elseif os(watchOS)
+        let device = WKInterfaceDevice.current()
+        name = device.name
+        let systemVersion = ProcessInfo.processInfo.operatingSystemVersion
+        let versionString = "\(systemVersion.majorVersion).\(systemVersion.minorVersion).\(systemVersion.patchVersion)"
+        model = "\(device.name) (watchOS \(versionString))"
         #endif
     }
 }
@@ -478,6 +488,12 @@ extension Image {
               let iconFiles = primaryIconsDictionary["CFBundleIconFiles"] as? [String],
               let lastIcon = iconFiles.last else { return nil }
         return Image(named: lastIcon)
+        #elseif os(watchOS)
+        guard let iconsDictionary = Bundle.main.infoDictionary?["CFBundleIcons"] as? [String: Any],
+              let primaryIconsDictionary = iconsDictionary["CFBundlePrimaryIcon"] as? [String: Any],
+              let iconFiles = primaryIconsDictionary["CFBundleIconFiles"] as? [String],
+              let lastIcon = iconFiles.last else { return nil }
+        return Image(named: lastIcon)
         #endif
     }
 
@@ -488,7 +504,7 @@ extension Image {
         // Resize, we don't need 1024px size
         newRep.size = CGSize(width: 64, height: 64)
         return newRep.representation(using: .png, properties: [:])
-        #elseif os(iOS) || targetEnvironment(macCatalyst) || os(tvOS) || os(visionOS)
+        #elseif os(iOS) || targetEnvironment(macCatalyst) || os(tvOS) || os(visionOS) || os(watchOS)
         // It's already by 64px
         return self.pngData()
         #endif
