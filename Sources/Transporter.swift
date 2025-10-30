@@ -253,10 +253,8 @@ extension NetServiceTransport {
                     break
                 case .tls:
                     break
-                case .wifiAware(_):
-                    break
                 @unknown default:
-                    fatalError()
+                    break
                 }
             case .setup:
                 break

@@ -17,7 +17,7 @@
 - [x] ✅ **No Proxy or trust any Certificates**
 - [x] ✅ Capture WS/WSS Traffic from URLSessionWebSocketTask
 - [x] Capture gRPC traffic (Advanced)
-- [x] Support iOS Physical Devices and Simulators
+- [x] Support iOS Physical Devices and Simulators, including iPhone, iPad, Apple Watch, Apple TV
 - [x] Review traffic log from macOS [Proxyman](https://proxyman.com) app ([Github](https://github.com/ProxymanApp/Proxyman))
 - [x] Categorize the log by project and devices.
 - [x] Ready for Production
@@ -30,7 +30,7 @@
 
 ## Requirement
 - macOS Proxyman app
-- iOS 16.0+ / macOS 11+ / Mac Catalyst 13.0+
+- iOS 16.0+ / macOS 11+ / Mac Catalyst 13.0+ / tvOS 13.0+ / watchOS 10.0+
 - Xcode 14+
 - Swift 5.0+
 
