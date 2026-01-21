@@ -244,7 +244,11 @@ struct Project: Codable {
     let bundleIdentifier: String
 
     init() {
-        name = Bundle.main.infoDictionary?[kCFBundleNameKey as String] as? String ?? "Untitled"
+        name = (Bundle.main.localizedInfoDictionary?["CFBundleDisplayName"] as? String)
+            ?? (Bundle.main.infoDictionary?["CFBundleDisplayName"] as? String)
+            ?? (Bundle.main.localizedInfoDictionary?[kCFBundleNameKey as String] as? String)
+            ?? (Bundle.main.infoDictionary?[kCFBundleNameKey as String] as? String)
+            ?? "Untitled"
         bundleIdentifier = Bundle.main.bundleIdentifier ?? "No bundle identifier"
     }
 }
@@ -483,11 +487,19 @@ extension Image {
         }
         return Image(named: iconName)
         #elseif os(iOS) || os(tvOS) || os(visionOS)
-        guard let iconsDictionary = Bundle.main.infoDictionary?["CFBundleIcons"] as? [String: Any],
-              let primaryIconsDictionary = iconsDictionary["CFBundlePrimaryIcon"] as? [String: Any],
-              let iconFiles = primaryIconsDictionary["CFBundleIconFiles"] as? [String],
-              let lastIcon = iconFiles.last else { return nil }
-        return Image(named: lastIcon)
+        if let iconsDictionary = Bundle.main.infoDictionary?["CFBundleIcons"] as? [String: Any],
+           let primaryIconsDictionary = iconsDictionary["CFBundlePrimaryIcon"] as? [String: Any] {
+            if let iconFiles = primaryIconsDictionary["CFBundleIconFiles"] as? [String],
+               let lastIcon = iconFiles.last,
+               let image = Image(named: lastIcon) {
+                return image
+            }
+            if let iconName = primaryIconsDictionary["CFBundleIconName"] as? String,
+               let image = Image(named: "\(iconName)60x60") {
+                return image
+            }
+        }
+        return nil
         #elseif os(watchOS)
         guard let iconsDictionary = Bundle.main.infoDictionary?["CFBundleIcons"] as? [String: Any],
               let primaryIconsDictionary = iconsDictionary["CFBundlePrimaryIcon"] as? [String: Any],
