@@ -9,7 +9,7 @@
 import Foundation
 
 func logError(name: String) {
-    print("❌ [Atlantis] Could not swizzle this func: \(name)! It looks like the latest iOS (beta) has changed, please contact support@proxyman.io")
+    print("❌ [Atlantis] Could not swizzle this func: \(name)! It looks like the latest iOS (beta) has changed, please contact support@proxyman.com")
 }
 
 extension NetworkInjector {

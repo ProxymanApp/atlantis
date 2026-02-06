@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<coverage generated="1770395419776" clover="3.2.0">
+  <project timestamp="1770395419776" name="All files">
+    <metrics statements="6" coveredstatements="6" conditionals="4" coveredconditionals="4" methods="4" coveredmethods="4" elements="14" coveredelements="14" complexity="0" loc="6" ncloc="6" packages="1" files="1" classes="1"/>
+    <file name="index.ts" path="/Users/nghiatran/Documents/work/proxyman/atlantis/atlantis-react-native/src/index.ts">
+      <metrics statements="6" coveredstatements="6" conditionals="4" coveredconditionals="4" methods="4" coveredmethods="4"/>
+      <line num="4" count="2" type="stmt"/>
+      <line num="9" count="2" type="cond" truecount="2" falsecount="0"/>
+      <line num="15" count="1" type="stmt"/>
+      <line num="32" count="5" type="cond" truecount="2" falsecount="0"/>
+      <line num="41" count="1" type="stmt"/>
+      <line num="50" count="3" type="stmt"/>
+    </file>
+  </project>
+</coverage>

@@ -210,7 +210,7 @@ extension Atlantis {
                 ---------------------------------------------------------------------------------
                 --------- ⚠️ [Atlantis] MISSING REQUIRED CONFIG from Info.plist for iOS 14+ --------
                 ---------------------------------------------------------------------------------
-                Read more at: https://docs.proxyman.io/atlantis/atlantis-for-ios
+                Read more at: https://docs.proxyman.com/atlantis/atlantis-for-ios
                 Please add the following config to your MainApp's Info.plist
 
                 \(instruction.joined(separator: "\n"))

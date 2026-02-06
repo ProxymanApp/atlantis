@@ -143,9 +143,9 @@ afterEvaluate {
                     
                     developers {
                         developer {
-                            id.set("nicksantamaria")
-                            name.set("Nghia Tran")
-                            email.set("nicksantamaria@proxyman.io")
+                            id.set("proxymanllc")
+                            name.set("Proxyman LLC")
+                            email.set("support@proxyman.com")
                         }
                     }
                     

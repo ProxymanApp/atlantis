@@ -78,3 +78,32 @@ jobs:
       with:
         name: android-test-results
         path: atlantis-android/atlantis/build/reports/tests/
+
+  react-native-test:
+    name: React Native Tests
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+
+    - name: Cache npm packages
+      uses: actions/cache@v4
+      with:
+        path: atlantis-react-native/node_modules
+        key: ${{ runner.os }}-npm-${{ hashFiles('atlantis-react-native/package-lock.json') }}
+        restore-keys: |
+          ${{ runner.os }}-npm-
+
+    - name: Install dependencies
+      working-directory: atlantis-react-native
+      run: npm install
+
+    - name: Run Tests
+      working-directory: atlantis-react-native
+      run: npx jest --ci --coverage

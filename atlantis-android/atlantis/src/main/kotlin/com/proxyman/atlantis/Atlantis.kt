@@ -43,8 +43,8 @@ import java.util.concurrent.atomic.AtomicBoolean
  * - Network Service Discovery to find Proxyman
  * - Direct connection support for emulators
  * 
- * @see <a href="https://proxyman.io">Proxyman</a>
- * @see <a href="https://github.com/nicksantamaria/atlantis">GitHub Repository</a>
+ * @see <a href="https://proxyman.com">Proxyman</a>
+ * @see <a href="https://github.com/ProxymanApp/atlantis">GitHub Repository</a>
  */
 object Atlantis {
     
@@ -421,7 +421,7 @@ object Atlantis {
     private fun printStartupMessage(hostName: String?) {
         Log.i(TAG, "---------------------------------------------------------------------------------")
         Log.i(TAG, "---------- \uD83E\uDDCA Atlantis Android is running (version $BUILD_VERSION)")
-        Log.i(TAG, "---------- GitHub: https://github.com/nicksantamaria/atlantis")
+        Log.i(TAG, "---------- GitHub: https://github.com/ProxymanApp/atlantis")
         if (hostName != null) {
             Log.i(TAG, "---------- Looking for Proxyman with hostname: $hostName")
         } else {

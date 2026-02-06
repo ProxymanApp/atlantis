@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "rootDir": "src",
+    "strict": true,
+    "target": "esnext",
+    "module": "esnext",
+    "moduleResolution": "node",
+    "jsx": "react-native",
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "declaration": true,
+    "outDir": "lib",
+    "types": ["jest", "react-native"]
+  },
+  "include": ["src"],
+  "exclude": ["node_modules", "lib", "example"]
+}
