@@ -485,6 +485,9 @@ extension Image {
         guard let iconName = Bundle.main.infoDictionary?["CFBundleIconFile"] as? String else {
             return nil
         }
+        if let _ = Bundle.main.url(forResource: iconName, withExtension: "icns") {
+            return nil
+        }
         return Image(named: iconName)
         #elseif os(iOS) || os(tvOS) || os(visionOS)
         if let iconsDictionary = Bundle.main.infoDictionary?["CFBundleIcons"] as? [String: Any],
