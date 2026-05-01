@@ -9,11 +9,31 @@ import SwiftUI
 
 struct ContentView: View {
     @State private var responseText = ""
+
+    // Server-Sent Events state
+    @State private var sseTask: URLSessionDataTask?
+    @State private var sseSession: URLSession?
+    @State private var sseDelegate: SSEStreamDelegate?
+    @State private var sseStatus = "Disconnected"
+    @State private var sseMessages: [String] = []
+    @State private var sseBuffer = ""
+    @State private var sseStreamID = UUID()
     
     // WebSocket state
     @State private var webSocketTask: URLSessionWebSocketTask?
     @State private var webSocketStatus = "Disconnected"
     @State private var webSocketMessages: [String] = []
+
+    private var sseStatusColor: Color {
+        switch sseStatus {
+        case "Connected":
+            return .green
+        case "Connecting":
+            return .orange
+        default:
+            return .red
+        }
+    }
     
     var body: some View {
         VStack {
@@ -62,6 +82,33 @@ struct ContentView: View {
                     
                     Divider()
                         .padding(.vertical, 8)
+
+                    VStack {
+                        Text("Server-Sent Events Test")
+                            .font(.headline)
+                            .padding(.bottom, 4)
+
+                        Text("Status: \(sseStatus)")
+                            .font(.caption)
+                            .foregroundColor(sseStatusColor)
+
+                        HStack {
+                            Button(sseStatus == "Disconnected" ? "Start SSE Demo" : "Restart SSE Demo") {
+                                startSSETest()
+                            }
+                            .buttonStyle(.borderedProminent)
+                            .disabled(sseStatus == "Connecting")
+
+                            Button("Stop SSE Demo") {
+                                stopSSETest()
+                            }
+                            .buttonStyle(.bordered)
+                            .disabled(sseTask == nil)
+                        }
+                    }
+
+                    Divider()
+                        .padding(.vertical, 8)
                     
                     VStack {
                         Text("WebSocket Test")
@@ -84,7 +131,7 @@ struct ContentView: View {
                 
                 Divider()
                 
-                if responseText.isEmpty && webSocketMessages.isEmpty {
+                if responseText.isEmpty && sseMessages.isEmpty && webSocketMessages.isEmpty {
                     Text("Response will appear here")
                         .foregroundColor(.gray)
                         .padding()
@@ -96,6 +143,17 @@ struct ContentView: View {
                             Text(responseText)
                                 .font(.system(.body, design: .monospaced))
                                 .frame(maxWidth: .infinity, alignment: .leading)
+                        }
+
+                        if !sseMessages.isEmpty {
+                            Text("SSE Events:")
+                                .font(.headline)
+                            ForEach(Array(sseMessages.enumerated()), id: \.offset) { index, message in
+                                Text(message)
+                                    .font(.system(.caption, design: .monospaced))
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .padding(.vertical, 2)
+                            }
                         }
                         
                         if !webSocketMessages.isEmpty {
@@ -112,6 +170,9 @@ struct ContentView: View {
                     .padding()
                 }
             }
+        }
+        .onDisappear {
+            stopSSETest(shouldAddMessage: false)
         }
     }
     
@@ -234,6 +295,208 @@ struct ContentView: View {
             }
         }.resume()
     }
+
+    // MARK: - Server-Sent Events Methods
+
+    func startSSETest() {
+        stopSSETest(shouldAddMessage: false)
+
+        sseMessages.removeAll()
+        sseBuffer = ""
+        responseText = ""
+
+        guard let url = URL(string: "https://stream.wikimedia.org/v2/stream/recentchange") else {
+            addSSEMessage("Invalid SSE URL")
+            return
+        }
+
+        let streamID = UUID()
+        sseStreamID = streamID
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.setValue("text/event-stream", forHTTPHeaderField: "Accept")
+        request.setValue("AtlantisSwiftUIApp/1.0 (https://github.com/ProxymanApp/atlantis)", forHTTPHeaderField: "User-Agent")
+
+        let delegate = SSEStreamDelegate()
+        delegate.onResponse = { response in
+            DispatchQueue.main.async {
+                guard self.sseStreamID == streamID else { return }
+                self.sseStatus = "Connected"
+                self.addSSEMessage("Connected (HTTP \(response.statusCode))")
+            }
+        }
+        delegate.onData = { data in
+            DispatchQueue.main.async {
+                guard self.sseStreamID == streamID else { return }
+                self.handleSSEData(data)
+            }
+        }
+        delegate.onComplete = { error in
+            DispatchQueue.main.async {
+                guard self.sseStreamID == streamID else { return }
+                self.handleSSECompletion(error)
+            }
+        }
+
+        let configuration = URLSessionConfiguration.default
+        configuration.timeoutIntervalForRequest = 60
+        configuration.timeoutIntervalForResource = 15 * 60
+
+        let session = URLSession(configuration: configuration, delegate: delegate, delegateQueue: nil)
+        let task = session.dataTask(with: request)
+
+        sseDelegate = delegate
+        sseSession = session
+        sseTask = task
+        sseStatus = "Connecting"
+        addSSEMessage("Connecting to Wikimedia EventStreams...")
+
+        task.resume()
+    }
+
+    private func stopSSETest(shouldAddMessage: Bool = true) {
+        guard sseTask != nil || sseSession != nil else { return }
+
+        if shouldAddMessage {
+            addSSEMessage("Stopping SSE stream...")
+        }
+
+        sseTask?.cancel()
+        sseSession?.invalidateAndCancel()
+        sseTask = nil
+        sseSession = nil
+        sseDelegate = nil
+        sseStreamID = UUID()
+        sseStatus = "Disconnected"
+    }
+
+    private func handleSSEData(_ data: Data) {
+        guard let chunk = String(data: data, encoding: .utf8) else {
+            addSSEMessage("Received \(data.count) SSE bytes")
+            return
+        }
+
+        // SSE events are separated by a blank line, but chunks can split an event anywhere.
+        sseBuffer += chunk
+        sseBuffer = sseBuffer.replacingOccurrences(of: "\r\n", with: "\n")
+
+        let parts = sseBuffer.components(separatedBy: "\n\n")
+        guard parts.count > 1 else { return }
+
+        sseBuffer = parts.last ?? ""
+        for event in parts.dropLast() {
+            let trimmedEvent = event.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !trimmedEvent.isEmpty else { continue }
+            addSSEMessage(summarizeSSEEvent(trimmedEvent))
+        }
+    }
+
+    private func handleSSECompletion(_ error: Error?) {
+        let nsError = error as NSError?
+        if nsError?.domain == NSURLErrorDomain && nsError?.code == NSURLErrorCancelled {
+            sseStatus = "Disconnected"
+            return
+        }
+
+        if let error = error {
+            addSSEMessage("SSE error: \(error.localizedDescription)")
+        } else {
+            addSSEMessage("SSE stream completed")
+        }
+
+        sseTask = nil
+        sseSession = nil
+        sseDelegate = nil
+        sseStatus = "Disconnected"
+    }
+
+    private func summarizeSSEEvent(_ eventText: String) -> String {
+        var eventName: String?
+        var eventID: String?
+        var dataLines: [String] = []
+        var comment: String?
+        var retry: String?
+
+        for rawLine in eventText.split(separator: "\n", omittingEmptySubsequences: false) {
+            let line = String(rawLine)
+            if line.hasPrefix(":") {
+                comment = String(line.dropFirst()).trimmingCharacters(in: .whitespaces)
+                continue
+            }
+
+            let parts = line.split(separator: ":", maxSplits: 1, omittingEmptySubsequences: false)
+            let field = parts.first.map(String.init) ?? ""
+            var value = parts.count > 1 ? String(parts[1]) : ""
+            if value.hasPrefix(" ") {
+                value.removeFirst()
+            }
+
+            switch field {
+            case "event":
+                eventName = value
+            case "id":
+                eventID = value
+            case "data":
+                dataLines.append(value)
+            case "retry":
+                retry = value
+            default:
+                break
+            }
+        }
+
+        if !dataLines.isEmpty {
+            return summarizeSSEData(dataLines.joined(separator: "\n"), eventName: eventName, eventID: eventID)
+        }
+
+        if let comment = comment, !comment.isEmpty {
+            return "comment: \(truncate(comment, maxLength: 180))"
+        }
+
+        if let retry = retry, !retry.isEmpty {
+            return "retry: \(retry) ms"
+        }
+
+        return truncate(eventText, maxLength: 180)
+    }
+
+    private func summarizeSSEData(_ dataText: String, eventName: String?, eventID: String?) -> String {
+        let label = eventName ?? "message"
+        var details = truncate(dataText, maxLength: 180)
+
+        if let data = dataText.data(using: .utf8),
+           let object = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any] {
+            let wiki = object["wiki"] as? String ?? object["server_name"] as? String
+            let title = object["title"] as? String
+            let user = object["user"] as? String
+            let readableFields = [wiki, title, user].compactMap { $0 }.filter { !$0.isEmpty }
+            if !readableFields.isEmpty {
+                details = readableFields.joined(separator: " | ")
+            }
+        }
+
+        if let eventID = eventID, !eventID.isEmpty {
+            return "event: \(label)\nid: \(truncate(eventID, maxLength: 80))\n\(details)"
+        }
+
+        return "event: \(label)\n\(details)"
+    }
+
+    private func addSSEMessage(_ message: String) {
+        let timestamp = DateFormatter.timeFormatter.string(from: Date())
+        sseMessages.append("[\(timestamp)] \(message)")
+
+        // Keep the demo lightweight while the stream stays open.
+        if sseMessages.count > 20 {
+            sseMessages.removeFirst()
+        }
+    }
+
+    private func truncate(_ text: String, maxLength: Int) -> String {
+        guard text.count > maxLength else { return text }
+        return String(text.prefix(maxLength)) + "..."
+    }
     
     // MARK: - WebSocket Methods
     
@@ -272,7 +535,7 @@ struct ContentView: View {
     }
     
     private func checkConnectionAndStartDemo() {
-        guard let task = webSocketTask else { return }
+        guard webSocketTask != nil else { return }
         
         self.webSocketStatus = "Connected"
         self.addWebSocketMessage("✅ WebSocket connected successfully!")
@@ -476,6 +739,36 @@ struct ContentView: View {
 
 #Preview {
     ContentView()
+}
+
+// MARK: - SSE URLSession Delegate
+
+private final class SSEStreamDelegate: NSObject, URLSessionDataDelegate {
+    var onResponse: ((HTTPURLResponse) -> Void)?
+    var onData: ((Data) -> Void)?
+    var onComplete: ((Error?) -> Void)?
+
+    func urlSession(_ session: URLSession,
+                    dataTask: URLSessionDataTask,
+                    didReceive response: URLResponse,
+                    completionHandler: @escaping (URLSession.ResponseDisposition) -> Void) {
+        if let response = response as? HTTPURLResponse {
+            onResponse?(response)
+        }
+        completionHandler(.allow)
+    }
+
+    func urlSession(_ session: URLSession,
+                    dataTask: URLSessionDataTask,
+                    didReceive data: Data) {
+        onData?(data)
+    }
+
+    func urlSession(_ session: URLSession,
+                    task: URLSessionTask,
+                    didCompleteWithError error: Error?) {
+        onComplete?(error)
+    }
 }
 
 // MARK: - Extensions

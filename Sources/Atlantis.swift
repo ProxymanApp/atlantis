@@ -337,6 +337,9 @@ extension Atlantis: InjectorDelegate {
             guard Atlantis.isEnabled.value else { return }
             let package = getPackage(dataTask)
             package?.appendResponseData(data)
+            if let package = package, package.isServerSentEventStream {
+                startSendingMessage(package: package)
+            }
         }
     }
 

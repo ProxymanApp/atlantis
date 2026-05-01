@@ -44,6 +44,124 @@ private final class TestTransporter: Transporter {
     }
 }
 
+private enum LocalSSEServerError: Error, CustomStringConvertible {
+    case missingResource
+    case invalidPort(String)
+    case timedOut(String, String)
+
+    var description: String {
+        switch self {
+        case .missingResource:
+            return "Could not find sse-server.js test resource"
+        case .invalidPort(let output):
+            return "Could not parse SSE server port from stdout: \(output)"
+        case .timedOut(let stdout, let stderr):
+            return "Timed out waiting for SSE server. stdout: \(stdout), stderr: \(stderr)"
+        }
+    }
+}
+
+private final class LocalSSEServer {
+    private let process: Process
+    private let stdout: Pipe
+    private let stderr: Pipe
+    private let port: Int
+
+    private init(process: Process, stdout: Pipe, stderr: Pipe, port: Int) {
+        self.process = process
+        self.stdout = stdout
+        self.stderr = stderr
+        self.port = port
+    }
+
+    static func start() throws -> LocalSSEServer {
+        guard let scriptURL = Bundle.module.url(forResource: "sse-server", withExtension: "js") else {
+            throw LocalSSEServerError.missingResource
+        }
+
+        let process = Process()
+        let stdout = Pipe()
+        let stderr = Pipe()
+        let outputQueue = DispatchQueue(label: "com.proxyman.atlantis.tests.sse-server-output")
+        let ready = DispatchSemaphore(value: 0)
+        var stdoutText = ""
+        var stderrText = ""
+        var parsedPort: Int?
+
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
+        process.arguments = ["node", scriptURL.path]
+        process.standardOutput = stdout
+        process.standardError = stderr
+
+        stdout.fileHandleForReading.readabilityHandler = { handle in
+            let data = handle.availableData
+            guard !data.isEmpty, let text = String(data: data, encoding: .utf8) else { return }
+            outputQueue.sync {
+                stdoutText += text
+                if parsedPort == nil, let port = parsePort(from: stdoutText) {
+                    parsedPort = port
+                    ready.signal()
+                }
+            }
+        }
+
+        stderr.fileHandleForReading.readabilityHandler = { handle in
+            let data = handle.availableData
+            guard !data.isEmpty, let text = String(data: data, encoding: .utf8) else { return }
+            outputQueue.sync {
+                stderrText += text
+            }
+        }
+
+        try process.run()
+
+        guard ready.wait(timeout: .now() + 5) == .success else {
+            let output = outputQueue.sync { (stdoutText, stderrText) }
+            stdout.fileHandleForReading.readabilityHandler = nil
+            stderr.fileHandleForReading.readabilityHandler = nil
+            if process.isRunning {
+                process.terminate()
+            }
+            throw LocalSSEServerError.timedOut(output.0, output.1)
+        }
+
+        guard let port = outputQueue.sync(execute: { parsedPort }) else {
+            stdout.fileHandleForReading.readabilityHandler = nil
+            stderr.fileHandleForReading.readabilityHandler = nil
+            if process.isRunning {
+                process.terminate()
+            }
+            throw LocalSSEServerError.invalidPort(outputQueue.sync { stdoutText })
+        }
+
+        return LocalSSEServer(process: process, stdout: stdout, stderr: stderr, port: port)
+    }
+
+    func url(path: String) -> URL {
+        URL(string: "http://127.0.0.1:\(port)\(path)")!
+    }
+
+    func stop() {
+        stdout.fileHandleForReading.readabilityHandler = nil
+        stderr.fileHandleForReading.readabilityHandler = nil
+        if process.isRunning {
+            process.terminate()
+            process.waitUntilExit()
+        }
+    }
+
+    deinit {
+        stop()
+    }
+}
+
+private func parsePort(from text: String) -> Int? {
+    text.split(whereSeparator: \.isNewline).compactMap { line -> Int? in
+        guard line.hasPrefix("PORT ") else { return nil }
+        return Int(line.dropFirst("PORT ".count))
+    }.first
+}
+
 final class URLSessionSwizzleTests: XCTestCase {
     private let baseURL = URL(string: "https://httpbin.proxyman.app")!
     private var transporter: TestTransporter!
@@ -240,11 +358,143 @@ final class URLSessionSwizzleTests: XCTestCase {
         XCTAssertEqual(package.request.body, body)
     }
 
+    func testServerSentEventsBasicStreamCapturedBeforeCompletion() throws {
+        let server = try LocalSSEServer.start()
+        defer { server.stop() }
+
+        var session: URLSession?
+        var task: URLSessionDataTask?
+        defer {
+            task?.cancel()
+            session?.invalidateAndCancel()
+        }
+
+        let package = waitForTrafficPackageIfAvailable(matching: { package in
+            self.isPackageForPath(package, "/basic") &&
+            package.endAt == nil &&
+            self.responseBodyString(package).contains("data: goodbye-atlantis")
+        }, timeout: 10) {
+            session = makeSession()
+            var request = URLRequest(url: server.url(path: "/basic"))
+            request.setValue("text/event-stream", forHTTPHeaderField: "Accept")
+            task = session?.dataTask(with: request)
+            task?.resume()
+        }
+
+        guard let package else {
+            XCTFail("Atlantis did not emit an SSE package before the stream completed")
+            return
+        }
+
+        assertServerSentEventPackage(package)
+        let body = responseBodyString(package)
+        XCTAssertTrue(body.contains("event: greeting"))
+        XCTAssertTrue(body.contains("id: basic-1"))
+        XCTAssertTrue(body.contains("data: hello-atlantis"))
+        XCTAssertTrue(body.contains("id: basic-2"))
+        XCTAssertTrue(body.contains("data: goodbye-atlantis"))
+    }
+
+    func testServerSentEventsMultilineEventCapturedBeforeCompletion() throws {
+        let server = try LocalSSEServer.start()
+        defer { server.stop() }
+
+        var session: URLSession?
+        var task: URLSessionDataTask?
+        defer {
+            task?.cancel()
+            session?.invalidateAndCancel()
+        }
+
+        let package = waitForTrafficPackageIfAvailable(matching: { package in
+            self.isPackageForPath(package, "/multiline") &&
+            package.endAt == nil &&
+            self.responseBodyString(package).contains("data: second line")
+        }, timeout: 10) {
+            session = makeSession()
+            var request = URLRequest(url: server.url(path: "/multiline"))
+            request.setValue("text/event-stream", forHTTPHeaderField: "Accept")
+            task = session?.dataTask(with: request)
+            task?.resume()
+        }
+
+        guard let package else {
+            XCTFail("Atlantis did not emit a multiline SSE package before the stream completed")
+            return
+        }
+
+        assertServerSentEventPackage(package)
+        let body = responseBodyString(package)
+        XCTAssertTrue(body.contains("event: note"))
+        XCTAssertTrue(body.contains("id: multiline-1"))
+        XCTAssertTrue(body.contains("data: first line"))
+        XCTAssertTrue(body.contains("data: second line"))
+    }
+
+    func testServerSentEventsCommentAndRetryCapturedBeforeCompletion() throws {
+        let server = try LocalSSEServer.start()
+        defer { server.stop() }
+
+        var session: URLSession?
+        var task: URLSessionDataTask?
+        defer {
+            task?.cancel()
+            session?.invalidateAndCancel()
+        }
+
+        let package = waitForTrafficPackageIfAvailable(matching: { package in
+            self.isPackageForPath(package, "/comment-retry") &&
+            package.endAt == nil &&
+            self.responseBodyString(package).contains("data: after-comment")
+        }, timeout: 10) {
+            session = makeSession()
+            var request = URLRequest(url: server.url(path: "/comment-retry"))
+            request.setValue("text/event-stream", forHTTPHeaderField: "Accept")
+            task = session?.dataTask(with: request)
+            task?.resume()
+        }
+
+        guard let package else {
+            XCTFail("Atlantis did not emit a comment/retry SSE package before the stream completed")
+            return
+        }
+
+        assertServerSentEventPackage(package)
+        let body = responseBodyString(package)
+        XCTAssertTrue(body.contains(": keep-alive"))
+        XCTAssertTrue(body.contains("retry: 1500"))
+        XCTAssertTrue(body.contains("event: update"))
+        XCTAssertTrue(body.contains("data: after-comment"))
+    }
+
     private func makeSession() -> URLSession {
         let config = URLSessionConfiguration.ephemeral
         config.timeoutIntervalForRequest = 15
         config.timeoutIntervalForResource = 30
         return URLSession(configuration: config)
+    }
+
+    private func waitForTrafficPackageIfAvailable(matching predicate: @escaping (TrafficPackage) -> Bool,
+                                                  timeout: TimeInterval,
+                                                  action: () -> Void) -> TrafficPackage? {
+        let expectation = expectation(description: "Wait for traffic package")
+        let lock = NSLock()
+        var capturedPackage: TrafficPackage?
+        var didFulfill = false
+
+        transporter.onTrafficPackage = { package in
+            guard predicate(package) else { return }
+            lock.lock()
+            defer { lock.unlock() }
+            guard !didFulfill else { return }
+            didFulfill = true
+            capturedPackage = package
+            expectation.fulfill()
+        }
+
+        action()
+        wait(for: [expectation], timeout: timeout)
+        return capturedPackage
     }
 
     private func waitForTrafficPackage(matching predicate: @escaping (TrafficPackage) -> Bool,
@@ -265,6 +515,25 @@ final class URLSessionSwizzleTests: XCTestCase {
                                                  file: StaticString = #filePath,
                                                  line: UInt = #line) {
         XCTAssertEqual(package.response?.statusCode, 200, file: file, line: line)
+    }
+
+    private func assertServerSentEventPackage(_ package: TrafficPackage,
+                                              file: StaticString = #filePath,
+                                              line: UInt = #line) {
+        XCTAssertEqual(package.response?.statusCode, 200, file: file, line: line)
+        XCTAssertNil(package.endAt, "SSE package should be emitted while the stream is still open", file: file, line: line)
+        XCTAssertTrue(package.response?.headers.contains { header in
+            header.key.caseInsensitiveCompare("Content-Type") == .orderedSame &&
+            header.value.range(of: "text/event-stream", options: .caseInsensitive) != nil
+        } == true, "Expected text/event-stream response", file: file, line: line)
+    }
+
+    private func responseBodyString(_ package: TrafficPackage) -> String {
+        String(data: package.responseBodyData, encoding: .utf8) ?? ""
+    }
+
+    private func isPackageForPath(_ package: TrafficPackage, _ path: String) -> Bool {
+        package.request.method == "GET" && package.request.url.contains(path)
     }
 
     private func assertSelectorExists(baseClass: AnyClass,

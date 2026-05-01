@@ -28,7 +28,8 @@ let package = Package(
         .testTarget(
             name: "AtlantisTests",
             dependencies: ["Atlantis"],
-            path: "Tests/atlantisTests")
+            path: "Tests/atlantisTests",
+            resources: [.copy("Resources")])
     ],
     swiftLanguageVersions: [.v5]
 )

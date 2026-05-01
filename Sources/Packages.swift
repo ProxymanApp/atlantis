@@ -83,6 +83,11 @@ public final class TrafficPackage: Codable, CustomDebugStringConvertible, Serial
         return false
     }
 
+    var isServerSentEventStream: Bool {
+        guard packageType == .http else { return false }
+        return response?.isServerSentEventStream == true
+    }
+
     // MARK: - Init
 
     init(id: String,
@@ -177,24 +182,36 @@ public final class TrafficPackage: Codable, CustomDebugStringConvertible, Serial
     }
 
     func toData() -> Data? {
-        // Set nil to prevent being encode to JSON
-        // It might increase the size of the message
-        lastData = nil
+        let request: Request
+        if isLargeRequestBody {
+            request = Request(url: self.request.url, method: self.request.method, headers: self.request.headers, body: nil)
+        } else {
+            request = self.request
+        }
 
         // For some reason, JSONEncoder could not allocate enough RAM to encode a large body
         // It crashes the app if the body might be > 100Mb
-        // We decice to skip the body, but send the request/response
+        // We decide to skip the body, but send the request/response
         // https://github.com/ProxymanApp/atlantis/issues/57
+        let responseBodyData: Data
         if isLargeReponseBody {
-            self.responseBodyData = "<Skip Large Body>".data(using: String.Encoding.utf8)!
-        }
-        if isLargeRequestBody {
-            self.request.resetBody()
+            responseBodyData = "<Skip Large Body>".data(using: String.Encoding.utf8)!
+        } else {
+            responseBodyData = self.responseBodyData
         }
 
         // Encode to JSON
         do {
-            return try JSONEncoder().encode(self)
+            let snapshot = TrafficPackageSnapshot(id: id,
+                                                  startAt: startAt,
+                                                  request: request,
+                                                  response: response,
+                                                  error: error,
+                                                  responseBodyData: responseBodyData,
+                                                  endAt: endAt,
+                                                  packageType: packageType,
+                                                  websocketMessagePackage: websocketMessagePackage)
+            return try JSONEncoder().encode(snapshot)
         } catch let error {
             print(error)
         }
@@ -208,6 +225,18 @@ public final class TrafficPackage: Codable, CustomDebugStringConvertible, Serial
     func setWebsocketMessagePackage(package: WebsocketMessagePackage) {
         self.websocketMessagePackage = package
     }
+}
+
+private struct TrafficPackageSnapshot: Encodable {
+    let id: String
+    let startAt: TimeInterval
+    let request: Request
+    let response: Response?
+    let error: CustomError?
+    let responseBodyData: Data
+    let endAt: TimeInterval?
+    let packageType: TrafficPackage.PackageType
+    let websocketMessagePackage: WebsocketMessagePackage?
 }
 
 struct Device: Codable {
@@ -372,6 +401,13 @@ public struct Response: Codable {
     public init(statusCode: Int, headers: [Header]) {
         self.statusCode = statusCode
         self.headers = headers
+    }
+
+    var isServerSentEventStream: Bool {
+        headers.contains { header in
+            header.key.caseInsensitiveCompare("Content-Type") == .orderedSame &&
+            header.value.range(of: "text/event-stream", options: .caseInsensitive) != nil
+        }
     }
 
     init?(_ response: URLResponse) {
