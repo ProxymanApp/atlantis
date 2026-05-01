@@ -64,7 +64,7 @@ public final class TrafficPackage: Codable, CustomDebugStringConvertible, Serial
     public private(set) var responseBodyData: Data
     public private(set) var endAt: TimeInterval?
     public private(set) var lastData: Data?
-    public let packageType: PackageType
+    public private(set) var packageType: PackageType
     private(set) var websocketMessagePackage: WebsocketMessagePackage?
 
     // MARK: - Variables
@@ -84,7 +84,6 @@ public final class TrafficPackage: Codable, CustomDebugStringConvertible, Serial
     }
 
     var isServerSentEventStream: Bool {
-        guard packageType == .http else { return false }
         return response?.isServerSentEventStream == true
     }
 
@@ -224,6 +223,10 @@ public final class TrafficPackage: Codable, CustomDebugStringConvertible, Serial
 
     func setWebsocketMessagePackage(package: WebsocketMessagePackage) {
         self.websocketMessagePackage = package
+    }
+
+    func markAsWebsocketPackage() {
+        self.packageType = .websocket
     }
 }
 

@@ -29,7 +29,7 @@ let package = Package(
             name: "AtlantisTests",
             dependencies: ["Atlantis"],
             path: "Tests/atlantisTests",
-            resources: [.copy("Resources")])
+            resources: [.process("Resources/sse-server.js")])
     ],
     swiftLanguageVersions: [.v5]
 )

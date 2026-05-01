@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import Network
 
 struct ContentView: View {
     @State private var responseText = ""
@@ -17,7 +18,11 @@ struct ContentView: View {
     @State private var sseStatus = "Disconnected"
     @State private var sseMessages: [String] = []
     @State private var sseBuffer = ""
+    @State private var sseEventCount = 0
+    @State private var sseDemoServer: LocalSSEDemoServer?
     @State private var sseStreamID = UUID()
+    private let sseDemoMaxEvents = 10
+    private let sseDemoEventInterval: TimeInterval = 0.5
     
     // WebSocket state
     @State private var webSocketTask: URLSessionWebSocketTask?
@@ -303,16 +308,41 @@ struct ContentView: View {
 
         sseMessages.removeAll()
         sseBuffer = ""
+        sseEventCount = 0
         responseText = ""
-
-        guard let url = URL(string: "https://stream.wikimedia.org/v2/stream/recentchange") else {
-            addSSEMessage("Invalid SSE URL")
-            return
-        }
 
         let streamID = UUID()
         sseStreamID = streamID
+        sseStatus = "Connecting"
+        addSSEMessage("Starting local SSE demo server...")
 
+        do {
+            let server = try LocalSSEDemoServer(maxEvents: sseDemoMaxEvents,
+                                                eventInterval: sseDemoEventInterval)
+            server.onReady = { url in
+                DispatchQueue.main.async {
+                    guard self.sseStreamID == streamID else { return }
+                    self.addSSEMessage("Local SSE server ready")
+                    self.startSSERequest(url: url, streamID: streamID)
+                }
+            }
+            server.onError = { error in
+                DispatchQueue.main.async {
+                    guard self.sseStreamID == streamID else { return }
+                    self.addSSEMessage("SSE server error: \(error.localizedDescription)")
+                    self.stopSSETest(shouldAddMessage: false)
+                }
+            }
+
+            sseDemoServer = server
+            server.start()
+        } catch {
+            addSSEMessage("Failed to start SSE demo server: \(error.localizedDescription)")
+            sseStatus = "Disconnected"
+        }
+    }
+
+    private func startSSERequest(url: URL, streamID: UUID) {
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
         request.setValue("text/event-stream", forHTTPHeaderField: "Accept")
@@ -323,7 +353,7 @@ struct ContentView: View {
             DispatchQueue.main.async {
                 guard self.sseStreamID == streamID else { return }
                 self.sseStatus = "Connected"
-                self.addSSEMessage("Connected (HTTP \(response.statusCode))")
+                self.addSSEMessage("Connected (HTTP \(response.statusCode)); expecting 10 events")
             }
         }
         delegate.onData = { data in
@@ -349,14 +379,13 @@ struct ContentView: View {
         sseDelegate = delegate
         sseSession = session
         sseTask = task
-        sseStatus = "Connecting"
-        addSSEMessage("Connecting to Wikimedia EventStreams...")
+        addSSEMessage("Connecting to \(url.absoluteString)")
 
         task.resume()
     }
 
     private func stopSSETest(shouldAddMessage: Bool = true) {
-        guard sseTask != nil || sseSession != nil else { return }
+        guard sseTask != nil || sseSession != nil || sseDemoServer != nil else { return }
 
         if shouldAddMessage {
             addSSEMessage("Stopping SSE stream...")
@@ -364,9 +393,11 @@ struct ContentView: View {
 
         sseTask?.cancel()
         sseSession?.invalidateAndCancel()
+        sseDemoServer?.stop()
         sseTask = nil
         sseSession = nil
         sseDelegate = nil
+        sseDemoServer = nil
         sseStreamID = UUID()
         sseStatus = "Disconnected"
     }
@@ -388,7 +419,16 @@ struct ContentView: View {
         for event in parts.dropLast() {
             let trimmedEvent = event.trimmingCharacters(in: .whitespacesAndNewlines)
             guard !trimmedEvent.isEmpty else { continue }
-            addSSEMessage(summarizeSSEEvent(trimmedEvent))
+            guard sseEventCount < sseDemoMaxEvents else { continue }
+
+            sseEventCount += 1
+            addSSEMessage("Event \(sseEventCount)/\(sseDemoMaxEvents)\n\(summarizeSSEEvent(trimmedEvent))")
+
+            if sseEventCount >= sseDemoMaxEvents {
+                addSSEMessage("SSE demo completed; stopping stream")
+                stopSSETest(shouldAddMessage: false)
+                break
+            }
         }
     }
 
@@ -739,6 +779,170 @@ struct ContentView: View {
 
 #Preview {
     ContentView()
+}
+
+// MARK: - Local SSE Demo Server
+
+private final class LocalSSEDemoServer {
+    var onReady: ((URL) -> Void)?
+    var onError: ((Error) -> Void)?
+
+    private let maxEvents: Int
+    private let eventInterval: TimeInterval
+    private let queue = DispatchQueue(label: "com.proxyman.atlantis.example.sse-server")
+    private let listener: NWListener
+    private var connections: [NWConnection] = []
+    private var isStopped = false
+
+    init(maxEvents: Int, eventInterval: TimeInterval) throws {
+        self.maxEvents = maxEvents
+        self.eventInterval = eventInterval
+        self.listener = try NWListener(using: .tcp, on: .any)
+
+        listener.newConnectionHandler = { [weak self] connection in
+            self?.handle(connection)
+        }
+
+        listener.stateUpdateHandler = { [weak self] state in
+            self?.handleListenerState(state)
+        }
+    }
+
+    func start() {
+        listener.start(queue: queue)
+    }
+
+    func stop() {
+        queue.async {
+            self.isStopped = true
+            self.listener.cancel()
+            self.connections.forEach { $0.cancel() }
+            self.connections.removeAll()
+        }
+    }
+
+    private func handleListenerState(_ state: NWListener.State) {
+        switch state {
+        case .ready:
+            guard let port = listener.port,
+                  let url = URL(string: "http://127.0.0.1:\(port.rawValue)/sse-demo") else {
+                return
+            }
+            DispatchQueue.main.async {
+                self.onReady?(url)
+            }
+        case .failed(let error):
+            DispatchQueue.main.async {
+                self.onError?(error)
+            }
+        default:
+            break
+        }
+    }
+
+    private func handle(_ connection: NWConnection) {
+        connections.append(connection)
+        connection.stateUpdateHandler = { [weak self, weak connection] state in
+            guard let self, let connection else { return }
+            if case .cancelled = state {
+                self.connections.removeAll { $0 === connection }
+            }
+        }
+
+        connection.start(queue: queue)
+        readRequest(on: connection, buffer: Data())
+    }
+
+    private func readRequest(on connection: NWConnection, buffer: Data) {
+        connection.receive(minimumIncompleteLength: 1, maximumLength: 4096) { [weak self] data, _, _, error in
+            guard let self, !self.isStopped else { return }
+            if let error {
+                DispatchQueue.main.async {
+                    self.onError?(error)
+                }
+                connection.cancel()
+                return
+            }
+
+            var requestData = buffer
+            if let data {
+                requestData.append(data)
+            }
+
+            // Wait for the HTTP header terminator before writing the SSE response.
+            if requestData.range(of: Data("\r\n\r\n".utf8)) != nil ||
+                requestData.range(of: Data("\n\n".utf8)) != nil {
+                self.sendResponseHeaders(on: connection)
+            } else {
+                self.readRequest(on: connection, buffer: requestData)
+            }
+        }
+    }
+
+    private func sendResponseHeaders(on connection: NWConnection) {
+        let headers = """
+        HTTP/1.1 200 OK\r
+        Content-Type: text/event-stream; charset=utf-8\r
+        Cache-Control: no-cache, no-transform\r
+        Connection: close\r
+        X-Accel-Buffering: no\r
+        \r
+
+        """
+
+        connection.send(content: Data(headers.utf8), completion: .contentProcessed { [weak self] error in
+            guard let self else { return }
+            if let error {
+                DispatchQueue.main.async {
+                    self.onError?(error)
+                }
+                connection.cancel()
+                return
+            }
+            self.sendEvent(1, on: connection)
+        })
+    }
+
+    private func sendEvent(_ index: Int, on connection: NWConnection) {
+        guard !isStopped else { return }
+        guard index <= maxEvents else {
+            connection.cancel()
+            return
+        }
+
+        queue.asyncAfter(deadline: .now() + eventInterval) { [weak self] in
+            guard let self, !self.isStopped else { return }
+
+            let event = self.makeEvent(index)
+            connection.send(content: Data(event.utf8), completion: .contentProcessed { [weak self] error in
+                guard let self else { return }
+                if let error {
+                    DispatchQueue.main.async {
+                        self.onError?(error)
+                    }
+                    connection.cancel()
+                    return
+                }
+
+                if index >= self.maxEvents {
+                    connection.cancel()
+                } else {
+                    self.sendEvent(index + 1, on: connection)
+                }
+            })
+        }
+    }
+
+    private func makeEvent(_ index: Int) -> String {
+        let payload: [String: Any] = [
+            "index": index,
+            "message": "Atlantis SSE demo event \(index)",
+            "timestamp": Date().timeIntervalSince1970
+        ]
+        let data = try? JSONSerialization.data(withJSONObject: payload, options: [.sortedKeys])
+        let json = data.flatMap { String(data: $0, encoding: .utf8) } ?? #"{"message":"Atlantis SSE demo event"}"#
+        return "event: atlantis-demo\nid: \(index)\ndata: \(json)\n\n"
+    }
 }
 
 // MARK: - SSE URLSession Delegate

@@ -29,6 +29,8 @@ public final class Atlantis: NSObject {
     private(set) var configuration: Configuration = Configuration.default()
     private var packages: [String: TrafficPackage] = [:]
     private lazy var waitingWebsocketPackages: [String: [TrafficPackage]] = [:]
+    private var sentServerSentEventTrafficIds: Set<String> = []
+    private var serverSentEventBuffers: [String: String] = [:]
     private var ignoreProtocols: [AnyClass] = []
     private let queue = DispatchQueue(label: "com.proxyman.atlantis")
     private var ignoredRequestIds: Set<String> = []
@@ -329,6 +331,10 @@ extension Atlantis: InjectorDelegate {
 
             // update the response
             package?.updateResponse(response)
+
+            if let package = package, package.isServerSentEventStream {
+                startSendingServerSentEventTrafficIfNeeded(package)
+            }
         }
     }
 
@@ -336,9 +342,12 @@ extension Atlantis: InjectorDelegate {
         queue.sync {
             guard Atlantis.isEnabled.value else { return }
             let package = getPackage(dataTask)
-            package?.appendResponseData(data)
-            if let package = package, package.isServerSentEventStream {
-                startSendingMessage(package: package)
+            guard let package = package else { return }
+
+            if package.isServerSentEventStream {
+                sendServerSentEventMessages(package: package, data: data)
+            } else {
+                package.appendResponseData(data)
             }
         }
     }
@@ -446,17 +455,20 @@ extension Atlantis {
             // All done
             package.updateDidComplete(error)
 
+            if package.isServerSentEventStream {
+                sendServerSentEventCloseMessage(package: package, error: error)
+                removeCompletedPackage(taskOrConnection: taskOrConnection, package: package)
+                return
+            }
+
             // At this time, the package has all the data
             // It's time to send it
             startSendingMessage(package: package)
 
             // Then remove it from our cache
-            let taskId = PackageIdentifier.getID(taskOrConnection: taskOrConnection)
             switch package.packageType {
             case .http:
-                packages.removeValue(forKey: package.id)
-                // Clean up taskStartTimes for completed HTTP requests
-                taskStartTimes.removeValue(forKey: taskId)
+                removeCompletedPackage(taskOrConnection: taskOrConnection, package: package)
             case .websocket:
                 // Don't remove the WS traffic
                 // Keep it in the packages, so we can send the WS Message
@@ -465,6 +477,7 @@ extension Atlantis {
                 // Sending all waiting WS
                 attemptSendingAllWaitingWSPackages(id: package.id)
                 // Clean up taskStartTimes for completed WebSocket requests
+                let taskId = PackageIdentifier.getID(taskOrConnection: taskOrConnection)
                 taskStartTimes.removeValue(forKey: taskId)
                 break
             }
@@ -527,6 +540,93 @@ extension Atlantis {
 
         // Release the list
         waitingWebsocketPackages[id] = nil
+    }
+
+    private func removeCompletedPackage(taskOrConnection: AnyObject, package: TrafficPackage) {
+        let taskId = PackageIdentifier.getID(taskOrConnection: taskOrConnection)
+        packages.removeValue(forKey: package.id)
+        taskStartTimes.removeValue(forKey: taskId)
+        sentServerSentEventTrafficIds.remove(package.id)
+        serverSentEventBuffers.removeValue(forKey: package.id)
+    }
+}
+
+// MARK: - Server-Sent Events
+
+extension Atlantis {
+
+    private func startSendingServerSentEventTrafficIfNeeded(_ package: TrafficPackage) {
+        guard !sentServerSentEventTrafficIds.contains(package.id) else {
+            return
+        }
+        sentServerSentEventTrafficIds.insert(package.id)
+        package.markAsWebsocketPackage()
+        startSendingMessage(package: package)
+    }
+
+    private func sendServerSentEventMessages(package: TrafficPackage, data: Data) {
+        startSendingServerSentEventTrafficIfNeeded(package)
+
+        for eventText in parseServerSentEventBlocks(packageId: package.id, data: data) {
+            sendServerSentEventMessage(package: package, eventText: eventText)
+        }
+    }
+
+    private func sendServerSentEventMessage(package: TrafficPackage, eventText: String) {
+        let normalizedEventText = eventText
+            .replacingOccurrences(of: "\r\n", with: "\n")
+            .replacingOccurrences(of: "\r", with: "\n")
+
+        // Reuse Proxyman's streaming-message channel so each SSE event is appended
+        // to the original request instead of creating another traffic row.
+        let streamMessage = WebsocketMessagePackage(id: package.id,
+                                                    message: .string(normalizedEventText),
+                                                    messageType: .receive)
+        package.setWebsocketMessagePackage(package: streamMessage)
+        startSendingWebsocketMessage(package)
+    }
+
+    private func sendServerSentEventCloseMessage(package: TrafficPackage, error: Error?) {
+        guard sentServerSentEventTrafficIds.contains(package.id) else {
+            return
+        }
+
+        if let pendingEvent = serverSentEventBuffers[package.id]?.trimmingCharacters(in: .whitespacesAndNewlines),
+           !pendingEvent.isEmpty {
+            sendServerSentEventMessage(package: package, eventText: pendingEvent)
+        }
+
+        let reason = error?.localizedDescription.data(using: .utf8)
+        let closeMessage = WebsocketMessagePackage(id: package.id,
+                                                   closeCode: URLSessionWebSocketTask.CloseCode.normalClosure.rawValue,
+                                                   reason: reason)
+        package.setWebsocketMessagePackage(package: closeMessage)
+        startSendingWebsocketMessage(package)
+    }
+
+    private func parseServerSentEventBlocks(packageId: String, data: Data) -> [String] {
+        let chunk = String(decoding: data, as: UTF8.self)
+        var buffer = (serverSentEventBuffers[packageId] ?? "") + chunk
+        var events: [String] = []
+
+        while let delimiterRange = firstServerSentEventDelimiterRange(in: buffer) {
+            let eventText = String(buffer[..<delimiterRange.lowerBound])
+            buffer.removeSubrange(buffer.startIndex..<delimiterRange.upperBound)
+
+            if !eventText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                events.append(eventText)
+            }
+        }
+
+        serverSentEventBuffers[packageId] = buffer
+        return events
+    }
+
+    private func firstServerSentEventDelimiterRange(in text: String) -> Range<String.Index>? {
+        let delimiters = ["\r\n\r\n", "\n\n", "\r\r"]
+        return delimiters
+            .compactMap { text.range(of: $0) }
+            .min { $0.lowerBound < $1.lowerBound }
     }
 }
 

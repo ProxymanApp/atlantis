@@ -41,6 +41,12 @@ const server = http.createServer((req, res) => {
         [50, "event: update\nid: comment-1\ndata: after-comment\n\n"]
       ]);
       break;
+    case "/split-event":
+      sendSSE(res, [
+        [0, "event: split\nid: split-1\ndata: first"],
+        [50, " line\ndata: second line\n\n"]
+      ]);
+      break;
     default:
       res.writeHead(404, { "Content-Type": "text/plain; charset=utf-8" });
       res.end("Not Found");

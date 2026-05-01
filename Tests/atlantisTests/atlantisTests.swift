@@ -10,9 +10,33 @@ private struct TestMessageEnvelope: Codable {
     let buildVersion: String?
 }
 
+private struct TestStreamPackageContent: Codable {
+    let id: String
+    let request: TestRequestContent
+    let websocketMessagePackage: TestStreamMessagePackage?
+}
+
+private struct TestRequestContent: Codable {
+    let url: String
+    let method: String
+}
+
+private struct TestStreamMessagePackage: Codable {
+    let id: String
+    let messageType: WebsocketMessagePackage.MessageType
+    let stringValue: String?
+    let dataValue: Data?
+}
+
+private struct TestServerSentEventCapture {
+    let trafficPackages: [TrafficPackage]
+    let streamMessages: [TestStreamMessagePackage]
+}
+
 private final class TestTransporter: Transporter {
     private let queue = DispatchQueue(label: "com.proxyman.atlantis.tests.transporter")
     private var messages: [TestMessageEnvelope] = []
+    var onMessageEnvelope: ((TestMessageEnvelope) -> Void)?
     var onTrafficPackage: ((TrafficPackage) -> Void)?
 
     func start(_ config: Configuration) {
@@ -31,6 +55,7 @@ private final class TestTransporter: Transporter {
         queue.async {
             self.messages.append(envelope)
         }
+        onMessageEnvelope?(envelope)
         guard envelope.messageType == .traffic,
               let content = envelope.content,
               let traffic = try? JSONDecoder().decode(TrafficPackage.self, from: content) else {
@@ -44,6 +69,7 @@ private final class TestTransporter: Transporter {
     }
 }
 
+#if os(macOS)
 private enum LocalSSEServerError: Error, CustomStringConvertible {
     case missingResource
     case invalidPort(String)
@@ -75,7 +101,12 @@ private final class LocalSSEServer {
     }
 
     static func start() throws -> LocalSSEServer {
-        guard let scriptURL = Bundle.module.url(forResource: "sse-server", withExtension: "js") else {
+        let resourceCandidates = [
+            Bundle.module.bundleURL.appendingPathComponent("sse-server.js"),
+            Bundle.module.resourceURL?.appendingPathComponent("sse-server.js")
+        ].compactMap { $0 }
+
+        guard let scriptURL = resourceCandidates.first(where: { FileManager.default.fileExists(atPath: $0.path) }) else {
             throw LocalSSEServerError.missingResource
         }
 
@@ -161,6 +192,7 @@ private func parsePort(from text: String) -> Int? {
         return Int(line.dropFirst("PORT ".count))
     }.first
 }
+#endif
 
 final class URLSessionSwizzleTests: XCTestCase {
     private let baseURL = URL(string: "https://httpbin.proxyman.app")!
@@ -358,7 +390,8 @@ final class URLSessionSwizzleTests: XCTestCase {
         XCTAssertEqual(package.request.body, body)
     }
 
-    func testServerSentEventsBasicStreamCapturedBeforeCompletion() throws {
+#if os(macOS)
+    func testServerSentEventsBasicStreamUsesSingleTrafficAndStreamMessages() throws {
         let server = try LocalSSEServer.start()
         defer { server.stop() }
 
@@ -369,11 +402,9 @@ final class URLSessionSwizzleTests: XCTestCase {
             session?.invalidateAndCancel()
         }
 
-        let package = waitForTrafficPackageIfAvailable(matching: { package in
-            self.isPackageForPath(package, "/basic") &&
-            package.endAt == nil &&
-            self.responseBodyString(package).contains("data: goodbye-atlantis")
-        }, timeout: 10) {
+        let capture = waitForServerSentEventCapture(path: "/basic",
+                                                    expectedMessageFragments: ["data: hello-atlantis", "data: goodbye-atlantis"],
+                                                    timeout: 10) {
             session = makeSession()
             var request = URLRequest(url: server.url(path: "/basic"))
             request.setValue("text/event-stream", forHTTPHeaderField: "Accept")
@@ -381,21 +412,21 @@ final class URLSessionSwizzleTests: XCTestCase {
             task?.resume()
         }
 
-        guard let package else {
-            XCTFail("Atlantis did not emit an SSE package before the stream completed")
+        XCTAssertEqual(capture.trafficPackages.count, 1, "SSE should create exactly one HTTP traffic row")
+        guard let package = capture.trafficPackages.first else {
+            XCTFail("Atlantis did not emit the initial SSE traffic package")
             return
         }
 
         assertServerSentEventPackage(package)
-        let body = responseBodyString(package)
-        XCTAssertTrue(body.contains("event: greeting"))
-        XCTAssertTrue(body.contains("id: basic-1"))
-        XCTAssertTrue(body.contains("data: hello-atlantis"))
-        XCTAssertTrue(body.contains("id: basic-2"))
-        XCTAssertTrue(body.contains("data: goodbye-atlantis"))
+        XCTAssertTrue(capture.streamMessages.contains { $0.stringValue?.contains("event: greeting") == true })
+        XCTAssertTrue(capture.streamMessages.contains { $0.stringValue?.contains("id: basic-1") == true })
+        XCTAssertTrue(capture.streamMessages.contains { $0.stringValue?.contains("data: hello-atlantis") == true })
+        XCTAssertTrue(capture.streamMessages.contains { $0.stringValue?.contains("id: basic-2") == true })
+        XCTAssertTrue(capture.streamMessages.contains { $0.stringValue?.contains("data: goodbye-atlantis") == true })
     }
 
-    func testServerSentEventsMultilineEventCapturedBeforeCompletion() throws {
+    func testServerSentEventsMultilineEventUsesSingleStreamMessage() throws {
         let server = try LocalSSEServer.start()
         defer { server.stop() }
 
@@ -406,11 +437,9 @@ final class URLSessionSwizzleTests: XCTestCase {
             session?.invalidateAndCancel()
         }
 
-        let package = waitForTrafficPackageIfAvailable(matching: { package in
-            self.isPackageForPath(package, "/multiline") &&
-            package.endAt == nil &&
-            self.responseBodyString(package).contains("data: second line")
-        }, timeout: 10) {
+        let capture = waitForServerSentEventCapture(path: "/multiline",
+                                                    expectedMessageFragments: ["data: first line", "data: second line"],
+                                                    timeout: 10) {
             session = makeSession()
             var request = URLRequest(url: server.url(path: "/multiline"))
             request.setValue("text/event-stream", forHTTPHeaderField: "Accept")
@@ -418,20 +447,21 @@ final class URLSessionSwizzleTests: XCTestCase {
             task?.resume()
         }
 
-        guard let package else {
-            XCTFail("Atlantis did not emit a multiline SSE package before the stream completed")
+        XCTAssertEqual(capture.trafficPackages.count, 1, "SSE should create exactly one HTTP traffic row")
+        guard let package = capture.trafficPackages.first else {
+            XCTFail("Atlantis did not emit the initial multiline SSE traffic package")
             return
         }
 
         assertServerSentEventPackage(package)
-        let body = responseBodyString(package)
-        XCTAssertTrue(body.contains("event: note"))
-        XCTAssertTrue(body.contains("id: multiline-1"))
-        XCTAssertTrue(body.contains("data: first line"))
-        XCTAssertTrue(body.contains("data: second line"))
+        let multilineMessages = capture.streamMessages.filter { $0.stringValue?.contains("id: multiline-1") == true }
+        XCTAssertEqual(multilineMessages.count, 1)
+        XCTAssertTrue(multilineMessages.first?.stringValue?.contains("event: note") == true)
+        XCTAssertTrue(multilineMessages.first?.stringValue?.contains("data: first line") == true)
+        XCTAssertTrue(multilineMessages.first?.stringValue?.contains("data: second line") == true)
     }
 
-    func testServerSentEventsCommentAndRetryCapturedBeforeCompletion() throws {
+    func testServerSentEventsCommentAndRetryUseStreamMessages() throws {
         let server = try LocalSSEServer.start()
         defer { server.stop() }
 
@@ -442,11 +472,9 @@ final class URLSessionSwizzleTests: XCTestCase {
             session?.invalidateAndCancel()
         }
 
-        let package = waitForTrafficPackageIfAvailable(matching: { package in
-            self.isPackageForPath(package, "/comment-retry") &&
-            package.endAt == nil &&
-            self.responseBodyString(package).contains("data: after-comment")
-        }, timeout: 10) {
+        let capture = waitForServerSentEventCapture(path: "/comment-retry",
+                                                    expectedMessageFragments: [": keep-alive", "retry: 1500", "data: after-comment"],
+                                                    timeout: 10) {
             session = makeSession()
             var request = URLRequest(url: server.url(path: "/comment-retry"))
             request.setValue("text/event-stream", forHTTPHeaderField: "Accept")
@@ -454,24 +482,113 @@ final class URLSessionSwizzleTests: XCTestCase {
             task?.resume()
         }
 
-        guard let package else {
-            XCTFail("Atlantis did not emit a comment/retry SSE package before the stream completed")
+        XCTAssertEqual(capture.trafficPackages.count, 1, "SSE should create exactly one HTTP traffic row")
+        guard let package = capture.trafficPackages.first else {
+            XCTFail("Atlantis did not emit the initial comment/retry SSE traffic package")
             return
         }
 
         assertServerSentEventPackage(package)
-        let body = responseBodyString(package)
-        XCTAssertTrue(body.contains(": keep-alive"))
-        XCTAssertTrue(body.contains("retry: 1500"))
-        XCTAssertTrue(body.contains("event: update"))
-        XCTAssertTrue(body.contains("data: after-comment"))
+        XCTAssertTrue(capture.streamMessages.contains { $0.stringValue?.contains(": keep-alive") == true })
+        XCTAssertTrue(capture.streamMessages.contains { $0.stringValue?.contains("retry: 1500") == true })
+        XCTAssertTrue(capture.streamMessages.contains { $0.stringValue?.contains("event: update") == true })
+        XCTAssertTrue(capture.streamMessages.contains { $0.stringValue?.contains("data: after-comment") == true })
     }
+
+    func testServerSentEventsSplitAcrossChunksWaitForCompleteEvent() throws {
+        let server = try LocalSSEServer.start()
+        defer { server.stop() }
+
+        var session: URLSession?
+        var task: URLSessionDataTask?
+        defer {
+            task?.cancel()
+            session?.invalidateAndCancel()
+        }
+
+        let capture = waitForServerSentEventCapture(path: "/split-event",
+                                                    expectedMessageFragments: ["data: first line", "data: second line"],
+                                                    timeout: 10) {
+            session = makeSession()
+            var request = URLRequest(url: server.url(path: "/split-event"))
+            request.setValue("text/event-stream", forHTTPHeaderField: "Accept")
+            task = session?.dataTask(with: request)
+            task?.resume()
+        }
+
+        XCTAssertEqual(capture.trafficPackages.count, 1, "SSE should create exactly one HTTP traffic row")
+        guard let package = capture.trafficPackages.first else {
+            XCTFail("Atlantis did not emit the initial split SSE traffic package")
+            return
+        }
+
+        assertServerSentEventPackage(package)
+        let splitMessages = capture.streamMessages.filter { $0.stringValue?.contains("id: split-1") == true }
+        XCTAssertEqual(splitMessages.count, 1)
+        XCTAssertTrue(splitMessages.first?.stringValue?.contains("event: split") == true)
+        XCTAssertTrue(splitMessages.first?.stringValue?.contains("data: first line") == true)
+        XCTAssertTrue(splitMessages.first?.stringValue?.contains("data: second line") == true)
+    }
+#endif
 
     private func makeSession() -> URLSession {
         let config = URLSessionConfiguration.ephemeral
         config.timeoutIntervalForRequest = 15
         config.timeoutIntervalForResource = 30
         return URLSession(configuration: config)
+    }
+
+    private func waitForServerSentEventCapture(path: String,
+                                               expectedMessageFragments: [String],
+                                               timeout: TimeInterval,
+                                               action: () -> Void) -> TestServerSentEventCapture {
+        let expectation = expectation(description: "Wait for SSE stream messages")
+        let lock = NSLock()
+        var trafficPackages: [TrafficPackage] = []
+        var streamMessages: [TestStreamMessagePackage] = []
+        var didFulfill = false
+
+        transporter.onMessageEnvelope = { envelope in
+            lock.lock()
+            defer { lock.unlock() }
+
+            switch envelope.messageType {
+            case .traffic:
+                guard let content = envelope.content,
+                      let package = try? JSONDecoder().decode(TrafficPackage.self, from: content),
+                      self.isPackageForPath(package, path) else {
+                    return
+                }
+                trafficPackages.append(package)
+            case .websocket:
+                guard let content = envelope.content,
+                      let package = try? JSONDecoder().decode(TestStreamPackageContent.self, from: content),
+                      package.request.url.contains(path),
+                      let streamMessage = package.websocketMessagePackage else {
+                    return
+                }
+                streamMessages.append(streamMessage)
+            case .connection:
+                return
+            }
+
+            let hasExpectedMessages = expectedMessageFragments.allSatisfy { fragment in
+                streamMessages.contains { $0.stringValue?.contains(fragment) == true }
+            }
+            if !didFulfill, !trafficPackages.isEmpty, hasExpectedMessages {
+                didFulfill = true
+                expectation.fulfill()
+            }
+        }
+
+        action()
+        wait(for: [expectation], timeout: timeout)
+        transporter.onMessageEnvelope = nil
+
+        lock.lock()
+        defer { lock.unlock() }
+        return TestServerSentEventCapture(trafficPackages: trafficPackages,
+                                          streamMessages: streamMessages)
     }
 
     private func waitForTrafficPackageIfAvailable(matching predicate: @escaping (TrafficPackage) -> Bool,
@@ -520,6 +637,7 @@ final class URLSessionSwizzleTests: XCTestCase {
     private func assertServerSentEventPackage(_ package: TrafficPackage,
                                               file: StaticString = #filePath,
                                               line: UInt = #line) {
+        XCTAssertEqual(package.packageType, .websocket, "SSE traffic must use the existing WebSocket-compatible package type so older Proxyman versions append events to one flow", file: file, line: line)
         XCTAssertEqual(package.response?.statusCode, 200, file: file, line: line)
         XCTAssertNil(package.endAt, "SSE package should be emitted while the stream is still open", file: file, line: line)
         XCTAssertTrue(package.response?.headers.contains { header in
