@@ -529,6 +529,28 @@ extension Image {
         }
         return Image(named: iconName)
         #elseif os(iOS) || os(tvOS) || os(visionOS)
+        // `UIImage(named:)` is documented thread-safe, but during the
+        // first UIWindow's automatic tintColor resolution it races with
+        // UIKit's AccentColor asset lookup. The race leaves the window's
+        // inherited tint as the system blue default, baking blue into
+        // every descendant of the initial render. Marshal to the main
+        // thread (mirrors the OSX branch above).
+        if Thread.isMainThread {
+            return _resolveAppIconOnMain()
+        } else {
+            return DispatchQueue.main.sync { _resolveAppIconOnMain() }
+        }
+        #elseif os(watchOS)
+        guard let iconsDictionary = Bundle.main.infoDictionary?["CFBundleIcons"] as? [String: Any],
+              let primaryIconsDictionary = iconsDictionary["CFBundlePrimaryIcon"] as? [String: Any],
+              let iconFiles = primaryIconsDictionary["CFBundleIconFiles"] as? [String],
+              let lastIcon = iconFiles.last else { return nil }
+        return Image(named: lastIcon)
+        #endif
+    }
+
+    #if os(iOS) || os(tvOS) || os(visionOS)
+    private static func _resolveAppIconOnMain() -> Image? {
         if let iconsDictionary = Bundle.main.infoDictionary?["CFBundleIcons"] as? [String: Any],
            let primaryIconsDictionary = iconsDictionary["CFBundlePrimaryIcon"] as? [String: Any] {
             if let iconFiles = primaryIconsDictionary["CFBundleIconFiles"] as? [String],
@@ -542,14 +564,8 @@ extension Image {
             }
         }
         return nil
-        #elseif os(watchOS)
-        guard let iconsDictionary = Bundle.main.infoDictionary?["CFBundleIcons"] as? [String: Any],
-              let primaryIconsDictionary = iconsDictionary["CFBundlePrimaryIcon"] as? [String: Any],
-              let iconFiles = primaryIconsDictionary["CFBundleIconFiles"] as? [String],
-              let lastIcon = iconFiles.last else { return nil }
-        return Image(named: lastIcon)
-        #endif
     }
+    #endif
 
     func getPNGData() -> Data? {
         #if os(OSX)
