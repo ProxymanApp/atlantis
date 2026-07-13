@@ -23,9 +23,24 @@ protocol Transporter {
 protocol Serializable {
 
     func toData() -> Data?
+    var retentionPriority: TransportRetentionPriority { get }
+    var replacementWhenDropped: Serializable? { get }
+}
+
+enum TransportRetentionPriority {
+    case essential
+    case payload
 }
 
 extension Serializable {
+
+    var retentionPriority: TransportRetentionPriority {
+        return .essential
+    }
+
+    var replacementWhenDropped: Serializable? {
+        return nil
+    }
 
     func toCompressedData() -> Data? {
         guard let rawData = self.toData() else { return nil }
@@ -37,6 +52,12 @@ extension Serializable {
 }
 
 final class NetServiceTransport: NSObject {
+
+    private struct PendingFrame {
+        let data: Data
+        let retentionPriority: TransportRetentionPriority
+        let replacementData: Data?
+    }
 
     struct Constants {
         static let netServiceType = "_Proxyman._tcp"
@@ -52,14 +73,20 @@ final class NetServiceTransport: NSObject {
 
     private var browser: NWBrowser?
     private let queue = DispatchQueue(label: "com.proxyman.atlantis.netservices") // Serial queue for thread safety
-    private var pendingPackages: [Serializable] = []
+    private let queueKey = DispatchSpecificKey<Void>()
+    private var pendingFrames: [PendingFrame] = []
+    private var pendingFrameBytes = 0
+    private var pendingDropMarker: Data?
+    private var isSendingFrame = false
+    private var sendGeneration: UInt64 = 0
     private var config: Configuration?
 
     // Multiple task connection support using NWConnection
     private var connections: [NWConnection] = []
 
-    // The maximum number of pending item to prevent Atlantis consumes too much RAM
-    private let maxPendingItem = 50
+    // Bound queued traffic while retaining lifecycle events ahead of message bodies.
+    private let maxPendingItem = 256
+    private let maxPendingBytes = 64 * 1024 * 1024
 
     // Retry mechanism for simulator direct connection
     private var simulatorRetryCount = 0
@@ -69,14 +96,27 @@ final class NetServiceTransport: NSObject {
 
     override init() {
         super.init()
+        queue.setSpecific(key: queueKey, value: ())
         initNotification()
     }
 
     deinit {
         NotificationCenter.default.removeObserver(self)
-        stop() // Ensure browser and connections are cleaned up
+        // Scheduling a weak async stop while deinitializing can ask Objective-C to form a weak
+        // reference to an object which is already being destroyed.
+        stopInternal()
     }
 }
+
+#if DEBUG
+extension NetServiceTransport {
+    var pendingBufferStatsForTesting: (count: Int, bytes: Int, hasDropMarker: Bool) {
+        return queue.sync {
+            (pendingFrames.count, pendingFrameBytes, pendingDropMarker != nil)
+        }
+    }
+}
+#endif
 
 // MARK: - Transporter
 
@@ -121,34 +161,32 @@ extension NetServiceTransport: Transporter {
     }
 
     func send(package: Serializable) {
-        queue.async {[weak self] in
-            guard let strongSelf = self else { return }
-
-            // Ensure we have at least one ready connection
-            guard strongSelf.connections.contains(where: { $0.state == .ready }) else {
-                // If no connection is ready, append to pending list
-                strongSelf.appendToPendingList(package)
-                return
-            }
-
-            // Send to all ready connections
-            strongSelf.streamToAllReadyConnections(package: package)
+        performOnQueue {
+            guard let compressedData = package.toCompressedData() else { return }
+            let frame = PendingFrame(
+                data: compressedData,
+                retentionPriority: package.retentionPriority,
+                replacementData: package.replacementWhenDropped?.toCompressedData()
+            )
+            appendToPendingList(frame)
+            sendNextPendingFrameIfPossible()
         }
     }
 
-    private func streamToAllReadyConnections(package: Serializable) {
-        // Compress data by gzip
-        guard let compressedData = package.toCompressedData() else { return }
-
-        // Send to all *ready* connections
-        for connection in connections where connection.state == .ready {
-            send(connection: connection, data: compressedData)
+    private func performOnQueue(_ operation: () -> Void) {
+        if DispatchQueue.getSpecific(key: queueKey) != nil {
+            operation()
+        } else {
+            // Applying the queue limit synchronously avoids an unbounded backlog of dispatch blocks
+            // when many streaming messages arrive faster than Network.framework can write them.
+            queue.sync(execute: operation)
         }
     }
 
-    private func send(connection: NWConnection, data: Data) {
+    private func send(connection: NWConnection, data: Data, completion: (() -> Void)? = nil) {
         guard connection.state == .ready else {
             print("[\(connection.endpoint.debugDescription)] ⚠️ Attempted to send data on a non-ready connection. State: \(connection.state)")
+            completion?()
             return
         }
 
@@ -173,24 +211,57 @@ extension NetServiceTransport: Transporter {
             if let error = error {
                 print("[\(connection.endpoint.debugDescription)][Error] Error sending frame content: \(error)")
             }
+            completion?()
         }))
     }
 
-    private func appendToPendingList(_ package: Serializable) {
-        // Remove oldest items if limit exceeded (FIFO approach)
-        while pendingPackages.count >= maxPendingItem {
-            pendingPackages.removeFirst()
+    private func appendToPendingList(_ frame: PendingFrame) {
+        pendingFrames.append(frame)
+        pendingFrameBytes += frame.data.count
+
+        while pendingFrames.count > maxPendingItem || pendingFrameBytes > maxPendingBytes {
+            let payloadIndex = pendingFrames.firstIndex { $0.retentionPriority == .payload }
+            let removalIndex = payloadIndex ?? pendingFrames.startIndex
+            let removedFrame = pendingFrames.remove(at: removalIndex)
+            pendingFrameBytes -= removedFrame.data.count
+
+            // Keep one small omission event so Proxyman can explain missing message contents.
+            if let replacementData = removedFrame.replacementData {
+                pendingDropMarker = replacementData
+            }
         }
-        pendingPackages.append(package)
     }
 
-    private func flushAllPendingPackagesIfNeed() {
-        guard !pendingPackages.isEmpty else { return }
-        print("[Atlantis] Flushing \(pendingPackages.count) pending items...")
-        let packagesToFlush = pendingPackages // Copy packages
-        pendingPackages.removeAll() // Clear immediately
-        for package in packagesToFlush {
-            streamToAllReadyConnections(package: package) // Stream copies
+    private func sendNextPendingFrameIfPossible() {
+        guard !isSendingFrame else { return }
+        let readyConnections = connections.filter { $0.state == .ready }
+        guard !readyConnections.isEmpty else { return }
+
+        let data: Data
+        if let dropMarker = pendingDropMarker {
+            data = dropMarker
+            pendingDropMarker = nil
+        } else if !pendingFrames.isEmpty {
+            let frame = pendingFrames.removeFirst()
+            pendingFrameBytes -= frame.data.count
+            data = frame.data
+        } else {
+            return
+        }
+
+        isSendingFrame = true
+        let generation = sendGeneration
+        let completionGroup = DispatchGroup()
+        for connection in readyConnections {
+            completionGroup.enter()
+            send(connection: connection, data: data) {
+                completionGroup.leave()
+            }
+        }
+        completionGroup.notify(queue: queue) { [weak self] in
+            guard let self = self, self.sendGeneration == generation else { return }
+            self.isSendingFrame = false
+            self.sendNextPendingFrameIfPossible()
         }
     }
 }
@@ -332,13 +403,13 @@ extension NetServiceTransport {
                 break
             case .ready:
                 print("[\(endpointDesc)] ✅ Connection established.")
-                // Send initial connection info and flush pending
+                // Send initial connection info and resume the backpressured frame queue.
                 #if targetEnvironment(simulator)
                 // Reset retry counter on successful simulator connection
                 strongSelf.simulatorRetryCount = 0
                 #endif
                 strongSelf.sendConnectionPackage(connection: connection)
-                strongSelf.flushAllPendingPackagesIfNeed()
+                strongSelf.sendNextPendingFrameIfPossible()
             case .waiting(let error):
                 #if targetEnvironment(simulator)
                 // For simulator, attempt to retry the connection after a delay
@@ -462,7 +533,11 @@ extension NetServiceTransport {
         // Cancel all active connections before removing them
         connections.forEach { $0.cancel() }
         connections.removeAll()
-        pendingPackages.removeAll()
+        pendingFrames.removeAll()
+        pendingFrameBytes = 0
+        pendingDropMarker = nil
+        isSendingFrame = false
+        sendGeneration &+= 1
         simulatorRetryCount = 0 // Reset retry count on stop
         print("[Atlantis] Transport stopped and connections cleared.") // Added log for clarity
     }
@@ -482,7 +557,9 @@ extension NetServiceTransport {
     @objc private func didReceiveMemoryNotification() {
         queue.async {[weak self] in
             print("[Atlantis] Received memory warning. Clearing pending packages.")
-            self?.pendingPackages.removeAll()
+            self?.pendingFrames.removeAll()
+            self?.pendingFrameBytes = 0
+            self?.pendingDropMarker = nil
         }
     }
 

@@ -16,7 +16,7 @@
 - [x] ✅ **Automatically** intercept all YOUR HTTP/HTTPS Traffic with 1 click
 - [x] ✅ **No Proxy or trust any Certificates**
 - [x] ✅ Capture WS/WSS Traffic from URLSessionWebSocketTask
-- [x] Capture gRPC traffic (Advanced)
+- [x] Automatically capture gRPC-Swift 2 client traffic
 - [x] Support iOS Physical Devices and Simulators, including iPhone, iPad, Apple Watch, Apple TV
 - [x] **NEW:** Support Android with OkHttp, Retrofit, and Apollo
 - [x] Review traffic log from macOS [Proxyman](https://proxyman.com) app ([Github](https://github.com/ProxymanApp/Proxyman))
@@ -34,8 +34,9 @@
 ### iOS
 - macOS Proxyman app
 - iOS 16.0+ / macOS 11+ / Mac Catalyst 13.0+ / tvOS 13.0+ / watchOS 10.0+
-- Xcode 14+
-- Swift 5.0+
+- Xcode 16.3+ with the Swift 6.1 toolchain
+- Automatic gRPC capture requires gRPC-Swift 2 and iOS 18+ / macOS 15+ / tvOS 18+ / watchOS 11+ / visionOS 2+
+- A Proxyman build with Atlantis gRPC schema v1 support is required to display captured RPCs
 
 ### Android
 - See [Atlantis Android](https://github.com/ProxymanApp/atlantis-android) for Android integration.
@@ -88,7 +89,7 @@ struct AtlantisSwiftUIAppApp: App {
         // If you have many Macbooks on the same WiFi Network, you can specify your Macbook's name
         // Find your Macbook's name by opening Proxyman App -> Certificate Menu -> Install Certificate for iOS -> With Atlantis ->
         // Click on "How to start Atlantis" -> Select "SwiftUI" Tab
-        // Atlantis.start("Your's Macbook Pro")
+        // Atlantis.start(hostName: "Your's Macbook Pro")
         #endif
     }
 }
@@ -112,7 +113,7 @@ func application(_ application: UIApplication, didFinishLaunchingWithOptions lau
         // If you have many Macbooks on the same WiFi Network, you can specify your Macbook's name
         // Find your Macbook's name by opening Proxyman App -> Certificate Menu -> Install Certificate for iOS -> With Atlantis ->
         // Click on "How to start Atlantis" -> Select "SwiftUI" Tab
-        // Atlantis.start("Your's Macbook Pro")
+        // Atlantis.start(hostName: "Your's Macbook Pro")
     #endif
 
     return true
@@ -145,8 +146,23 @@ func application(_ application: UIApplication, didFinishLaunchingWithOptions lau
 1. Open Proxyman for macOS
 2. Make sure your iOS devices/simulator and macOS Proxyman are in the **same Wi-Fi network** or connect your iOS Devices to your Mac by a **USB cable**
 3. Start your iOS app via Xcode. Works with iOS Simulator or iOS Devices.
-4. Proxyman now captures all HTTP/HTTPS, Websocket from your iOS app without any configuration.
+4. Proxyman now captures all HTTP/HTTPS, WebSocket, and supported gRPC traffic from your app without client configuration.
 5. Enjoy debugging ❤️
+
+## Capture gRPC-Swift 2 Traffic
+
+Atlantis automatically observes client RPCs made by gRPC-Swift 2. Keep the normal `Atlantis.start()` call shown above and start it before the first RPC you want to inspect. The gRPC client may be constructed before Atlantis starts; no client interceptor, system proxy, certificate, transport wrapper, or channel configuration is required.
+
+Captured data includes:
+
+- Logical calls and individual retry or hedging attempts
+- Request, response, and trailing metadata, including duplicate and binary values
+- Serialized unary and streaming request/response messages
+- Local and remote peers, final status, cancellation, and transport failures
+
+Atlantis captures the logical gRPC data before transport compression and TLS. It does not produce a byte-for-byte HTTP/2 trace. Individual payloads larger than 50 MB are represented as omitted, and disconnected buffering is limited to 256 events or 64 MiB.
+
+This integration supports gRPC-Swift 2 clients using the official NIO transports. gRPC-Swift 1, arbitrary SwiftNIO pipelines, AsyncHTTPClient, and server-side RPCs are not captured automatically.
 
 ## Capture Websocket Traffic
 - By using Atlantis, Proxyman can capture Websocket from `URLSessionWebsocketTask` from iOS out of the box.
@@ -636,7 +652,7 @@ Atlantis supports OkHttp 4.x and 5.x. If you're using an older version, please u
 ## ❓ FAQ 
 #### 1. How does Atlantis work?
 
-Atlantis uses [Method Swizzling](https://nshipster.com/method-swizzling/) technique to swizzle certain functions of NSURLSession that enables Atlantis to capture HTTP/HTTPS traffic on the fly.
+Atlantis uses [Method Swizzling](https://nshipster.com/method-swizzling/) to capture URLSession traffic. For gRPC-Swift 2, it registers a process-wide diagnostics observer in GRPCCore and receives serialized RPC events before the NIO transport applies compression or TLS.
 
 Then it sends to [Proxyman app](https://proxyman.com) via a local Bonjour Service for inspecting.
 
@@ -653,6 +669,7 @@ Atlantis and Proxyman apps do not store any of your data on any server.
 #### 4. What kind of data does Atlantis capture?
 
 - All HTTP/HTTPS traffic from your iOS apps, that integrate the Atlantis framework 
+- Supported gRPC client metadata, serialized messages, statuses, errors, and retry/hedging identifiers
 - Your iOS app name, bundle identifier, and small size of the logo
 - iOS devices/simulators name and device models.
 
@@ -678,4 +695,3 @@ Atlantis is built for inspecting the Network, not debugging purposes. If you wou
 
 ## License
 Atlantis is released under the Apache-2.0 License. See LICENSE for details.
-

@@ -1,4 +1,6 @@
 import Foundation
+import GRPCCore
+import GRPCInProcessTransport
 import ObjectiveC
 import XCTest
 @testable import Atlantis
@@ -66,6 +68,67 @@ private final class TestTransporter: Transporter {
 
     func drainMessages() -> [TestMessageEnvelope] {
         queue.sync { messages }
+    }
+}
+
+@available(macOS 15.0, iOS 18.0, tvOS 18.0, watchOS 11.0, visionOS 2.0, *)
+private struct AtlantisGRPCEchoService: RegistrableRPCService {
+    static let method = MethodDescriptor(
+        fullyQualifiedService: "atlantis.tests.Echo",
+        method: "Unary",
+        type: .unary
+    )
+
+    func registerMethods<Transport: ServerTransport>(with router: inout RPCRouter<Transport>) {
+        router.registerHandler(
+            forMethod: Self.method,
+            deserializer: AtlantisIdentityDeserializer(),
+            serializer: AtlantisIdentitySerializer()
+        ) { request, _ in
+            let request = try await ServerRequest<[UInt8]>(stream: request)
+            return StreamingServerResponse(single: ServerResponse(message: request.message,
+                                                                   metadata: request.metadata))
+        }
+    }
+}
+
+@available(macOS 15.0, iOS 18.0, tvOS 18.0, watchOS 11.0, visionOS 2.0, *)
+private struct AtlantisIdentitySerializer: MessageSerializer {
+    func serialize<Bytes: GRPCContiguousBytes>(_ message: [UInt8]) throws -> Bytes {
+        return Bytes(message)
+    }
+}
+
+@available(macOS 15.0, iOS 18.0, tvOS 18.0, watchOS 11.0, visionOS 2.0, *)
+private struct AtlantisIdentityDeserializer: MessageDeserializer {
+    func deserialize<Bytes: GRPCContiguousBytes>(_ serializedMessageBytes: Bytes) throws -> [UInt8] {
+        return serializedMessageBytes.withUnsafeBytes { Array($0) }
+    }
+}
+
+@available(macOS 15.0, iOS 18.0, tvOS 18.0, watchOS 11.0, visionOS 2.0, *)
+private struct AtlantisOversizedBytes: GRPCContiguousBytes {
+    let count: Int
+    private var storage: [UInt8]
+
+    init(repeating byte: UInt8, count: Int) {
+        self.count = count
+        self.storage = [byte]
+    }
+
+    init<Bytes: Sequence>(_ sequence: Bytes) where Bytes.Element == UInt8 {
+        self.storage = Array(sequence)
+        self.count = storage.count
+    }
+
+    func withUnsafeBytes<R>(_ body: (UnsafeRawBufferPointer) throws -> R) rethrows -> R {
+        return try storage.withUnsafeBytes(body)
+    }
+
+    mutating func withUnsafeMutableBytes<R>(
+        _ body: (UnsafeMutableRawBufferPointer) throws -> R
+    ) rethrows -> R {
+        return try storage.withUnsafeMutableBytes(body)
     }
 }
 
@@ -259,6 +322,178 @@ final class URLSessionSwizzleTests: XCTestCase {
             assertSelectorExists(baseClass: webSocketClass, selector: NSSelectorFromString("receiveMessageWithCompletionHandler:"), name: "websocket receive")
             assertSelectorExists(baseClass: webSocketClass, selector: NSSelectorFromString("sendPingWithPongReceiveHandler:"), name: "websocket ping/pong")
             assertSelectorExists(baseClass: webSocketClass, selector: NSSelectorFromString("cancelWithCloseCode:reason:"), name: "websocket cancel")
+        }
+    }
+
+    @available(macOS 15.0, iOS 18.0, tvOS 18.0, watchOS 11.0, visionOS 2.0, *)
+    func testGRPCSwiftUnaryIsCapturedWithoutClientConfiguration() async throws {
+        let transport = InProcessTransport()
+        var metadata = Metadata()
+        metadata.addString("123", forKey: "request-id")
+        metadata.addString("456", forKey: "request-id")
+        metadata.addBinary([0, 1, 2], forKey: "trace-bin")
+
+        try await withGRPCServer(
+            transport: transport.server,
+            services: [AtlantisGRPCEchoService()]
+        ) { _ in
+            try await withGRPCClient(transport: transport.client) { client in
+                try await client.unary(
+                    request: ClientRequest(message: [1, 2, 3], metadata: metadata),
+                    descriptor: AtlantisGRPCEchoService.method,
+                    serializer: AtlantisIdentitySerializer(),
+                    deserializer: AtlantisIdentityDeserializer(),
+                    options: .defaults
+                ) { response in
+                    XCTAssertEqual(try response.message, [1, 2, 3])
+                }
+            }
+        }
+
+        let packages = transporter.drainMessages().compactMap { envelope -> GRPCEventPackage? in
+            guard envelope.messageType == .grpc, let content = envelope.content else { return nil }
+            return try? JSONDecoder().decode(GRPCEventPackage.self, from: content)
+        }
+
+        XCTAssertEqual(packages.filter { $0.eventType == .callStarted }.count, 1)
+        XCTAssertEqual(packages.filter { $0.eventType == .attemptStarted }.count, 1)
+        XCTAssertEqual(packages.filter { $0.eventType == .attemptFinished }.count, 1)
+        XCTAssertEqual(packages.filter { $0.eventType == .callFinished }.count, 1)
+        XCTAssertEqual(packages.first { $0.eventType == .requestMessage }?.payload, Data([1, 2, 3]))
+        XCTAssertEqual(packages.first { $0.eventType == .responseMessage }?.payload, Data([1, 2, 3]))
+        XCTAssertEqual(packages.first { $0.eventType == .requestMessage }?.direction, .outbound)
+        XCTAssertEqual(packages.first { $0.eventType == .responseMessage }?.direction, .inbound)
+        XCTAssertEqual(packages.first { $0.eventType == .responseStatus }?.statusCode, 0)
+        XCTAssertFalse(packages.first { $0.eventType == .streamCreated }?.remotePeer?.isEmpty ?? true)
+        let capturedMetadata = packages.first { $0.eventType == .requestMetadata }?.metadata
+        XCTAssertEqual(capturedMetadata?.filter { $0.key == "request-id" }.compactMap(\.stringValue),
+                       ["123", "456"])
+        XCTAssertEqual(capturedMetadata?.first { $0.key == "trace-bin" }?.binaryValue,
+                       Data([0, 1, 2]))
+    }
+
+    @available(macOS 15.0, iOS 18.0, tvOS 18.0, watchOS 11.0, visionOS 2.0, *)
+    func testGRPCClientCreatedBeforeStartAndStartStopRestart() async throws {
+        Atlantis.stop()
+
+        let transport = InProcessTransport()
+        let client = GRPCClient(transport: transport.client)
+        let server = GRPCServer(transport: transport.server, services: [AtlantisGRPCEchoService()])
+
+        try await withThrowingTaskGroup(of: Void.self) { group in
+            group.addTask {
+                try await server.serve()
+            }
+            group.addTask {
+                try await client.runConnections()
+            }
+            defer {
+                client.beginGracefulShutdown()
+                server.beginGracefulShutdown()
+            }
+
+            Atlantis.start()
+            try await performGRPCUnary(client: client, message: [1])
+            let capturedAfterStart = transporter.drainMessages().count
+            XCTAssertGreaterThan(capturedAfterStart, 0)
+
+            Atlantis.stop()
+            try await performGRPCUnary(client: client, message: [2])
+            XCTAssertEqual(transporter.drainMessages().count, capturedAfterStart)
+
+            Atlantis.start()
+            try await performGRPCUnary(client: client, message: [3])
+        }
+
+        let requestPayloads = transporter.drainMessages().compactMap { envelope -> Data? in
+            guard envelope.messageType == .grpc,
+                  let content = envelope.content,
+                  let package = try? JSONDecoder().decode(GRPCEventPackage.self, from: content),
+                  package.eventType == .requestMessage else {
+                return nil
+            }
+            return package.payload
+        }
+        XCTAssertEqual(requestPayloads, [Data([1]), Data([3])])
+    }
+
+    func testGRPCPayloadHasAnOmissionReplacementForBufferPressure() throws {
+        let package = GRPCEventPackage(eventType: .requestMessage,
+                                       callID: "1",
+                                       attemptID: "1.1",
+                                       attemptNumber: 1,
+                                       sequenceNumber: 0,
+                                       payload: Data([1, 2, 3]),
+                                       payloadSize: 3)
+        let message = Message.buildGRPCMessage(id: "1.1", item: package)
+
+        guard let replacementData = message.replacementWhenDropped?.toData(),
+              let envelope = try? JSONDecoder().decode(TestMessageEnvelope.self, from: replacementData),
+              let content = envelope.content else {
+            return XCTFail("Expected a serializable omission replacement")
+        }
+
+        let replacement = try JSONDecoder().decode(GRPCEventPackage.self, from: content)
+        XCTAssertNil(replacement.payload)
+        XCTAssertEqual(replacement.payloadSize, 3)
+        XCTAssertEqual(replacement.payloadOmissionReason, .bufferLimit)
+    }
+
+    @available(macOS 15.0, iOS 18.0, tvOS 18.0, watchOS 11.0, visionOS 2.0, *)
+    func testGRPCPayloadLargerThan50MBIsOmittedWithoutCopying() {
+        var captured: [GRPCEventPackage] = []
+        let injector = GRPCNetworkInjector { package in
+            captured.append(package)
+        }
+        let attemptID = GRPCClientAttemptID(callID: GRPCClientCallID(rawValue: 42), attempt: 1)
+        let context = GRPCClientDiagnosticsMessageContext(
+            attemptID: attemptID,
+            direction: .outbound,
+            sequenceNumber: 0
+        )
+        let bytes = AtlantisOversizedBytes(repeating: 0,
+                                           count: NetServiceTransport.MaximumSizePackage + 1)
+
+        injector.observe(message: bytes, context: context)
+
+        XCTAssertEqual(captured.count, 1)
+        XCTAssertNil(captured.first?.payload)
+        XCTAssertEqual(captured.first?.payloadSize, NetServiceTransport.MaximumSizePackage + 1)
+        XCTAssertEqual(captured.first?.payloadOmissionReason, .exceedsSizeLimit)
+    }
+
+    func testDisconnectedTransportBoundsPendingGRPCEvents() {
+        let transport = NetServiceTransport()
+        for sequence in 0 ..< 300 {
+            let package = GRPCEventPackage(eventType: .requestMessage,
+                                           callID: "1",
+                                           attemptID: "1.1",
+                                           attemptNumber: 1,
+                                           sequenceNumber: sequence,
+                                           payload: Data([UInt8(sequence % 255)]),
+                                           payloadSize: 1)
+            transport.send(package: Message.buildGRPCMessage(id: "1.1", item: package))
+        }
+
+        let stats = transport.pendingBufferStatsForTesting
+        XCTAssertEqual(stats.count, 256)
+        XCTAssertLessThanOrEqual(stats.bytes, 64 * 1024 * 1024)
+        XCTAssertTrue(stats.hasDropMarker)
+    }
+
+    @available(macOS 15.0, iOS 18.0, tvOS 18.0, watchOS 11.0, visionOS 2.0, *)
+    private func performGRPCUnary(
+        client: GRPCClient<InProcessTransport.Client>,
+        message: [UInt8]
+    ) async throws {
+        try await client.unary(
+            request: ClientRequest(message: message),
+            descriptor: AtlantisGRPCEchoService.method,
+            serializer: AtlantisIdentitySerializer(),
+            deserializer: AtlantisIdentityDeserializer(),
+            options: .defaults
+        ) { response in
+            XCTAssertEqual(try response.message, message)
         }
     }
 
@@ -568,7 +803,7 @@ final class URLSessionSwizzleTests: XCTestCase {
                     return
                 }
                 streamMessages.append(streamMessage)
-            case .connection:
+            case .connection, .grpc:
                 return
             }
 

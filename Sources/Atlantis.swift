@@ -83,7 +83,7 @@ public final class Atlantis: NSObject {
     /// Build version of Atlantis
     /// It's essential for Proxyman to known if it's compatible with this version
     /// Instead of receving the number from the info.plist, we should hardcode here because the info file doesn't exist in SPM
-    public static let buildVersion: String = "1.36.0"
+    public static let buildVersion: String = "2.0.0"
 
     /// Start Swizzle all network functions and monitoring the traffic
     /// It also starts looking Bonjour network from Proxyman app.
@@ -117,6 +117,9 @@ public final class Atlantis: NSObject {
 
         // Start transport layer if need
         if Atlantis.shared.isEnabledTransportLayer {
+            GRPCNetworkInjectionController.start { [weak atlantis = Atlantis.shared] package in
+                atlantis?.sendGRPCEvent(package)
+            }
             Atlantis.shared.transporter.start(configuration)
         }
     }
@@ -125,6 +128,7 @@ public final class Atlantis: NSObject {
     @objc public class func stop() {
         guard isEnabled.value else { return }
         isEnabled.mutate { $0 = false }
+        GRPCNetworkInjectionController.stop()
         if Atlantis.shared.isEnabledTransportLayer {
             Atlantis.shared.transporter.stop()
         }
@@ -167,6 +171,12 @@ private var retainedTestTransporters: [Transporter] = []
 // MARK: - Private
 
 extension Atlantis {
+
+    private func sendGRPCEvent(_ package: GRPCEventPackage) {
+        guard Atlantis.isEnabled.value, isEnabledTransportLayer else { return }
+        let messageID = package.attemptID ?? package.callID
+        transporter.send(package: Message.buildGRPCMessage(id: messageID, item: package))
+    }
 
     private func safetyCheck() {
         if Atlantis.isServiceAvailable {
