@@ -164,9 +164,10 @@ func application(_ application: UIApplication, didFinishLaunchingWithOptions lau
 ## SwiftUI Example App
 Atlantis provides a simple iOS app that can demonstrate how to integrate and use Atlantis and Proxyman. Please follow the following steps:
 1. Open Proxyman for macOS
-2. Open iOS Project at `./Example/AtlantisSwiftUIApp.xcodeproj`
+2. Open iOS Project at `./Example/AtlantisSwiftUIApp/AtlantisSwiftUIApp.xcodeproj`
 3. Start the project with any iPhone/iPad Simulator or iPhone/iPad device
-4. Tap on some buttons to see the HTTP/HTTPS Request/Response on Proxyman app
+4. Pick a tab (iOS 18, iOS 26, iOS 27), then tap an API or **Run All** to see the HTTP/HTTPS Request/Response on Proxyman app
+5. Each API shows the method that Atlantis swizzles, and whether Atlantis captured the request
 
 <details>
   <summary>Advanced Usage</summary>
