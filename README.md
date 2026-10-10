@@ -167,7 +167,7 @@ Atlantis provides a simple iOS app that can demonstrate how to integrate and use
 2. Open iOS Project at `./Example/AtlantisSwiftUIApp/AtlantisSwiftUIApp.xcodeproj`
 3. Start the project with any iPhone/iPad Simulator or iPhone/iPad device
 4. Pick a tab (iOS 18, iOS 26, iOS 27), then tap an API or **Run All** to see the HTTP/HTTPS Request/Response on Proxyman app
-5. Each API shows the method that Atlantis swizzles, and whether Atlantis captured the request
+5. Each API shows the method that Atlantis swizzles. A green ✓ means Atlantis captured the request
 
 <details>
   <summary>Advanced Usage</summary>

@@ -16,7 +16,6 @@ enum DemoPage: String, CaseIterable, Identifiable {
 
 struct DemoSection: Identifiable {
     let title: String
-    var footer: String? = nil
     let demos: [Demo]
 
     var id: String { title }
@@ -67,16 +66,14 @@ struct Demo: Identifiable {
     }
 
     enum Action {
-        /// Send the request and return its result
-        case request(() async throws -> DemoResult)
-        /// Show an AsyncImage, it loads the image at this path
-        case image(path: String, loader: URLSessionLoader)
+        /// Send the request, return the status code
+        case request(() async throws -> Int)
+        /// Show an AsyncImage of the Atlantis logo, loaded with this loader
+        case image(URLSessionLoader)
     }
 
     let id: String
     let title: String
-    /// The API that the demo calls
-    let api: String
     /// The method that Atlantis swizzles to capture the traffic
     let swizzled: String
     let symbol: String
@@ -85,21 +82,11 @@ struct Demo: Identifiable {
     let action: Action
 }
 
-struct DemoResult {
-    let statusCode: Int
-    var summary: String? = nil
-
-    init(_ response: URLResponse, summary: String? = nil) {
-        self.statusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
-        self.summary = summary
-    }
-}
-
 enum DemoStatus: Equatable {
     case idle
     case running
     /// The status code is nil if it's unknown, e.g. AsyncImage
-    case success(statusCode: Int?, summary: String?, duration: TimeInterval)
+    case success(statusCode: Int?)
     case failure(String)
 }
 
@@ -116,7 +103,6 @@ final class DemoStore: ObservableObject {
     @Published private var statuses: [Demo.ID: DemoStatus] = [:]
     @Published private var captures: [Demo.ID: Capture] = [:]
     @Published private var runningPages: Set<DemoPage> = []
-    private var imageStartDates: [Demo.ID: Date] = [:]
 
     /// A new value loads the image again
     @Published private(set) var imageRuns: [Demo.ID: UUID] = [:]
@@ -142,19 +128,15 @@ final class DemoStore: ObservableObject {
 
         switch demo.action {
         case .request(let send):
-            let startDate = Date()
             do {
-                let result = try await send()
-                statuses[demo.id] = .success(statusCode: result.statusCode,
-                                             summary: result.summary,
-                                             duration: Date().timeIntervalSince(startDate))
+                let statusCode = try await send()
+                statuses[demo.id] = .success(statusCode: statusCode)
                 verifyCapture(of: demo)
             } catch {
                 statuses[demo.id] = .failure(error.localizedDescription)
             }
         case .image:
             // DemoRow shows the image, then calls imageDidLoad or imageDidFail
-            imageStartDates[demo.id] = Date()
             imageRuns[demo.id] = UUID()
         }
     }
@@ -174,8 +156,7 @@ final class DemoStore: ObservableObject {
         guard status(of: demo) == .running else {
             return
         }
-        let duration = imageStartDates[demo.id].map { Date().timeIntervalSince($0) } ?? 0
-        statuses[demo.id] = .success(statusCode: nil, summary: nil, duration: duration)
+        statuses[demo.id] = .success(statusCode: nil)
         verifyCapture(of: demo)
     }
 

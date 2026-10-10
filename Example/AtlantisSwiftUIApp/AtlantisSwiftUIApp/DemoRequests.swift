@@ -13,12 +13,14 @@ enum URLSessionLoader: String {
     case new
 }
 
-/// The requests of the demos.
+/// The requests of the demos, they return the status code.
 /// Every URL has a `demo` query item, so the app knows which demo Atlantis captured
 enum DemoRequests {
 
     private static let baseURL = URL(string: "https://httpbin.proxyman.app")!
     private static let webSocketURL = URL(string: "wss://echo.websocket.org/.ws")!
+    /// The Atlantis logo in this repository
+    private static let atlantisLogoURL = URL(string: "https://raw.githubusercontent.com/ProxymanApp/atlantis/main/images/atlantis_logo.jpg")!
 
     /// AsyncImage keeps using it, so it's never invalidated
     static let newLoaderImageSession = makeSession(.new)
@@ -35,176 +37,170 @@ enum DemoRequests {
         return URLSession(configuration: configuration, delegate: delegate, delegateQueue: nil)
     }
 
-    static func url(_ path: String, demo: String, queryItems: [URLQueryItem] = []) -> URL {
-        var components = URLComponents(url: baseURL.appendingPathComponent(path), resolvingAgainstBaseURL: false)!
+    static func url(_ path: String, demo: String) -> URL {
+        return url(baseURL.appendingPathComponent(path), demo: demo)
+    }
+
+    /// The image of the downloads and AsyncImage
+    static func logoURL(demo: String, queryItems: [URLQueryItem] = []) -> URL {
+        return url(atlantisLogoURL, demo: demo, queryItems: queryItems)
+    }
+
+    private static func url(_ url: URL, demo: String, queryItems: [URLQueryItem] = []) -> URL {
+        var components = URLComponents(url: url, resolvingAgainstBaseURL: false)!
         components.queryItems = [URLQueryItem(name: "demo", value: demo)] + queryItems
         return components.url!
     }
 
     // MARK: - Data Task
 
-    static func get(_ loader: URLSessionLoader, demo: String) async throws -> DemoResult {
+    static func get(_ loader: URLSessionLoader, demo: String) async throws -> Int {
         let session = makeSession(loader)
         defer { session.finishTasksAndInvalidate() }
 
-        let (data, response) = try await send {
+        let response = try await send {
             session.dataTask(with: url("get", demo: demo), completionHandler: $0)
         }
-        return DemoResult(response, summary: byteCount(data))
+        return statusCode(response)
     }
 
-    static func postJSON(_ loader: URLSessionLoader, demo: String) async throws -> DemoResult {
+    static func post(_ loader: URLSessionLoader, demo: String) async throws -> Int {
         let session = makeSession(loader)
         defer { session.finishTasksAndInvalidate() }
         var request = postRequest(url("post", demo: demo))
         request.httpBody = jsonBody(api: "dataTask(with:completionHandler:)", loader: loader)
 
-        let (data, response) = try await send {
+        let response = try await send {
             session.dataTask(with: request, completionHandler: $0)
         }
-        return DemoResult(response, summary: byteCount(data))
+        return statusCode(response)
     }
 
-    static func dataTaskWithDelegate(_ loader: URLSessionLoader, demo: String) async throws -> DemoResult {
+    static func dataTaskWithDelegate(_ loader: URLSessionLoader, demo: String) async throws -> Int {
         let delegate = DataTaskDelegate()
         let session = makeSession(loader, delegate: delegate)
         defer { session.finishTasksAndInvalidate() }
 
-        let (data, response) = try await delegate.run(URLRequest(url: url("get", demo: demo)), on: session)
-        return DemoResult(response, summary: byteCount(data))
+        let response = try await delegate.run(URLRequest(url: url("get", demo: demo)), on: session)
+        return statusCode(response)
     }
 
     // MARK: - Upload & Download
 
-    static func uploadData(_ loader: URLSessionLoader, demo: String) async throws -> DemoResult {
+    static func uploadData(_ loader: URLSessionLoader, demo: String) async throws -> Int {
         let session = makeSession(loader)
         defer { session.finishTasksAndInvalidate() }
         let request = postRequest(url("post", demo: demo))
         let body = jsonBody(api: "uploadTask(with:from:)", loader: loader)
 
-        let (_, response) = try await send {
+        let response = try await send {
             session.uploadTask(with: request, from: body, completionHandler: $0)
         }
-        return DemoResult(response, summary: "Sent \(byteCount(body))")
+        return statusCode(response)
     }
 
-    static func uploadFile(_ loader: URLSessionLoader, demo: String) async throws -> DemoResult {
+    static func uploadFile(_ loader: URLSessionLoader, demo: String) async throws -> Int {
         let session = makeSession(loader)
         defer { session.finishTasksAndInvalidate() }
         let request = postRequest(url("post", demo: demo))
-        let body = jsonBody(api: "uploadTask(with:fromFile:)", loader: loader)
-        let fileURL = try temporaryFile(body)
+        let fileURL = try temporaryFile(jsonBody(api: "uploadTask(with:fromFile:)", loader: loader))
         defer { try? FileManager.default.removeItem(at: fileURL) }
 
-        let (_, response) = try await send {
+        let response = try await send {
             session.uploadTask(with: request, fromFile: fileURL, completionHandler: $0)
         }
-        return DemoResult(response, summary: "Sent \(byteCount(body))")
+        return statusCode(response)
     }
 
-    static func downloadTask(_ loader: URLSessionLoader, demo: String) async throws -> DemoResult {
+    static func downloadTask(_ loader: URLSessionLoader, demo: String) async throws -> Int {
         let session = makeSession(loader)
         defer { session.finishTasksAndInvalidate() }
-        let url = url("image/jpeg", demo: demo)
+        let url = logoURL(demo: demo)
 
-        let (size, response) = try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<(Int, URLResponse), Error>) in
-            session.downloadTask(with: url) { location, response, error in
+        let response = try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<URLResponse, Error>) in
+            session.downloadTask(with: url) { _, response, error in
                 if let error = error {
                     continuation.resume(throwing: error)
                 } else if let response = response {
-                    // The file is removed when the completion handler returns
-                    let size = location.flatMap { try? FileManager.default.attributesOfItem(atPath: $0.path)[.size] as? Int } ?? 0
-                    continuation.resume(returning: (size, response))
+                    continuation.resume(returning: response)
                 } else {
                     continuation.resume(throwing: URLError(.badServerResponse))
                 }
             }.resume()
         }
-        return DemoResult(response, summary: byteCount(size))
+        return statusCode(response)
     }
 
     // MARK: - Async/Await
 
-    static func asyncData(_ loader: URLSessionLoader, demo: String) async throws -> DemoResult {
+    static func asyncData(_ loader: URLSessionLoader, demo: String) async throws -> Int {
         let session = makeSession(loader)
         defer { session.finishTasksAndInvalidate() }
 
-        let (data, response) = try await session.data(for: URLRequest(url: url("get", demo: demo)))
-        return DemoResult(response, summary: byteCount(data))
+        let (_, response) = try await session.data(for: URLRequest(url: url("get", demo: demo)))
+        return statusCode(response)
     }
 
-    static func asyncBytes(_ loader: URLSessionLoader, demo: String) async throws -> DemoResult {
+    static func asyncBytes(_ loader: URLSessionLoader, demo: String) async throws -> Int {
         let session = makeSession(loader)
         defer { session.finishTasksAndInvalidate() }
 
         // 5 JSON lines
         let (bytes, response) = try await session.bytes(for: URLRequest(url: url("stream/5", demo: demo)))
-        var lines = 0
-        for try await _ in bytes.lines {
-            lines += 1
-        }
-        return DemoResult(response, summary: "\(lines) lines")
+        for try await _ in bytes.lines {}
+        return statusCode(response)
     }
 
-    static func asyncUploadData(_ loader: URLSessionLoader, demo: String) async throws -> DemoResult {
+    static func asyncUploadData(_ loader: URLSessionLoader, demo: String) async throws -> Int {
         let session = makeSession(loader)
         defer { session.finishTasksAndInvalidate() }
         let body = jsonBody(api: "upload(for:from:)", loader: loader)
 
         let (_, response) = try await session.upload(for: postRequest(url("post", demo: demo)), from: body)
-        return DemoResult(response, summary: "Sent \(byteCount(body))")
+        return statusCode(response)
     }
 
-    static func asyncUploadFile(_ loader: URLSessionLoader, demo: String) async throws -> DemoResult {
+    static func asyncUploadFile(_ loader: URLSessionLoader, demo: String) async throws -> Int {
         let session = makeSession(loader)
         defer { session.finishTasksAndInvalidate() }
-        let body = jsonBody(api: "upload(for:fromFile:)", loader: loader)
-        let fileURL = try temporaryFile(body)
+        let fileURL = try temporaryFile(jsonBody(api: "upload(for:fromFile:)", loader: loader))
         defer { try? FileManager.default.removeItem(at: fileURL) }
 
         let (_, response) = try await session.upload(for: postRequest(url("post", demo: demo)), fromFile: fileURL)
-        return DemoResult(response, summary: "Sent \(byteCount(body))")
+        return statusCode(response)
     }
 
-    static func asyncDownload(_ loader: URLSessionLoader, demo: String) async throws -> DemoResult {
+    static func asyncDownload(_ loader: URLSessionLoader, demo: String) async throws -> Int {
         let session = makeSession(loader)
         defer { session.finishTasksAndInvalidate() }
 
-        let (location, response) = try await session.download(for: URLRequest(url: url("image/png", demo: demo)))
-        defer { try? FileManager.default.removeItem(at: location) }
-        let size = (try? FileManager.default.attributesOfItem(atPath: location.path)[.size] as? Int) ?? 0
-        return DemoResult(response, summary: byteCount(size))
+        let (location, response) = try await session.download(for: URLRequest(url: logoURL(demo: demo)))
+        try? FileManager.default.removeItem(at: location)
+        return statusCode(response)
     }
 
     // MARK: - Streaming
 
     /// A local server sends 5 events, then closes the stream
-    static func serverSentEvents(_ loader: URLSessionLoader, demo: String) async throws -> DemoResult {
+    static func serverSentEvents(_ loader: URLSessionLoader, demo: String) async throws -> Int {
         let server = try LocalSSEDemoServer(maxEvents: 5, eventInterval: 0.2)
         defer { server.stop() }
-        var components = URLComponents(url: try await server.start(), resolvingAgainstBaseURL: false)!
-        components.queryItems = [URLQueryItem(name: "demo", value: demo)]
-        var request = URLRequest(url: components.url!)
+        var request = URLRequest(url: url(try await server.start(), demo: demo))
         request.setValue("text/event-stream", forHTTPHeaderField: "Accept")
 
         let delegate = DataTaskDelegate()
         let session = makeSession(loader, delegate: delegate)
         defer { session.finishTasksAndInvalidate() }
 
-        let (data, response) = try await delegate.run(request, on: session)
-        let events = String(decoding: data, as: UTF8.self)
-            .components(separatedBy: "\n\n")
-            .filter { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
-        return DemoResult(response, summary: "\(events.count) events")
+        let response = try await delegate.run(request, on: session)
+        return statusCode(response)
     }
 
     /// echo.websocket.org says hello, then echoes every message
-    static func webSocket(_ loader: URLSessionLoader, demo: String) async throws -> DemoResult {
+    static func webSocket(_ loader: URLSessionLoader, demo: String) async throws -> Int {
         let session = makeSession(loader)
         defer { session.invalidateAndCancel() }
-        var components = URLComponents(url: webSocketURL, resolvingAgainstBaseURL: false)!
-        components.queryItems = [URLQueryItem(name: "demo", value: demo)]
-        let task = session.webSocketTask(with: components.url!)
+        let task = session.webSocketTask(with: url(webSocketURL, demo: demo))
 
         // Don't wait forever, cancelling makes the pending calls throw
         let timeout = Task {
@@ -232,13 +228,13 @@ enum DemoRequests {
         }
         let statusCode = (task.response as? HTTPURLResponse)?.statusCode ?? 101
         task.cancel(with: .normalClosure, reason: Data("Bye".utf8))
-        return DemoResult(statusCode: statusCode, summary: "Sent 2, received 3, ping")
+        return statusCode
     }
 
     // MARK: - iOS 26
 
     /// HTTP/3 0-RTT. It requires the new loader
-    static func earlyData(demo: String) async throws -> DemoResult {
+    static func earlyData(demo: String) async throws -> Int {
         guard #available(iOS 26.0, *) else {
             throw URLError(.unsupportedURL)
         }
@@ -247,12 +243,12 @@ enum DemoRequests {
         }
         defer { session.finishTasksAndInvalidate() }
 
-        let (data, response) = try await session.data(for: URLRequest(url: url("get", demo: demo)))
-        return DemoResult(response, summary: byteCount(data))
+        let (_, response) = try await session.data(for: URLRequest(url: url("get", demo: demo)))
+        return statusCode(response)
     }
 
     /// Ultra Constrained networks, e.g. satellite
-    static func ultraConstrainedNetwork(demo: String) async throws -> DemoResult {
+    static func ultraConstrainedNetwork(demo: String) async throws -> Int {
         guard #available(iOS 26.1, *) else {
             throw URLError(.unsupportedURL)
         }
@@ -263,25 +259,29 @@ enum DemoRequests {
         var request = URLRequest(url: url("get", demo: demo))
         request.allowsUltraConstrainedNetworkAccess = true
 
-        let (data, response) = try await session.data(for: request)
-        return DemoResult(response, summary: byteCount(data))
+        let (_, response) = try await session.data(for: request)
+        return statusCode(response)
     }
 
     // MARK: - Private
 
     /// Resume the task and wait for its completion handler
-    private static func send(_ makeTask: (@escaping @Sendable (Data?, URLResponse?, Error?) -> Void) -> URLSessionTask) async throws -> (Data, URLResponse) {
+    private static func send(_ makeTask: (@escaping @Sendable (Data?, URLResponse?, Error?) -> Void) -> URLSessionTask) async throws -> URLResponse {
         return try await withCheckedThrowingContinuation { continuation in
-            makeTask { data, response, error in
+            makeTask { _, response, error in
                 if let error = error {
                     continuation.resume(throwing: error)
                 } else if let response = response {
-                    continuation.resume(returning: (data ?? Data(), response))
+                    continuation.resume(returning: response)
                 } else {
                     continuation.resume(throwing: URLError(.badServerResponse))
                 }
             }.resume()
         }
+    }
+
+    private static func statusCode(_ response: URLResponse) -> Int {
+        return (response as? HTTPURLResponse)?.statusCode ?? 0
     }
 
     private static func postRequest(_ url: URL) -> URLRequest {
@@ -304,46 +304,25 @@ enum DemoRequests {
         try data.write(to: fileURL)
         return fileURL
     }
-
-    private static func byteCount(_ data: Data) -> String {
-        return byteCount(data.count)
-    }
-
-    private static func byteCount(_ count: Int) -> String {
-        return ByteCountFormatter.string(fromByteCount: Int64(count), countStyle: .file)
-    }
 }
 
-extension DemoResult {
-
-    init(statusCode: Int, summary: String?) {
-        self.statusCode = statusCode
-        self.summary = summary
-    }
-}
-
-/// Collect the body of a data task, with a delegate
+/// Run a data task with a delegate
 private final class DataTaskDelegate: NSObject, URLSessionDataDelegate {
 
-    private var data = Data()
-    private var continuation: CheckedContinuation<(Data, URLResponse), Error>?
+    private var continuation: CheckedContinuation<URLResponse, Error>?
 
-    func run(_ request: URLRequest, on session: URLSession) async throws -> (Data, URLResponse) {
+    func run(_ request: URLRequest, on session: URLSession) async throws -> URLResponse {
         return try await withCheckedThrowingContinuation { continuation in
             self.continuation = continuation
             session.dataTask(with: request).resume()
         }
     }
 
-    func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive data: Data) {
-        self.data.append(data)
-    }
-
     func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
         if let error = error {
             continuation?.resume(throwing: error)
         } else if let response = task.response {
-            continuation?.resume(returning: (data, response))
+            continuation?.resume(returning: response)
         } else {
             continuation?.resume(throwing: URLError(.badServerResponse))
         }
