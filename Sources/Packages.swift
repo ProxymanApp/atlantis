@@ -113,8 +113,7 @@ public final class TrafficPackage: Codable, CustomDebugStringConvertible, Serial
               let request = Request(currentRequest) else { return nil }
 
         // Check if it's a websocket
-        if let websocketClass = NSClassFromString("__NSURLSessionWebSocketTask"),
-           sessionTask.isKind(of: websocketClass) {
+        if sessionTask.isWebSocketTask {
             return TrafficPackage(id: id, request: request, packageType: .websocket)
         }
 
@@ -221,7 +220,7 @@ public final class TrafficPackage: Codable, CustomDebugStringConvertible, Serial
         return "Package: id=\(id), request=\(String(describing: request)), response=\(String(describing: response))"
     }
 
-    func setWebsocketMessagePackage(package: WebsocketMessagePackage) {
+    func setWebsocketMessagePackage(package: WebsocketMessagePackage?) {
         self.websocketMessagePackage = package
     }
 

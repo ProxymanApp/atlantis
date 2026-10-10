@@ -47,7 +47,17 @@ final class NetworkInjector: Injector {
 
     weak var delegate: InjectorDelegate?
 
+    /// Methods that are already swizzled.
+    /// The same func is swizzled on many classes (e.g. the classic and the new URLSession loader),
+    /// if the classes share an implementation, it must be swizzled once. Otherwise, the traffic is captured twice.
+    private var swizzledMethods = Set<OpaquePointer>()
+
     // MARK: - Internal
+
+    /// Return false if the method was already swizzled
+    func markAsSwizzled(_ method: Method) -> Bool {
+        return swizzledMethods.insert(method).inserted
+    }
 
     func injectAllNetworkClasses(config: NetworkConfiguration = NetworkConfiguration()) {
         // Make sure we swizzle *ONCE*
@@ -81,6 +91,9 @@ extension NetworkInjector {
         if config.shouldCaptureWebSocketTraffic {
             injectURLSessionWebsocketTasks()
         }
+
+        // The new loader, used when URLSessionConfiguration.usesClassicLoadingMode is false
+        injectNetworkLoaderURLSession(config)
     }
 
     private func injectIntoURLSessionDelegate(anyClass: AnyClass) {
@@ -98,7 +111,8 @@ extension NetworkInjector {
         if !ProcessInfo.processInfo.responds(to: #selector(getter: ProcessInfo.operatingSystemVersion)) {
             baseResumeClass = NSClassFromString("__NSCFLocalSessionTask")
         } else {
-            #if targetEnvironment(macCatalyst) || os(macOS)
+            // watchOS and visionOS are versioned differently, but they always use NSURLSessionTask (same as iOS 14+)
+            #if targetEnvironment(macCatalyst) || os(macOS) || os(watchOS) || os(visionOS)
             baseResumeClass = URLSessionTask.self
             #else
             let majorVersion = ProcessInfo.processInfo.operatingSystemVersion.majorVersion
@@ -123,6 +137,52 @@ extension NetworkInjector {
     }
 
     private func injectURLSessionWebsocketTasks() {
-        _swizzleURLSessionWebsocketSelector()
+        guard let websocketClass = NSClassFromString("__NSURLSessionWebSocketTask") else {
+            print("[Atlantis][ERROR] Could not inject __NSURLSessionWebSocketTask!!")
+            return
+        }
+        _swizzleURLSessionWebsocketSelector(baseClass: websocketClass)
+    }
+
+    /// iOS 18.4+, macOS 15.4+, tvOS 18.4+, watchOS 11.4+, visionOS 2.4+ ship a second URLSession loader built on Network.framework.
+    /// URLSession switches to it when `URLSessionConfiguration.usesClassicLoadingMode` is false,
+    /// which is required by newer APIs, e.g. `enablesEarlyData` (HTTP/3 0-RTT) in iOS 26.
+    /// Its classes (NWURLSession, NWURLSessionTask, ...) don't inherit from NSURLSession/NSURLSessionTask, so the classic swizzling doesn't see them.
+    private func injectNetworkLoaderURLSession(_ config: NetworkConfiguration) {
+        guard let sessionClass = NSClassFromString("NWURLSession"),
+              let taskClass = NSClassFromString("NWURLSessionTask") else {
+            // Older OS, there is only the classic loader
+            return
+        }
+
+        // Resume
+        _swizzleURLSessionResumeSelector(baseClass: taskClass)
+
+        // Upload
+        _swizzleURLSessionUploadSelector(baseClass: sessionClass)
+
+        // Response, Data and Completion are delivered to a response consumer,
+        // one for each kind of task (completion handler, delegate, download)
+        for consumerName in ["NWURLSessionResponseConsumerDataCompletionHandler",
+                             "NWURLSessionResponseConsumerDataDelegate",
+                             "NWURLSessionResponseConsumerDownload"] {
+            guard let consumerClass = NSClassFromString(consumerName) else {
+                logError(name: consumerName)
+                continue
+            }
+            _swizzleNWURLSessionConsumerDeliverResponse(baseClass: consumerClass)
+            _swizzleNWURLSessionConsumerDeliverData(baseClass: consumerClass)
+        }
+
+        // Websocket
+        if config.shouldCaptureWebSocketTraffic {
+            guard let websocketClass = NSClassFromString("NWURLSessionWebSocketTask") else {
+                logError(name: "NWURLSessionWebSocketTask")
+                return
+            }
+            _swizzleURLSessionWebsocketSelector(baseClass: websocketClass, isNetworkLoader: true)
+            _swizzleNWURLSessionTaskLoaderConnected(baseClass: taskClass)
+            _swizzleNWURLSessionWebSocketTaskComplete(baseClass: websocketClass)
+        }
     }
 }

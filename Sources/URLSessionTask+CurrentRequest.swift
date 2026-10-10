@@ -17,4 +17,15 @@ extension URLSessionTask {
 
         return currentRequest
     }
+
+    var isWebSocketTask: Bool {
+        // The new loader's NWURLSessionWebSocketTask only answers to the public class
+        if isKind(of: URLSessionWebSocketTask.self) {
+            return true
+        }
+        if let websocketClass = NSClassFromString("__NSURLSessionWebSocketTask") {
+            return isKind(of: websocketClass)
+        }
+        return false
+    }
 }

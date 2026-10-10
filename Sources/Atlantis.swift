@@ -28,7 +28,7 @@ public final class Atlantis: NSObject {
     private var injector: Injector = NetworkInjector()
     private(set) var configuration: Configuration = Configuration.default()
     private var packages: [String: TrafficPackage] = [:]
-    private lazy var waitingWebsocketPackages: [String: [TrafficPackage]] = [:]
+    private lazy var waitingWebsocketPackages: [String: [WebsocketMessagePackage]] = [:]
     private var sentServerSentEventTrafficIds: Set<String> = []
     private var serverSentEventBuffers: [String: String] = [:]
     private var ignoreProtocols: [AnyClass] = []
@@ -420,24 +420,26 @@ extension Atlantis {
     }
 
     private func prepareAndSendWSMessage(task: URLSessionTask, wsPackageBuilder: (String) -> WebsocketMessagePackage?) {
-        // Get the ID
+        // A message might be sent before the handshake is done, e.g. send() right after resume()
+        // Get or create the package, so the message waits for the handshake instead of being dropped
+        // Don't create it after the WS is closed, the message would wait forever
         let id = PackageIdentifier.getID(taskOrConnection: task)
-
-        // The value should be available
-        if let package = packages[id] {
-
-            // Build a package
-            guard let wsPackage = wsPackageBuilder(id) else {
-                print("[Atlantis][Error] Skipping sending WS Packages!! Please contact Proxyman Team.")
-                return
-            }
-
-            // It's important to set a message with a WS package
-            package.setWebsocketMessagePackage(package: wsPackage)
-
-            // Sending via Bonjour service
-            startSendingWebsocketMessage(package)
+        guard packages[id] != nil || task.state == .running,
+              let package = getPackage(task) else {
+            return
         }
+
+        // Build a package
+        guard let wsPackage = wsPackageBuilder(package.id) else {
+            print("[Atlantis][Error] Skipping sending WS Packages!! Please contact Proxyman Team.")
+            return
+        }
+
+        // It's important to set a message with a WS package
+        package.setWebsocketMessagePackage(package: wsPackage)
+
+        // Sending via Bonjour service
+        startSendingWebsocketMessage(package)
     }
 }
 
@@ -475,7 +477,7 @@ extension Atlantis {
                 // Only remove the we receive the Close message
 
                 // Sending all waiting WS
-                attemptSendingAllWaitingWSPackages(id: package.id)
+                attemptSendingAllWaitingWSPackages(package)
                 // Clean up taskStartTimes for completed WebSocket requests
                 let taskId = PackageIdentifier.getID(taskOrConnection: taskOrConnection)
                 taskStartTimes.removeValue(forKey: taskId)
@@ -510,36 +512,43 @@ extension Atlantis {
         // It means that the WS is not finished yet,
         // We don't send it, we put it in the waiting queue
         if package.response == nil {
-            var waitingList = waitingWebsocketPackages[id] ?? []
-            waitingList.append(package)
-            waitingWebsocketPackages[id] = waitingList
+            // The package only holds the latest message, so we keep the message itself
+            if let wsMessage = package.websocketMessagePackage {
+                var waitingList = waitingWebsocketPackages[id] ?? []
+                waitingList.append(wsMessage)
+                waitingWebsocketPackages[id] = waitingList
+            }
+            package.setWebsocketMessagePackage(package: nil)
             return
         }
 
         // Sending all waiting WS if need
-        attemptSendingAllWaitingWSPackages(id: id)
+        attemptSendingAllWaitingWSPackages(package)
 
         // Send the current one
         let message = Message.buildWebSocketMessage(id: configuration.id, item: package)
         transporter.send(package: message)
     }
 
-    private func attemptSendingAllWaitingWSPackages(id: String) {
+    private func attemptSendingAllWaitingWSPackages(_ package: TrafficPackage) {
         guard !waitingWebsocketPackages.isEmpty else {
             return
         }
-        guard let waitingList = waitingWebsocketPackages[id] else {
+        guard let waitingList = waitingWebsocketPackages[package.id] else {
             return
         }
 
-        // Send all waiting WS Message
-        waitingList.forEach { item in
-            let message = Message.buildWebSocketMessage(id: configuration.id, item: item)
+        // Send all waiting WS Message, in order
+        let currentMessage = package.websocketMessagePackage
+        waitingList.forEach { wsMessage in
+            package.setWebsocketMessagePackage(package: wsMessage)
+            let message = Message.buildWebSocketMessage(id: configuration.id, item: package)
             transporter.send(package: message)
         }
+        package.setWebsocketMessagePackage(package: currentMessage)
 
         // Release the list
-        waitingWebsocketPackages[id] = nil
+        waitingWebsocketPackages[package.id] = nil
     }
 
     private func removeCompletedPackage(taskOrConnection: AnyObject, package: TrafficPackage) {

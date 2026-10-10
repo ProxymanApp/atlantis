@@ -84,6 +84,11 @@ struct ContentView: View {
                         makeUploadRequest()
                     }
                     .buttonStyle(.borderedProminent)
+
+                    Button("Async Upload with New URLSession Loader") {
+                        makeNewLoaderRequest()
+                    }
+                    .buttonStyle(.borderedProminent)
                     
                     Divider()
                         .padding(.vertical, 8)
@@ -302,6 +307,37 @@ struct ContentView: View {
     }
 
     // MARK: - Server-Sent Events Methods
+
+    /// URLSession uses the new loader (Network framework) when usesClassicLoadingMode is false (iOS 18.4+)
+    /// It's required by enablesEarlyData (HTTP/3 0-RTT) on iOS 26
+    func makeNewLoaderRequest() {
+        guard #available(iOS 18.4, *) else {
+            responseText = "The new URLSession loader requires iOS 18.4+"
+            return
+        }
+        let configuration = URLSessionConfiguration.default
+        configuration.usesClassicLoadingMode = false
+        if #available(iOS 26.0, *) {
+            configuration.enablesEarlyData = true
+        }
+        let session = URLSession(configuration: configuration)
+
+        var request = URLRequest(url: URL(string: "https://httpbin.proxyman.app/post")!)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        let body = Data(#"{"loader": "new", "api": "upload(for:from:)"}"#.utf8)
+
+        responseText = "Uploading..."
+        Task {
+            defer { session.finishTasksAndInvalidate() }
+            do {
+                let (data, _) = try await session.upload(for: request, from: body)
+                responseText = "New Loader Response:\n\(String(decoding: data, as: UTF8.self))"
+            } catch {
+                responseText = "New Loader Error: \(error.localizedDescription)"
+            }
+        }
+    }
 
     func startSSETest() {
         stopSSETest(shouldAddMessage: false)
