@@ -674,7 +674,11 @@ final class URLSessionPrivateAPITests: XCTestCase {
         assertMethod("NWURLSessionWebSocketTask", "receiveMessageWithCompletionHandler:", encoding: "v@:@?")
         assertMethod("NWURLSessionWebSocketTask", "sendPingWithPongReceiveHandler:", encoding: "v@:@?")
         assertMethod("NWURLSessionWebSocketTask", "cancelWithCloseCode:reason:", encoding: "v@:q@")
-        assertMethod("NWURLSessionWebSocketTask", "completeTaskWithError:retryable:", encoding: "v@:@B")
+
+        // Optional, macOS 15 / iOS 18 don't have it
+        if #available(iOS 27.0, macOS 27.0, tvOS 27.0, watchOS 27.0, visionOS 27.0, *) {
+            assertMethod("NWURLSessionWebSocketTask", "completeTaskWithError:retryable:", encoding: "v@:@B")
+        }
     }
 
     func testClassicLoaderAsyncUploadSelectorsExist() throws {

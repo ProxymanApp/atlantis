@@ -512,7 +512,8 @@ extension NetworkInjector {
             let wrapperHandler = AtlantisHelper.swizzleWebSocketReceiveMessage(withCompleteHandler: handler, responseHandler: {[weak self] (str, data, error) in
                 if let task = me as? URLSessionTask {
                     if isNetworkLoader {
-                        self?.reportNetworkLoaderWebSocketHandshakeIfNeeded(task: task, error: nil)
+                        // On iOS 18 (no completeTaskWithError:retryable:), a failed handshake is only reported here
+                        self?.reportNetworkLoaderWebSocketHandshakeIfNeeded(task: task, error: error)
                     }
                     if let message = self?.wrapWebSocketMessage(strValue: str, dataValue: data) {
                         self?.delegate?.injectorSessionWebSocketDidReceive(task: task, message: message)

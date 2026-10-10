@@ -182,7 +182,11 @@ extension NetworkInjector {
             }
             _swizzleURLSessionWebsocketSelector(baseClass: websocketClass, isNetworkLoader: true)
             _swizzleNWURLSessionTaskLoaderConnected(baseClass: taskClass)
-            _swizzleNWURLSessionWebSocketTaskComplete(baseClass: websocketClass)
+
+            // Not on iOS 18 / macOS 15. The receive hook reports a failed handshake too
+            if websocketClass.instancesRespond(to: NSSelectorFromString("completeTaskWithError:retryable:")) {
+                _swizzleNWURLSessionWebSocketTaskComplete(baseClass: websocketClass)
+            }
         }
     }
 }

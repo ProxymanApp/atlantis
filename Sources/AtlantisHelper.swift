@@ -70,6 +70,9 @@ class AtlantisHelper: NSObject {
                     }()
                     responseHandler(body.string, body.data, error)
                 }
+            } else if message == nil, let error = error {
+                // The receive failed, e.g. the server rejected the handshake
+                responseHandler?(nil, nil, error)
             }
 
             originalHandler(message, error)
