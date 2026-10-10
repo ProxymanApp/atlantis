@@ -298,9 +298,10 @@ final class URLSessionSwizzleTests: XCTestCase {
     }
 
     func testDownloadRequestCaptured() {
-        let url = baseURL.appendingPathComponent("bytes/32")
+        // /bytes/N fails on httpbin.proxyman.app (502 or a reset HTTP/2 stream), download a static image instead
+        let url = baseURL.appendingPathComponent("image/png")
         let package = waitForTrafficPackage(matching: { package in
-            package.request.method == "GET" && package.request.url.contains("/bytes/32")
+            package.request.method == "GET" && package.request.url.contains("/image/png")
         }) {
             let session = makeSession()
             let task = session.downloadTask(with: url)
