@@ -28,7 +28,6 @@ public final class Atlantis: NSObject {
     private var injector: Injector = NetworkInjector()
     private(set) var configuration: Configuration = Configuration.default()
     private var packages: [String: TrafficPackage] = [:]
-    private lazy var waitingWebsocketPackages: [String: [WebsocketMessagePackage]] = [:]
     private var sentServerSentEventTrafficIds: Set<String> = []
     private var serverSentEventBuffers: [String: String] = [:]
     private var ignoreProtocols: [AnyClass] = []
@@ -256,7 +255,8 @@ extension Atlantis {
 
         //
         if ignoredRequestIds.contains(id) {
-            if isCompleted {
+            // Keep ignoring a WS after the handshake, its messages come later
+            if isCompleted, (taskOrConnection as? URLSessionTask)?.isWebSocketTask != true {
                 ignoredRequestIds.remove(id)
             }
             return nil
@@ -414,34 +414,71 @@ extension Atlantis {
             // Remove after the WS connection is closed
             let id = PackageIdentifier.getID(taskOrConnection: task)
             packages.removeValue(forKey: id)
+            ignoredRequestIds.remove(id)
+            removeWaitingWebsocketMessages(of: task)
             // Clean up taskStartTimes for closed WebSocket connections
             taskStartTimes.removeValue(forKey: id)
         }
     }
 
     private func prepareAndSendWSMessage(task: URLSessionTask, wsPackageBuilder: (String) -> WebsocketMessagePackage?) {
-        // A message might be sent before the handshake is done, e.g. send() right after resume()
-        // Get or create the package, so the message waits for the handshake instead of being dropped
-        // Don't create it after the WS is closed, the message would wait forever
+        // Get the ID
         let id = PackageIdentifier.getID(taskOrConnection: task)
-        guard packages[id] != nil || task.state == .running,
-              let package = getPackage(task) else {
-            return
-        }
 
         // Build a package
-        guard let wsPackage = wsPackageBuilder(package.id) else {
+        guard let wsPackage = wsPackageBuilder(id) else {
             print("[Atlantis][Error] Skipping sending WS Packages!! Please contact Proxyman Team.")
             return
         }
 
-        // It's important to set a message with a WS package
-        package.setWebsocketMessagePackage(package: wsPackage)
+        // The WS traffic is sent (handleDidFinish), so Proxyman knows the message
+        if let package = packages[id], package.endAt != nil {
+            sendWebsocketMessage(wsPackage, package: package)
+            return
+        }
 
-        // Sending via Bonjour service
-        startSendingWebsocketMessage(package)
+        // A message might be sent before the handshake is reported, e.g. send() right after resume()
+        // It waits for handleDidFinish. The package isn't created here, the request isn't final until the handshake is done
+        // Don't keep it after the WS is closed or if it's ignored, it would wait forever
+        guard task.state != .canceling, task.state != .completed, !ignoredRequestIds.contains(id) else {
+            return
+        }
+        appendWaitingWebsocketMessage(wsPackage, task: task)
+    }
+
+    /// Send a WS message of the package, without changing the package
+    private func sendWebsocketMessage(_ wsMessage: WebsocketMessagePackage, package: TrafficPackage) {
+        let message = Message.buildWebSocketMessage(id: configuration.id, package: package, websocketMessage: wsMessage)
+        transporter.send(package: message)
+    }
+
+    private func appendWaitingWebsocketMessage(_ wsMessage: WebsocketMessagePackage, task: URLSessionTask) {
+        if let waiting = objc_getAssociatedObject(task, &waitingWebsocketMessagesKey) as? WaitingWebsocketMessages {
+            waiting.messages.append(wsMessage)
+            return
+        }
+        let waiting = WaitingWebsocketMessages()
+        waiting.messages.append(wsMessage)
+        objc_setAssociatedObject(task, &waitingWebsocketMessagesKey, waiting, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+    }
+
+    @discardableResult
+    private func removeWaitingWebsocketMessages(of taskOrConnection: AnyObject) -> [WebsocketMessagePackage] {
+        guard let waiting = objc_getAssociatedObject(taskOrConnection, &waitingWebsocketMessagesKey) as? WaitingWebsocketMessages else {
+            return []
+        }
+        objc_setAssociatedObject(taskOrConnection, &waitingWebsocketMessagesKey, nil, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+        return waiting.messages
     }
 }
+
+/// The WS messages that are sent before the handshake is reported.
+/// They're kept on the task, so they're released with it, even if the handshake is never reported
+private final class WaitingWebsocketMessages {
+    var messages: [WebsocketMessagePackage] = []
+}
+
+private var waitingWebsocketMessagesKey: UInt8 = 0
 
 // MARK: - Private
 
@@ -451,6 +488,8 @@ extension Atlantis {
         queue.sync {
             guard Atlantis.isEnabled.value else { return }
             guard let package = getPackage(taskOrConnection, isCompleted: true) else {
+                // e.g. an ignored WS, its waiting messages are never sent
+                removeWaitingWebsocketMessages(of: taskOrConnection)
                 return
             }
 
@@ -476,8 +515,14 @@ extension Atlantis {
                 // Keep it in the packages, so we can send the WS Message
                 // Only remove the we receive the Close message
 
-                // Sending all waiting WS
-                attemptSendingAllWaitingWSPackages(package)
+                // Send the messages that are sent before the handshake, in order
+                // If the handshake failed, they never reached the server and no message comes after: drop them and the package
+                let waitingMessages = removeWaitingWebsocketMessages(of: taskOrConnection)
+                if error == nil {
+                    waitingMessages.forEach { sendWebsocketMessage($0, package: package) }
+                } else {
+                    removeCompletedPackage(taskOrConnection: taskOrConnection, package: package)
+                }
                 // Clean up taskStartTimes for completed WebSocket requests
                 let taskId = PackageIdentifier.getID(taskOrConnection: taskOrConnection)
                 taskStartTimes.removeValue(forKey: taskId)
@@ -505,50 +550,11 @@ extension Atlantis {
         transporter.send(package: message)
     }
 
+    /// It doesn't use any state of Atlantis, addGRPCStreaming calls it from any thread
+    /// The messages of URLSession's WS wait for the handshake in prepareAndSendWSMessage
     func startSendingWebsocketMessage(_ package: TrafficPackage) {
-        let id = package.id
-
-        // If the response of WS is nil
-        // It means that the WS is not finished yet,
-        // We don't send it, we put it in the waiting queue
-        if package.response == nil {
-            // The package only holds the latest message, so we keep the message itself
-            if let wsMessage = package.websocketMessagePackage {
-                var waitingList = waitingWebsocketPackages[id] ?? []
-                waitingList.append(wsMessage)
-                waitingWebsocketPackages[id] = waitingList
-            }
-            package.setWebsocketMessagePackage(package: nil)
-            return
-        }
-
-        // Sending all waiting WS if need
-        attemptSendingAllWaitingWSPackages(package)
-
-        // Send the current one
         let message = Message.buildWebSocketMessage(id: configuration.id, item: package)
         transporter.send(package: message)
-    }
-
-    private func attemptSendingAllWaitingWSPackages(_ package: TrafficPackage) {
-        guard !waitingWebsocketPackages.isEmpty else {
-            return
-        }
-        guard let waitingList = waitingWebsocketPackages[package.id] else {
-            return
-        }
-
-        // Send all waiting WS Message, in order
-        let currentMessage = package.websocketMessagePackage
-        waitingList.forEach { wsMessage in
-            package.setWebsocketMessagePackage(package: wsMessage)
-            let message = Message.buildWebSocketMessage(id: configuration.id, item: package)
-            transporter.send(package: message)
-        }
-        package.setWebsocketMessagePackage(package: currentMessage)
-
-        // Release the list
-        waitingWebsocketPackages[package.id] = nil
     }
 
     private func removeCompletedPackage(taskOrConnection: AnyObject, package: TrafficPackage) {

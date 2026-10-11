@@ -64,7 +64,8 @@ final class LocalSSEDemoServer: @unchecked Sendable {
             } else {
                 startContinuation?.resume(throwing: URLError(.cannotConnectToHost))
             }
-        case .failed(let error):
+        case .failed(let error), .waiting(let error):
+            // Don't wait forever, e.g. the loopback interface isn't available
             startContinuation?.resume(throwing: error)
         case .cancelled:
             startContinuation?.resume(throwing: CancellationError())

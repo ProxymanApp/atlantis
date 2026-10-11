@@ -28,4 +28,26 @@ extension URLSessionTask {
         }
         return false
     }
+
+    private static let markLock = NSLock()
+
+    /// Whether the task is marked with the key, without a lock
+    func isMarked(_ key: UnsafeRawPointer) -> Bool {
+        return objc_getAssociatedObject(self, key) != nil
+    }
+
+    /// Mark the task with the key, e.g. to report something once per task.
+    /// Return false if it's already marked
+    func markOnce(_ key: UnsafeRawPointer) -> Bool {
+        guard !isMarked(key) else {
+            return false
+        }
+        URLSessionTask.markLock.lock()
+        defer { URLSessionTask.markLock.unlock() }
+        guard !isMarked(key) else {
+            return false
+        }
+        objc_setAssociatedObject(self, key, true, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+        return true
+    }
 }

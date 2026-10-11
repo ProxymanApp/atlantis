@@ -9,7 +9,6 @@ import Foundation
 
 /// Mark a WebSocket task that its handshake is already reported
 private var webSocketHandshakeReportedKey: UInt8 = 0
-private let webSocketHandshakeLock = NSLock()
 
 // MARK: - New URLSession loader (NWURLSession)
 //
@@ -74,23 +73,23 @@ extension NetworkInjector {
         let originalImp: IMP = method_getImplementation(method)
         let block: @convention(block) (AnyObject, AnyObject?, AnyObject?, Bool, AnyObject?, AnyObject?) -> Void = {[weak self](me, task, data, isComplete, error, handler) in
 
+            // Report the data before calling the original
+            // The original asks for the next chunk, which might be delivered from another thread right after
+            if let task = task as? URLSessionTask {
+                // It's a dispatch_data_t, which is bridged to NSData
+                if let data = data as? Data, !data.isEmpty {
+                    self?.delegate?.injectorSessionDidReceiveData(dataTask: task, data: data)
+                }
+                if isComplete {
+                    self?.delegate?.injectorSessionDidComplete(task: task, error: error as? Error)
+                }
+            } else {
+                print("[Atlantis] ❌ Error: Could not get data from _swizzleNWURLSessionConsumerDeliverData. It might causes due to the latest iOS changes. Please contact the author!")
+            }
+
             // call the original
             let original: NewClosureType = unsafeBitCast(originalImp, to: NewClosureType.self)
             original(me, selector, task, data, isComplete, error, handler)
-
-            // Safe-check
-            guard let task = task as? URLSessionTask else {
-                print("[Atlantis] ❌ Error: Could not get data from _swizzleNWURLSessionConsumerDeliverData. It might causes due to the latest iOS changes. Please contact the author!")
-                return
-            }
-
-            // It's a dispatch_data_t, which is bridged to NSData
-            if let data = data as? Data, !data.isEmpty {
-                self?.delegate?.injectorSessionDidReceiveData(dataTask: task, data: data)
-            }
-            if isComplete {
-                self?.delegate?.injectorSessionDidComplete(task: task, error: error as? Error)
-            }
         }
 
         method_setImplementation(method, imp_implementationWithBlock(block))
@@ -166,19 +165,15 @@ extension NetworkInjector {
     /// The classic loader reports the WebSocket handshake as a normal request: the response (101), then the completion.
     /// Do the same for the new loader, once per task
     func reportNetworkLoaderWebSocketHandshakeIfNeeded(task: URLSessionTask, error: Error?) {
-        // Wait for the response, unless the handshake failed
-        let response = task.response
-        guard response != nil || error != nil else {
+        // It's called on every WS event. Once it's reported, it's a cheap check without a lock
+        guard !task.isMarked(&webSocketHandshakeReportedKey) else {
             return
         }
 
-        webSocketHandshakeLock.lock()
-        let isReported = objc_getAssociatedObject(task, &webSocketHandshakeReportedKey) != nil
-        if !isReported {
-            objc_setAssociatedObject(task, &webSocketHandshakeReportedKey, true, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
-        }
-        webSocketHandshakeLock.unlock()
-        guard !isReported else {
+        // Wait for the response, unless the handshake failed
+        let response = task.response
+        guard response != nil || error != nil,
+              task.markOnce(&webSocketHandshakeReportedKey) else {
             return
         }
 
@@ -186,5 +181,22 @@ extension NetworkInjector {
             delegate?.injectorSessionDidReceiveResponse(dataTask: task, response: response)
         }
         delegate?.injectorSessionDidComplete(task: task, error: error)
+    }
+
+    /// Wrap the completion handler of sendMessage:completionHandler: and sendPingWithPongReceiveHandler:.
+    /// Without completeTaskWithError:retryable: (iOS 18 / macOS 15), it reports a failed handshake of a WS that doesn't call receive()
+    func wrapNetworkLoaderWebSocketHandler(task: AnyObject, handler: AnyObject?) -> AnyObject? {
+        typealias Handler = @convention(block) (NSError?) -> Void
+        guard let handler = handler else {
+            return nil
+        }
+        let originalHandler = unsafeBitCast(handler, to: Handler.self)
+        let wrapperHandler: Handler = {[weak self, weak task] error in
+            if let error = error, let task = task as? URLSessionTask {
+                self?.reportNetworkLoaderWebSocketHandshakeIfNeeded(task: task, error: error)
+            }
+            originalHandler(error)
+        }
+        return wrapperHandler as AnyObject
     }
 }

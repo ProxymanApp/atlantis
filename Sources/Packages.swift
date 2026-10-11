@@ -180,6 +180,11 @@ public final class TrafficPackage: Codable, CustomDebugStringConvertible, Serial
     }
 
     func toData() -> Data? {
+        return toData(websocketMessagePackage: websocketMessagePackage)
+    }
+
+    /// Encode the package with a WS message, without changing the package
+    func toData(websocketMessagePackage: WebsocketMessagePackage?) -> Data? {
         let request: Request
         if isLargeRequestBody {
             request = Request(url: self.request.url, method: self.request.method, headers: self.request.headers, body: nil)

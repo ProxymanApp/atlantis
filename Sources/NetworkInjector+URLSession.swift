@@ -204,6 +204,16 @@ extension NetworkInjector {
 /// Mark an upload task that its body is already reported
 private var uploadBodyReportedKey: UInt8 = 0
 
+/// Read the body of an upload from a file
+/// Skip a large file: it blocks the thread and Atlantis doesn't send a body larger than MaximumSizePackage anyway
+private func uploadBody(fileURL: URL) -> Data? {
+    let fileSize = (try? fileURL.resourceValues(forKeys: [.fileSizeKey]))?.fileSize ?? 0
+    guard fileSize <= NetServiceTransport.MaximumSizePackage else {
+        return nil
+    }
+    return try? Data(contentsOf: fileURL)
+}
+
 extension NetworkInjector {
 
     func _swizzleURLSessionUploadSelector(baseClass: AnyClass) {
@@ -222,10 +232,9 @@ extension NetworkInjector {
     /// The new loader (NWURLSession) calls the private upload funcs from the public ones,
     /// so we make sure that the body is reported once per task. Otherwise, the body is duplicated
     private func reportUploadIfNeeded(task: URLSessionTask, request: NSURLRequest, data: @autoclosure () -> Data?) {
-        guard objc_getAssociatedObject(task, &uploadBodyReportedKey) == nil else {
+        guard task.markOnce(&uploadBodyReportedKey) else {
             return
         }
-        objc_setAssociatedObject(task, &uploadBodyReportedKey, true, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
         delegate?.injectorSessionDidUpload(task: task, request: request, data: data())
     }
 
@@ -253,7 +262,7 @@ extension NetworkInjector {
             if let task = task as? URLSessionTask,
                let request = request as? NSURLRequest,
                let fileURL = fileURL as? URL {
-                self?.reportUploadIfNeeded(task: task, request: request, data: try? Data(contentsOf: fileURL))
+                self?.reportUploadIfNeeded(task: task, request: request, data: uploadBody(fileURL: fileURL))
             } else {
                 print("[Atlantis] ❌ Error: Could not get data from _swizzleURLSessionUploadSelector. It might causes due to the latest iOS changes. Please contact the author!")
             }
@@ -287,7 +296,7 @@ extension NetworkInjector {
             if let task = task as? URLSessionTask,
                let request = request as? NSURLRequest,
                 let fileURL = fileURL as? URL {
-                self?.reportUploadIfNeeded(task: task, request: request, data: try? Data(contentsOf: fileURL))
+                self?.reportUploadIfNeeded(task: task, request: request, data: uploadBody(fileURL: fileURL))
             } else {
                 print("[Atlantis] ❌ Error: Could not get data from _swizzleURLSessionUploadSelector. It might causes due to the latest iOS changes. Please contact the author!")
             }
@@ -426,7 +435,7 @@ extension NetworkInjector {
             if let task = task as? URLSessionTask,
                let request = request as? NSURLRequest,
                let fileURL = fileURL as? URL {
-                self?.reportUploadIfNeeded(task: task, request: request, data: try? Data(contentsOf: fileURL))
+                self?.reportUploadIfNeeded(task: task, request: request, data: uploadBody(fileURL: fileURL))
             } else {
                 print("[Atlantis] ❌ Error: Could not get data from _swizzleURLSessionUploadFromFileWithDelegateSelector. It might causes due to the latest iOS changes. Please contact the author!")
             }
@@ -443,7 +452,8 @@ extension NetworkInjector {
 extension NetworkInjector {
 
     /// - Parameter isNetworkLoader: true for NWURLSessionWebSocketTask (the new loader).
-    /// It doesn't tell us when the handshake is done, so we check it on every WS event
+    /// It doesn't tell us when the handshake is done, so we check it on every WS event (a cheap check once it's reported),
+    /// and the completion handlers report a failed handshake
     func _swizzleURLSessionWebsocketSelector(baseClass: AnyClass, isNetworkLoader: Bool = false) {
         _swizzleURLSessionWebSocketSendMessageSelector(baseClass, isNetworkLoader: isNetworkLoader)
         _swizzleURLSessionWebSocketReceiveMessageSelector(baseClass, isNetworkLoader: isNetworkLoader)
@@ -468,9 +478,12 @@ extension NetworkInjector {
         let originalImp: IMP = method_getImplementation(method)
         let block: @convention(block) (AnyObject, AnyObject, AnyObject?) -> Void = {[weak self] (me, message, block) in
 
+            // On the new loader, the completion handler reports a failed handshake
+            let handler = isNetworkLoader ? (self?.wrapNetworkLoaderWebSocketHandler(task: me, handler: block) ?? block) : block
+
             // call the original
             let original: NewClosureType = unsafeBitCast(originalImp, to: NewClosureType.self)
-            original(me, selector, message, block)
+            original(me, selector, message, handler)
 
             // Safe-check
             if let task = me as? URLSessionTask {
@@ -548,9 +561,12 @@ extension NetworkInjector {
         let originalImp: IMP = method_getImplementation(method)
         let block: @convention(block) (AnyObject, AnyObject?) -> Void = {[weak self](me, handler) in
 
+            // On the new loader, the pong handler reports a failed handshake
+            let pongHandler = isNetworkLoader ? (self?.wrapNetworkLoaderWebSocketHandler(task: me, handler: handler) ?? handler) : handler
+
             // call the original
             let original: NewClosureType = unsafeBitCast(originalImp, to: NewClosureType.self)
-            original(me, selector, handler)
+            original(me, selector, pongHandler)
 
             // Safe-check
             if let task = me as? URLSessionTask {

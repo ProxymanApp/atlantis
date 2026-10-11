@@ -675,8 +675,8 @@ final class URLSessionPrivateAPITests: XCTestCase {
         assertMethod("NWURLSessionWebSocketTask", "sendPingWithPongReceiveHandler:", encoding: "v@:@?")
         assertMethod("NWURLSessionWebSocketTask", "cancelWithCloseCode:reason:", encoding: "v@:q@")
 
-        // Optional, macOS 15 / iOS 18 don't have it
-        if #available(iOS 27.0, macOS 27.0, tvOS 27.0, watchOS 27.0, visionOS 27.0, *) {
+        // Optional, macOS 15 / iOS 18 don't have it. Atlantis swizzles it whenever it exists
+        if NSClassFromString("NWURLSessionWebSocketTask")?.instancesRespond(to: NSSelectorFromString("completeTaskWithError:retryable:")) == true {
             assertMethod("NWURLSessionWebSocketTask", "completeTaskWithError:retryable:", encoding: "v@:@B")
         }
     }
