@@ -68,6 +68,8 @@ struct Demo: Identifiable {
     enum Action {
         /// Send the request, return the status code
         case request(() async throws -> Int)
+        /// Call an API of a WebSocket connection, return what happened, e.g. "Sent"
+        case webSocket(() async throws -> String)
         /// Show an AsyncImage of the Atlantis logo, loaded with this loader
         case image(URLSessionLoader)
     }
@@ -80,13 +82,21 @@ struct Demo: Identifiable {
     let tint: Color
     var requirement: Requirement = .none
     let action: Action
+
+    /// Atlantis reports the traffic to its delegate, but not the WebSocket messages
+    var verifiesCapture: Bool {
+        if case .webSocket = action {
+            return false
+        }
+        return true
+    }
 }
 
 enum DemoStatus: Equatable {
     case idle
     case running
-    /// The status code is nil if it's unknown, e.g. AsyncImage
-    case success(statusCode: Int?)
+    /// The status code, or what happened, e.g. "Sent"
+    case success(String)
     case failure(String)
 }
 
@@ -130,8 +140,14 @@ final class DemoStore: ObservableObject {
         case .request(let send):
             do {
                 let statusCode = try await send()
-                statuses[demo.id] = .success(statusCode: statusCode)
+                statuses[demo.id] = .success("\(statusCode)")
                 verifyCapture(of: demo)
+            } catch {
+                statuses[demo.id] = .failure(error.localizedDescription)
+            }
+        case .webSocket(let call):
+            do {
+                statuses[demo.id] = .success(try await call())
             } catch {
                 statuses[demo.id] = .failure(error.localizedDescription)
             }
@@ -156,7 +172,7 @@ final class DemoStore: ObservableObject {
         guard status(of: demo) == .running else {
             return
         }
-        statuses[demo.id] = .success(statusCode: nil)
+        statuses[demo.id] = .success("OK")
         verifyCapture(of: demo)
     }
 

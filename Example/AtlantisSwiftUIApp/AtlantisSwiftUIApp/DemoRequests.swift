@@ -18,7 +18,8 @@ enum URLSessionLoader: String {
 enum DemoRequests {
 
     private static let baseURL = URL(string: "https://httpbin.proxyman.app")!
-    private static let webSocketURL = URL(string: "wss://echo.websocket.org/.ws")!
+    /// It says hello, then echoes every message
+    private static let echoWebSocketURL = URL(string: "wss://echo.websocket.org/.ws")!
     /// The Atlantis logo in this repository
     private static let atlantisLogoURL = URL(string: "https://raw.githubusercontent.com/ProxymanApp/atlantis/main/images/atlantis_logo.jpg")!
 
@@ -39,6 +40,10 @@ enum DemoRequests {
 
     static func url(_ path: String, demo: String) -> URL {
         return url(baseURL.appendingPathComponent(path), demo: demo)
+    }
+
+    static func webSocketURL(demo: String) -> URL {
+        return url(echoWebSocketURL, demo: demo)
     }
 
     /// The image of the downloads and AsyncImage
@@ -200,7 +205,7 @@ enum DemoRequests {
     static func webSocket(_ loader: URLSessionLoader, demo: String) async throws -> Int {
         let session = makeSession(loader)
         defer { session.invalidateAndCancel() }
-        let task = session.webSocketTask(with: url(webSocketURL, demo: demo))
+        let task = session.webSocketTask(with: webSocketURL(demo: demo))
 
         // Don't wait forever, cancelling makes the pending calls throw
         let timeout = Task {

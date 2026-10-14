@@ -74,13 +74,16 @@ private struct DemoRow: View {
                                         .offset(x: 6, y: -6)
                                 }
                         } else {
-                            DemoStatusBadge(status: status, capture: store.capture(of: demo), requirement: demo.requirement)
+                            DemoStatusBadge(status: status,
+                                            capture: store.capture(of: demo),
+                                            verifiesCapture: demo.verifiesCapture,
+                                            requirement: demo.requirement)
                         }
                     }
                     Text(DemoText.wrappable(demo.swizzled))
                         .font(.caption2.monospaced())
                         .foregroundStyle(Color(.secondaryLabel))
-                        .lineLimit(2)
+                        .lineLimit(3)
                     if case .failure(let message) = status {
                         Text(message)
                             .font(.caption2)
@@ -94,11 +97,12 @@ private struct DemoRow: View {
     }
 }
 
-/// The status code. Green with ✓ when Atlantis captured the request, orange when it didn't
+/// The status code, or what happened (e.g. Sent). Green with ✓ when Atlantis captured the request, orange when it didn't
 private struct DemoStatusBadge: View {
 
     let status: DemoStatus
     let capture: DemoStore.Capture?
+    let verifiesCapture: Bool
     let requirement: Demo.Requirement
 
     var body: some View {
@@ -112,12 +116,12 @@ private struct DemoStatusBadge: View {
                 EmptyView()
             case .running:
                 ProgressView()
-            case .success(let statusCode):
+            case .success(let label):
                 HStack(spacing: 3) {
                     if capture == .captured {
                         Image(systemName: "checkmark")
                     }
-                    Text(statusCode.map { "\($0)" } ?? "OK")
+                    Text(label)
                 }
                 .font(.caption.weight(.semibold).monospacedDigit())
                 .foregroundStyle(.white)
@@ -135,7 +139,8 @@ private struct DemoStatusBadge: View {
         switch capture {
         case .captured: return .green
         case .missed: return .orange
-        case nil: return Color(.systemGray3)
+        // Waiting for Atlantis, or nothing to wait for
+        case nil: return verifiesCapture ? Color(.systemGray3) : .green
         }
     }
 }

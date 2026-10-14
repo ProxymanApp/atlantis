@@ -49,7 +49,6 @@ private extension DemoPage {
         let completionConsumer = isClassic ? "__NSCFURLLocalSessionConnection" : "NWURLSessionResponseConsumerDataCompletionHandler"
         let delegateConsumer = isClassic ? "__NSCFURLLocalSessionConnection" : "NWURLSessionResponseConsumerDataDelegate"
         let downloadConsumer = isClassic ? "__NSCFURLLocalSessionConnection" : "NWURLSessionResponseConsumerDownload"
-        let webSocketTask = isClassic ? "__NSURLSessionWebSocketTask" : "NWURLSessionWebSocketTask"
         let id = { (name: String) in "\(page.rawValue).\(name)" }
 
         return [
@@ -95,12 +94,39 @@ private extension DemoPage {
             DemoSection(title: "Streaming", demos: [
                 Demo(id: id("sse"), title: "Server-Sent Events", swizzled: delegateConsumer,
                      symbol: "dot.radiowaves.up.forward", tint: .pink, requirement: requirement,
-                     action: .request { try await DemoRequests.serverSentEvents(loader, demo: id("sse")) }),
-                Demo(id: id("webSocket"), title: "WebSocket", swizzled: webSocketTask,
-                     symbol: "antenna.radiowaves.left.and.right", tint: .pink, requirement: requirement,
-                     action: .request { try await DemoRequests.webSocket(loader, demo: id("webSocket")) })
-            ])
+                     action: .request { try await DemoRequests.serverSentEvents(loader, demo: id("sse")) })
+            ]),
+            webSocketSection(id: id, loader: loader, requirement: requirement)
         ]
+    }
+
+    /// URLSessionWebSocketTask: each row calls one API on the same connection
+    static func webSocketSection(id: (String) -> String, loader: URLSessionLoader, requirement: Demo.Requirement) -> DemoSection {
+        let isClassic = loader == .classic
+        let webSocketTask = isClassic ? "__NSURLSessionWebSocketTask" : "NWURLSessionWebSocketTask"
+        let handshake = isClassic ? "__NSCFURLLocalSessionConnection" : "-[NWURLSessionTask loaderConnectedWithHTTPConnectionMetadata:CNAMEChain:unlistedTracker:]"
+        let webSocket = DemoWebSocket.shared(loader)
+
+        return DemoSection(title: "WebSocket", demos: [
+            Demo(id: id("webSocketConnect"), title: "Connect", swizzled: handshake,
+                 symbol: "link", tint: .red, requirement: requirement,
+                 action: .request { try await webSocket.connect() }),
+            Demo(id: id("webSocketSendText"), title: "Send Text", swizzled: "-[\(webSocketTask) sendMessage:completionHandler:]",
+                 symbol: "text.bubble", tint: .red, requirement: requirement,
+                 action: .webSocket { try await webSocket.sendText() }),
+            Demo(id: id("webSocketSendData"), title: "Send Data", swizzled: "-[\(webSocketTask) sendMessage:completionHandler:]",
+                 symbol: "01.square", tint: .red, requirement: requirement,
+                 action: .webSocket { try await webSocket.sendData() }),
+            Demo(id: id("webSocketReceive"), title: "Receive", swizzled: "-[\(webSocketTask) receiveMessageWithCompletionHandler:]",
+                 symbol: "arrow.down.message", tint: .red, requirement: requirement,
+                 action: .webSocket { try await webSocket.receive() }),
+            Demo(id: id("webSocketPing"), title: "Ping", swizzled: "-[\(webSocketTask) sendPingWithPongReceiveHandler:]",
+                 symbol: "dot.radiowaves.left.and.right", tint: .red, requirement: requirement,
+                 action: .webSocket { try await webSocket.ping() }),
+            Demo(id: id("webSocketClose"), title: "Close", swizzled: "-[\(webSocketTask) cancelWithCloseCode:reason:]",
+                 symbol: "xmark.circle", tint: .red, requirement: requirement,
+                 action: .webSocket { await webSocket.close() })
+        ])
     }
 }
 
