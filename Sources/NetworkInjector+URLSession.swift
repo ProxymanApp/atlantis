@@ -22,6 +22,7 @@ extension NetworkInjector {
             logError(name: "_swizzleURLSessionResumeSelector")
             return
         }
+        guard markAsSwizzled(method) else { return }
 
         // 
         typealias NewClosureType =  @convention(c) (AnyObject, Selector) -> Void
@@ -43,7 +44,7 @@ extension NetworkInjector {
             if let task = me as? URLSessionTask {
                 self?.delegate?.injectorSessionDidCallResume(task: task)
             } else {
-                assertionFailure("Could not get data from _swizzleURLSessionResumeSelector. It might causes due to the latest iOS changes. Please contact the author!")
+                print("[Atlantis] ❌ Error: Could not get data from _swizzleURLSessionResumeSelector. It might causes due to the latest iOS changes. Please contact the author!")
             }
         }
 
@@ -200,6 +201,19 @@ extension NetworkInjector {
 
 // MARK: - Upload
 
+/// Mark an upload task that its body is already reported
+private var uploadBodyReportedKey: UInt8 = 0
+
+/// Read the body of an upload from a file
+/// Skip a large file: it blocks the thread and Atlantis doesn't send a body larger than MaximumSizePackage anyway
+private func uploadBody(fileURL: URL) -> Data? {
+    let fileSize = (try? fileURL.resourceValues(forKeys: [.fileSizeKey]))?.fileSize ?? 0
+    guard fileSize <= NetServiceTransport.MaximumSizePackage else {
+        return nil
+    }
+    return try? Data(contentsOf: fileURL)
+}
+
 extension NetworkInjector {
 
     func _swizzleURLSessionUploadSelector(baseClass: AnyClass) {
@@ -207,6 +221,21 @@ extension NetworkInjector {
         _swizzleURLSessionUploadFromFileWithCompleteHandlerSelector(baseClass)
         _swizzleURLSessionUploadFromDataSelector(baseClass)
         _swizzleURLSessionUploadFromDataWithCompleteHandlerSelector(baseClass)
+
+        // async/await upload(for:from:delegate:) and upload(for:fromFile:delegate:) don't call the public funcs above
+        if #available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *) {
+            _swizzleURLSessionUploadFromDataWithDelegateSelector(baseClass)
+            _swizzleURLSessionUploadFromFileWithDelegateSelector(baseClass)
+        }
+    }
+
+    /// The new loader (NWURLSession) calls the private upload funcs from the public ones,
+    /// so we make sure that the body is reported once per task. Otherwise, the body is duplicated
+    private func reportUploadIfNeeded(task: URLSessionTask, request: NSURLRequest, data: @autoclosure () -> Data?) {
+        guard task.markOnce(&uploadBodyReportedKey) else {
+            return
+        }
+        delegate?.injectorSessionDidUpload(task: task, request: request, data: data())
     }
 
     private func _swizzleURLSessionUploadFromFileSelector(_ baseClass: AnyClass) {
@@ -217,6 +246,7 @@ extension NetworkInjector {
             logError(name: "_swizzleURLSessionUploadFromFileSelector")
             return
         }
+        guard markAsSwizzled(method) else { return }
 
         // For safety, we should cast to AnyObject
         // To prevent app crashes in the future if the object type is changed
@@ -232,10 +262,9 @@ extension NetworkInjector {
             if let task = task as? URLSessionTask,
                let request = request as? NSURLRequest,
                let fileURL = fileURL as? URL {
-                let data = try? Data(contentsOf: fileURL)
-                self?.delegate?.injectorSessionDidUpload(task: task, request: request, data: data)
+                self?.reportUploadIfNeeded(task: task, request: request, data: uploadBody(fileURL: fileURL))
             } else {
-                assertionFailure("Could not get data from _swizzleURLSessionUploadSelector. It might causes due to the latest iOS changes. Please contact the author!")
+                print("[Atlantis] ❌ Error: Could not get data from _swizzleURLSessionUploadSelector. It might causes due to the latest iOS changes. Please contact the author!")
             }
             return task
         }
@@ -251,6 +280,7 @@ extension NetworkInjector {
             logError(name: "_swizzleURLSessionUploadFromFileWithCompleteHandlerSelector")
             return
         }
+        guard markAsSwizzled(method) else { return }
 
         // For safety, we should cast to AnyObject
         // To prevent app crashes in the future if the object type is changed
@@ -266,10 +296,9 @@ extension NetworkInjector {
             if let task = task as? URLSessionTask,
                let request = request as? NSURLRequest,
                 let fileURL = fileURL as? URL {
-                let data = try? Data(contentsOf: fileURL)
-                self?.delegate?.injectorSessionDidUpload(task: task, request: request, data: data)
+                self?.reportUploadIfNeeded(task: task, request: request, data: uploadBody(fileURL: fileURL))
             } else {
-                assertionFailure("Could not get data from _swizzleURLSessionUploadSelector. It might causes due to the latest iOS changes. Please contact the author!")
+                print("[Atlantis] ❌ Error: Could not get data from _swizzleURLSessionUploadSelector. It might causes due to the latest iOS changes. Please contact the author!")
             }
 
             return task
@@ -286,6 +315,7 @@ extension NetworkInjector {
             logError(name: "_swizzleURLSessionUploadFromDataSelector")
             return
         }
+        guard markAsSwizzled(method) else { return }
 
         // For safety, we should cast to AnyObject
         // To prevent app crashes in the future if the object type is changed
@@ -300,10 +330,9 @@ extension NetworkInjector {
             // Safe-check
             if let task = task as? URLSessionTask,
                let request = request as? NSURLRequest {
-                let data = data as? Data
-                self?.delegate?.injectorSessionDidUpload(task: task, request: request, data: data)
+                self?.reportUploadIfNeeded(task: task, request: request, data: data as? Data)
             } else {
-                assertionFailure("Could not get data from _swizzleURLSessionUploadSelector. It might causes due to the latest iOS changes. Please contact the author!")
+                print("[Atlantis] ❌ Error: Could not get data from _swizzleURLSessionUploadSelector. It might causes due to the latest iOS changes. Please contact the author!")
             }
 
             return task
@@ -320,6 +349,7 @@ extension NetworkInjector {
             logError(name: "_swizzleURLSessionUploadFromDataWithCompleteHandlerSelector")
             return
         }
+        guard markAsSwizzled(method) else { return }
 
         // For safety, we should cast to AnyObject
         // To prevent app crashes in the future if the object type is changed
@@ -334,9 +364,80 @@ extension NetworkInjector {
             // Safe-check
             if let task = task as? URLSessionTask,
                let request = request as? NSURLRequest {
-                self?.delegate?.injectorSessionDidUpload(task: task, request: request, data: data as? Data)
+                self?.reportUploadIfNeeded(task: task, request: request, data: data as? Data)
             } else {
-                assertionFailure("Could not get data from _swizzleURLSessionUploadSelector. It might causes due to the latest iOS changes. Please contact the author!")
+                print("[Atlantis] ❌ Error: Could not get data from _swizzleURLSessionUploadSelector. It might causes due to the latest iOS changes. Please contact the author!")
+            }
+
+            return task
+        }
+
+        method_setImplementation(method, imp_implementationWithBlock(block))
+    }
+
+    /// Used by `upload(for:from:delegate:)` async
+    private func _swizzleURLSessionUploadFromDataWithDelegateSelector(_ baseClass: AnyClass) {
+        // Prepare
+        let selector = NSSelectorFromString("_uploadTaskWithRequest:fromData:delegate:completionHandler:")
+        guard let method = class_getInstanceMethod(baseClass, selector),
+            baseClass.instancesRespond(to: selector) else {
+            logError(name: "_swizzleURLSessionUploadFromDataWithDelegateSelector")
+            return
+        }
+        guard markAsSwizzled(method) else { return }
+
+        // For safety, we should cast to AnyObject
+        // To prevent app crashes in the future if the object type is changed
+        typealias NewClosureType =  @convention(c) (AnyObject, Selector, AnyObject, AnyObject?, AnyObject?, AnyObject?) -> AnyObject?
+        let originalImp: IMP = method_getImplementation(method)
+        let block: @convention(block) (AnyObject, AnyObject, AnyObject?, AnyObject?, AnyObject?) -> AnyObject? = {[weak self](me, request, data, taskDelegate, block) in
+
+            // call the original
+            let original: NewClosureType = unsafeBitCast(originalImp, to: NewClosureType.self)
+            let task = original(me, selector, request, data, taskDelegate, block)
+
+            // Safe-check
+            if let task = task as? URLSessionTask,
+               let request = request as? NSURLRequest {
+                self?.reportUploadIfNeeded(task: task, request: request, data: data as? Data)
+            } else {
+                print("[Atlantis] ❌ Error: Could not get data from _swizzleURLSessionUploadFromDataWithDelegateSelector. It might causes due to the latest iOS changes. Please contact the author!")
+            }
+
+            return task
+        }
+
+        method_setImplementation(method, imp_implementationWithBlock(block))
+    }
+
+    /// Used by `upload(for:fromFile:delegate:)` async
+    private func _swizzleURLSessionUploadFromFileWithDelegateSelector(_ baseClass: AnyClass) {
+        // Prepare
+        let selector = NSSelectorFromString("_uploadTaskWithRequest:fromFile:delegate:completionHandler:")
+        guard let method = class_getInstanceMethod(baseClass, selector),
+            baseClass.instancesRespond(to: selector) else {
+            logError(name: "_swizzleURLSessionUploadFromFileWithDelegateSelector")
+            return
+        }
+        guard markAsSwizzled(method) else { return }
+
+        // For safety, we should cast to AnyObject
+        // To prevent app crashes in the future if the object type is changed
+        typealias NewClosureType =  @convention(c) (AnyObject, Selector, AnyObject, AnyObject?, AnyObject?, AnyObject?) -> AnyObject?
+        let originalImp: IMP = method_getImplementation(method)
+        let block: @convention(block) (AnyObject, AnyObject, AnyObject?, AnyObject?, AnyObject?) -> AnyObject? = {[weak self](me, request, fileURL, taskDelegate, block) in
+
+            // call the original
+            let original: NewClosureType = unsafeBitCast(originalImp, to: NewClosureType.self)
+            let task = original(me, selector, request, fileURL, taskDelegate, block)
+
+            // Safe-check
+            if let task = task as? URLSessionTask,
+               let request = request as? NSURLRequest,
+               let fileURL = fileURL as? URL {
+                self?.reportUploadIfNeeded(task: task, request: request, data: uploadBody(fileURL: fileURL))
+            } else {
+                print("[Atlantis] ❌ Error: Could not get data from _swizzleURLSessionUploadFromFileWithDelegateSelector. It might causes due to the latest iOS changes. Please contact the author!")
             }
 
             return task
@@ -350,20 +451,17 @@ extension NetworkInjector {
 
 extension NetworkInjector {
 
-    func _swizzleURLSessionWebsocketSelector() {
-        guard let websocketClass = NSClassFromString("__NSURLSessionWebSocketTask") else {
-            print("[Atlantis][ERROR] Could not inject __NSURLSessionWebSocketTask!!")
-            return
-        }
-
-        //
-        _swizzleURLSessionWebSocketSendMessageSelector(websocketClass)
-        _swizzleURLSessionWebSocketReceiveMessageSelector(websocketClass)
-        _swizzleURLSessionWebSocketSendPingPongSelector(websocketClass)
-        _swizzleURLSessionWebSocketCancelWithCloseCodeReasonSelector(websocketClass)
+    /// - Parameter isNetworkLoader: true for NWURLSessionWebSocketTask (the new loader).
+    /// It doesn't tell us when the handshake is done, so we check it on every WS event (a cheap check once it's reported),
+    /// and the completion handlers report a failed handshake
+    func _swizzleURLSessionWebsocketSelector(baseClass: AnyClass, isNetworkLoader: Bool = false) {
+        _swizzleURLSessionWebSocketSendMessageSelector(baseClass, isNetworkLoader: isNetworkLoader)
+        _swizzleURLSessionWebSocketReceiveMessageSelector(baseClass, isNetworkLoader: isNetworkLoader)
+        _swizzleURLSessionWebSocketSendPingPongSelector(baseClass, isNetworkLoader: isNetworkLoader)
+        _swizzleURLSessionWebSocketCancelWithCloseCodeReasonSelector(baseClass, isNetworkLoader: isNetworkLoader)
     }
 
-    private func _swizzleURLSessionWebSocketSendMessageSelector(_ baseClass: AnyClass) {
+    private func _swizzleURLSessionWebSocketSendMessageSelector(_ baseClass: AnyClass, isNetworkLoader: Bool) {
 
         // Prepare
         let selector = NSSelectorFromString("sendMessage:completionHandler:")
@@ -372,33 +470,41 @@ extension NetworkInjector {
             logError(name: "_swizzleURLSessionWebSocketSendMessageSelector")
             return
         }
+        guard markAsSwizzled(method) else { return }
 
         // For safety, we should cast to AnyObject
         // To prevent app crashes in the future if the object type is changed
-        typealias NewClosureType =  @convention(c) (AnyObject, Selector, AnyObject, AnyObject) -> Void
+        typealias NewClosureType =  @convention(c) (AnyObject, Selector, AnyObject, AnyObject?) -> Void
         let originalImp: IMP = method_getImplementation(method)
-        let block: @convention(block) (AnyObject, AnyObject, AnyObject) -> Void = {[weak self] (me, message, block) in
+        let block: @convention(block) (AnyObject, AnyObject, AnyObject?) -> Void = {[weak self] (me, message, block) in
+
+            // On the new loader, the completion handler reports a failed handshake
+            let handler = isNetworkLoader ? (self?.wrapNetworkLoaderWebSocketHandler(task: me, handler: block) ?? block) : block
 
             // call the original
             let original: NewClosureType = unsafeBitCast(originalImp, to: NewClosureType.self)
-            original(me, selector, message, block)
+            original(me, selector, message, handler)
 
             // Safe-check
             if let task = me as? URLSessionTask {
+                if isNetworkLoader {
+                    self?.reportNetworkLoaderWebSocketHandshakeIfNeeded(task: task, error: nil)
+                }
+
                 // As message is `NSURLSessionWebSocketMessage` and Xcode doesn't allow to cast it.
-                // We use value(forKey:) to get the value
+                // We use value(forKey:) to get the value
                 if let newMessage = self?.wrapWebSocketMessage(object: message) {
                     self?.delegate?.injectorSessionWebSocketDidSendMessage(task: task, message: newMessage)
                 }
             } else {
-                assertionFailure("Could not get data from _swizzleURLSessionWebSocketSendMessageSelector. It might causes due to the latest iOS changes. Please contact the author!")
+                print("[Atlantis] ❌ Error: Could not get data from _swizzleURLSessionWebSocketSendMessageSelector. It might causes due to the latest iOS changes. Please contact the author!")
             }
         }
 
         method_setImplementation(method, imp_implementationWithBlock(block))
     }
 
-    private func _swizzleURLSessionWebSocketReceiveMessageSelector(_ baseClass: AnyClass) {
+    private func _swizzleURLSessionWebSocketReceiveMessageSelector(_ baseClass: AnyClass, isNetworkLoader: Bool) {
 
         // Prepare
         let selector = NSSelectorFromString("receiveMessageWithCompletionHandler:")
@@ -407,6 +513,7 @@ extension NetworkInjector {
             logError(name: "_swizzleURLSessionWebSocketReceiveMessageSelector")
             return
         }
+        guard markAsSwizzled(method) else { return }
 
         // For safety, we should cast to AnyObject
         // To prevent app crashes in the future if the object type is changed
@@ -417,11 +524,15 @@ extension NetworkInjector {
             // Originally implemented in Obj-C.
             let wrapperHandler = AtlantisHelper.swizzleWebSocketReceiveMessage(withCompleteHandler: handler, responseHandler: {[weak self] (str, data, error) in
                 if let task = me as? URLSessionTask {
+                    if isNetworkLoader {
+                        // On iOS 18 (no completeTaskWithError:retryable:), a failed handshake is only reported here
+                        self?.reportNetworkLoaderWebSocketHandshakeIfNeeded(task: task, error: error)
+                    }
                     if let message = self?.wrapWebSocketMessage(strValue: str, dataValue: data) {
                         self?.delegate?.injectorSessionWebSocketDidReceive(task: task, message: message)
                     }
                 } else {
-                    assertionFailure("Could not get data from _swizzleURLSessionWebSocketReceiveMessageSelector. It might causes due to the latest iOS changes. Please contact the author!")
+                    print("[Atlantis] ❌ Error: Could not get data from _swizzleURLSessionWebSocketReceiveMessageSelector. It might causes due to the latest iOS changes. Please contact the author!")
                 }
             }) ?? handler
 
@@ -433,7 +544,7 @@ extension NetworkInjector {
         method_setImplementation(method, imp_implementationWithBlock(block))
     }
 
-    private func _swizzleURLSessionWebSocketSendPingPongSelector(_ baseClass: AnyClass) {
+    private func _swizzleURLSessionWebSocketSendPingPongSelector(_ baseClass: AnyClass, isNetworkLoader: Bool) {
 
         // Prepare
         let selector = NSSelectorFromString("sendPingWithPongReceiveHandler:")
@@ -442,29 +553,36 @@ extension NetworkInjector {
             logError(name: "_swizzleURLSessionWebSocketSendPingPongSelector")
             return
         }
+        guard markAsSwizzled(method) else { return }
 
         // For safety, we should cast to AnyObject
         // To prevent app crashes in the future if the object type is changed
-        typealias NewClosureType =  @convention(c) (AnyObject, Selector, AnyObject) -> Void
+        typealias NewClosureType =  @convention(c) (AnyObject, Selector, AnyObject?) -> Void
         let originalImp: IMP = method_getImplementation(method)
-        let block: @convention(block) (AnyObject, AnyObject) -> Void = {[weak self](me, handler) in
+        let block: @convention(block) (AnyObject, AnyObject?) -> Void = {[weak self](me, handler) in
+
+            // On the new loader, the pong handler reports a failed handshake
+            let pongHandler = isNetworkLoader ? (self?.wrapNetworkLoaderWebSocketHandler(task: me, handler: handler) ?? handler) : handler
 
             // call the original
             let original: NewClosureType = unsafeBitCast(originalImp, to: NewClosureType.self)
-            original(me, selector, handler)
+            original(me, selector, pongHandler)
 
             // Safe-check
             if let task = me as? URLSessionTask {
+                if isNetworkLoader {
+                    self?.reportNetworkLoaderWebSocketHandshakeIfNeeded(task: task, error: nil)
+                }
                 self?.delegate?.injectorSessionWebSocketDidSendPingPong(task: task)
             } else {
-                assertionFailure("Could not get data from _swizzleURLSessionWebSocketSendPingPongSelector. It might causes due to the latest iOS changes. Please contact the author!")
+                print("[Atlantis] ❌ Error: Could not get data from _swizzleURLSessionWebSocketSendPingPongSelector. It might causes due to the latest iOS changes. Please contact the author!")
             }
         }
 
         method_setImplementation(method, imp_implementationWithBlock(block))
     }
 
-    private func _swizzleURLSessionWebSocketCancelWithCloseCodeReasonSelector(_ baseClass: AnyClass) {
+    private func _swizzleURLSessionWebSocketCancelWithCloseCodeReasonSelector(_ baseClass: AnyClass, isNetworkLoader: Bool) {
 
         // Prepare
         let selector = NSSelectorFromString("cancelWithCloseCode:reason:")
@@ -473,6 +591,7 @@ extension NetworkInjector {
             logError(name: "_swizzleURLSessionWebSocketCancelWithCloseCodeReasonSelector")
             return
         }
+        guard markAsSwizzled(method) else { return }
 
         // For safety, we should cast to AnyObject
         // To prevent app crashes in the future if the object type is changed
@@ -486,11 +605,14 @@ extension NetworkInjector {
 
             // Safe-check
             if let task = me as? URLSessionTask {
+                if isNetworkLoader {
+                    self?.reportNetworkLoaderWebSocketHandshakeIfNeeded(task: task, error: nil)
+                }
                 let newCloseCode = URLSessionWebSocketTask.CloseCode(rawValue: closeCode) ?? .invalid
                 let data = reason as? Data // optional data
                 self?.delegate?.injectorSessionWebSocketDidSendCancelWithReason(task: task, closeCode: newCloseCode, reason: data)
             } else {
-                assertionFailure("Could not get data from _swizzleURLSessionWebSocketCancelWithCloseCodeReasonSelector. It might causes due to the latest iOS changes. Please contact the author!")
+                print("[Atlantis] ❌ Error: Could not get data from _swizzleURLSessionWebSocketCancelWithCloseCodeReasonSelector. It might causes due to the latest iOS changes. Please contact the author!")
             }
         }
 

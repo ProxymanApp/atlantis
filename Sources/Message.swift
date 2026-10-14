@@ -45,6 +45,10 @@ struct Message: Codable {
     static func buildWebSocketMessage(id: String, item: Serializable) -> Message {
         return Message(id: id, messageType: MessageType.websocket, content: item.toData())
     }
+
+    static func buildWebSocketMessage(id: String, package: TrafficPackage, websocketMessage: WebsocketMessagePackage) -> Message {
+        return Message(id: id, messageType: MessageType.websocket, content: package.toData(websocketMessagePackage: websocketMessage))
+    }
 }
 
 // MARK: - Serializable

@@ -7,6 +7,12 @@
 [![License](https://img.shields.io/cocoapods/l/atlantis-proxyman.svg?style=flat)](https://cocoapods.org/pods/atlantis-proxyman)
 [Join our Discord Channel](https://discord.gg/tjWEq6Da42)
 
+## 🆕 What's New
+- ✅ Ready for iOS 26 & iOS 27: iPhone, iPad, Apple Watch, Apple TV, Vision Pro and Mac
+- ✅ Capture URLSession's new loader (`usesClassicLoadingMode = false`), required by HTTP/3 Early Data (`enablesEarlyData`) on iOS 26
+- ✅ Capture the body of async/await uploads: `upload(for:from:)`, `upload(for:fromFile:)`
+- ✅ Capture WebSocket messages sent before the connection is open
+
 ## Atlantis is developed by Proxyman Team
 - Homepage: [https://proxyman.com](https://proxyman.com)
 - Twitter: [https://twitter.com/proxyman_app](https://twitter.com/proxyman_app)
@@ -158,9 +164,10 @@ func application(_ application: UIApplication, didFinishLaunchingWithOptions lau
 ## SwiftUI Example App
 Atlantis provides a simple iOS app that can demonstrate how to integrate and use Atlantis and Proxyman. Please follow the following steps:
 1. Open Proxyman for macOS
-2. Open iOS Project at `./Example/AtlantisSwiftUIApp.xcodeproj`
+2. Open iOS Project at `./Example/AtlantisSwiftUIApp/AtlantisSwiftUIApp.xcodeproj`
 3. Start the project with any iPhone/iPad Simulator or iPhone/iPad device
-4. Tap on some buttons to see the HTTP/HTTPS Request/Response on Proxyman app
+4. Pick a tab (iOS 18, iOS 26, iOS 27), then tap an API or **Run All** to see the HTTP/HTTPS Request/Response on Proxyman app
+5. Each API shows the method that Atlantis swizzles. A green ✓ means Atlantis captured the request
 
 <details>
   <summary>Advanced Usage</summary>
@@ -659,6 +666,16 @@ Atlantis and Proxyman apps do not store any of your data on any server.
 **All the above data are not stored anywhere (except in the memory)**. It will be wiped out as soon as you close the app. 
 
 They are required to categorize the traffic on the Proxyman app by project and device name. Therefore, it's easier to know where the request/response comes from.
+
+#### 5. Which URLSession APIs are supported?
+
+- Data, Upload, Download and WebSocket tasks, with a completion handler, a delegate, or async/await (`data(for:)`, `bytes(for:)`, `upload(for:from:)`, `upload(for:fromFile:)`, `download(for:)`)
+- Server-Sent Events (`text/event-stream`)
+- Both URLSession loaders:
+  - The classic loader (default)
+  - The new loader built on Network framework, used when `URLSessionConfiguration.usesClassicLoadingMode` is `false` (iOS 18.4+, macOS 15.4+, tvOS 18.4+, watchOS 11.4+, visionOS 2.4+). It's required by `enablesEarlyData` (HTTP/3 0-RTT) on iOS 26
+
+Traffic that doesn't go through URLSession in your app isn't captured automatically, e.g. `NWConnection`, `NetworkConnection`, SwiftNIO or `WKWebView`. For your own networking code, you can send the traffic to Proxyman with `Atlantis.add(request:response:responseBody:)`.
 
 ## Troubleshooting
 ### 1. I could not see any request from Atlantis on Proxyman app?

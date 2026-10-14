@@ -16,6 +16,7 @@
 		OBJ_40 /* DispatchQueue+Once.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_13 /* DispatchQueue+Once.swift */; };
 		OBJ_41 /* Message.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_14 /* Message.swift */; };
 		OBJ_42 /* NetworkInjector+URLSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_15 /* NetworkInjector+URLSession.swift */; };
+		BA7C1E2F2F8A4B0000A1B2C3 /* NetworkInjector+NWURLSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA7C1E2E2F8A4B0000A1B2C3 /* NetworkInjector+NWURLSession.swift */; };
 		OBJ_43 /* NetworkInjector.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_16 /* NetworkInjector.swift */; };
 		OBJ_44 /* PackageIdentifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_17 /* PackageIdentifier.swift */; };
 		OBJ_45 /* Packages.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_18 /* Packages.swift */; };
@@ -32,6 +33,7 @@
 		OBJ_13 /* DispatchQueue+Once.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DispatchQueue+Once.swift"; sourceTree = "<group>"; };
 		OBJ_14 /* Message.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Message.swift; sourceTree = "<group>"; };
 		OBJ_15 /* NetworkInjector+URLSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NetworkInjector+URLSession.swift"; sourceTree = "<group>"; };
+		BA7C1E2E2F8A4B0000A1B2C3 /* NetworkInjector+NWURLSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NetworkInjector+NWURLSession.swift"; sourceTree = "<group>"; };
 		OBJ_16 /* NetworkInjector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkInjector.swift; sourceTree = "<group>"; };
 		OBJ_17 /* PackageIdentifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PackageIdentifier.swift; sourceTree = "<group>"; };
 		OBJ_18 /* Packages.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Packages.swift; sourceTree = "<group>"; };
@@ -102,6 +104,7 @@
 				OBJ_13 /* DispatchQueue+Once.swift */,
 				OBJ_14 /* Message.swift */,
 				OBJ_15 /* NetworkInjector+URLSession.swift */,
+				BA7C1E2E2F8A4B0000A1B2C3 /* NetworkInjector+NWURLSession.swift */,
 				OBJ_16 /* NetworkInjector.swift */,
 				OBJ_17 /* PackageIdentifier.swift */,
 				OBJ_18 /* Packages.swift */,
@@ -185,6 +188,7 @@
 				OBJ_40 /* DispatchQueue+Once.swift in Sources */,
 				OBJ_41 /* Message.swift in Sources */,
 				OBJ_42 /* NetworkInjector+URLSession.swift in Sources */,
+				BA7C1E2F2F8A4B0000A1B2C3 /* NetworkInjector+NWURLSession.swift in Sources */,
 				OBJ_43 /* NetworkInjector.swift in Sources */,
 				OBJ_44 /* PackageIdentifier.swift in Sources */,
 				OBJ_45 /* Packages.swift in Sources */,

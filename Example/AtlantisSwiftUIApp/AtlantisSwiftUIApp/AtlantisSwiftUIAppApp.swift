@@ -15,6 +15,8 @@ import Atlantis
 @main
 struct AtlantisSwiftUIAppApp: App {
 
+    @StateObject private var store = DemoStore()
+
     init() {
         // 2. Connect to your Macbook
         #if DEBUG
@@ -31,6 +33,7 @@ struct AtlantisSwiftUIAppApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .environmentObject(store)
         }
     }
 }
